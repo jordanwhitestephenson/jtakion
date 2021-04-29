@@ -1,0 +1,44 @@
+li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 32px;
+  font-size: 20px;
+  padding: 4px 32px;
+  border-bottom: 1px solid #29826b;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #f0faf5;
+    .btn-primary.delete-button {
+      display: inline-block;
+    }
+  }
+
+  .item-wrapper {
+    display: flex;
+    width: calc(100% - 48px);
+    align-items: center;
+    cursor: pointer;
+
+	> span {
+		width: 33.3%;
+	}
+
+	.import-status {
+		text-align: right;
+	}
+
+    &:hover {
+      background-color: #f0faf5;
+    }
+  }
+
+  .btn-primary.delete-button {
+    display: none;
+    min-height: unset;
+    padding: 4px;
+    margin-right: -20px;
+    background-color: red;
+  }
+}

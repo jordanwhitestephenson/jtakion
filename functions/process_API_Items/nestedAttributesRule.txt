@@ -1,0 +1,36 @@
+function getNestedValue(attr) {
+  if (!attr || !attr.assetId) return null; // no valid nested attr value
+  // check if attr has nested attr
+  const { configurator } = api.scene.get({ id: attr.assetId });
+  const { attributes = [] } = configurator || {};
+  const nestedAttr = attributes.find(({ type }) => type === 'Asset');
+  if (!nestedAttr) {
+    // this attr is a leaf node, so no further nesting to traverse, just return its value
+    return attr;
+  }
+  // at this point, we have a nested attribute we need to dive into
+  if (!attr.configuration) {
+    // no configuration means nested attr not set
+    return null;
+  }
+  // get nested attr
+  const nestedAttrName = nestedAttr.name;
+  return getNestedValue(attr.configuration[nestedAttrName]);
+}
+const propagationPath = api.scene.find({
+  id: api.instanceId,
+  plug: 'Proxy',
+  property: 'asset',
+});
+const propagatedConfiguration = {};
+Object.entries(api.configurator.getFullConfiguration()).forEach(
+  ([attrName, attrValue]) => {
+    const nestedValue = getNestedValue(attrValue);
+    if (nestedValue === attrValue) return; // was non-nested or null, no need for custom propagation
+    propagatedConfiguration[attrName] = nestedValue;
+  }
+);
+api.configurator.propagateConfiguration(
+  propagationPath,
+  propagatedConfiguration
+);

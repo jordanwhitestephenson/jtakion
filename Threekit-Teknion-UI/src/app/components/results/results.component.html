@@ -1,0 +1,46 @@
+<app-header></app-header>
+<main>
+	<h1>{{ logGroupDisplayName }}</h1>
+	<div class="progressSection">
+		<h3>Import Status</h3> 
+		<div *ngIf="hasCheckedStatus">			
+			<div class="progress">
+				<div [ngStyle]="{'width': percentComplete + '%'}" class="bar">{{percentComplete | number:'1.0-1'}}%</div>
+			</div>
+		</div>
+		<div *ngIf="!hasCheckedStatus">
+			Checking status...
+		</div>
+	</div>
+	<div *ngIf="hasErrors" class="errorsDetected">
+		<span class="warning">&#9888;</span>
+		<span class="errorMessage">Errors detected during import. Check 'Only show errors' and click the update button to view.</span>
+	</div>
+	<div class="controls">	  
+		<div class="filters-container">
+			<input id="onlyErrors" type="checkbox" (change)="errorsOnlyClicked($event)"/>
+			<label for="onlyErrors">Only show errors</label>
+			<div class="filters">
+				<span *ngIf="filters.item || filters.group || filters.option" class="filter-label">Filters:</span>
+				<button *ngIf="filters.item" class="btn-secondary" (click)="removeFilter('item')"><span>Item Id: {{filters.item}} </span><h4 class="cancel">+</h4></button>
+				<button *ngIf="filters.group" class="btn-secondary" (click)="removeFilter('group')"><span>Group Id: {{filters.group}} </span><h4 class="cancel">+</h4></button>
+				<button *ngIf="filters.option" class="btn-secondary" (click)="removeFilter('option')"><span>Option Id: {{filters.option}} </span><h4 class="cancel">+</h4></button>
+			</div>
+		</div>
+		<button type="button" class="btn-primary" [disabled]="isLoading || isGettingNext" (click)="refreshLogs(false)">Update</button>
+	</div>
+	<div class="results">
+		<h2 *ngIf="isLoading">Loading results...</h2>
+		<h2 *ngIf="logEvents.length === 0 && !isLoading">No {{ errorsOnly ? 'errors' : 'results' }} found.</h2>
+		<ul *ngIf="logEvents.length > 0 && !isLoading">
+			<app-results-event
+				*ngFor="let event of logEvents"
+				[timestamp]="getEventTimestamp(event)"
+				[message]="getEventMessage(event)"
+				(addFilter)="updateFilters($event)"></app-results-event>
+		</ul>
+		<div class="load-more" [class.loading]="isGettingNext" *ngIf="nextToken && !isLoading" (click)="refreshLogs(true)">
+			<span>{{ isGettingNext ? 'Loading...' : 'Click to get more results' }}</span>
+		</div>
+	</div>
+</main>

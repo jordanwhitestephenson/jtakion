@@ -1,0 +1,34 @@
+header {
+  display: flex;
+  height: 56px;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 19px;
+  padding-right: 19px;
+  div {
+    display: flex;
+    align-items: flex-end;
+
+    img {
+      height: 29px;
+    }
+  
+    span {
+      margin-left: 24px;
+      font-size: 20px;
+      cursor: pointer;
+  
+      &.active {
+        text-decoration: underline;
+        
+        &.exact {
+          cursor: default;
+        }
+      }
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}

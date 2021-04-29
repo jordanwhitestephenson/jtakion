@@ -1,0 +1,10 @@
+{
+  "auth": {
+    "threekitteknionui797c1001": {
+      "service": "Cognito",
+      "providerPlugin": "awscloudformation",
+      "dependsOn": [],
+      "customAuth": false
+    }
+  }
+}

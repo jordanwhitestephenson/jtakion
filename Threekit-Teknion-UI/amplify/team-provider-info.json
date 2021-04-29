@@ -1,0 +1,20 @@
+{
+  "prod": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-threekitteknionui-prod-115230-authRole",
+      "UnauthRoleArn": "arn:aws:iam::826628530756:role/amplify-threekitteknionui-prod-115230-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::826628530756:role/amplify-threekitteknionui-prod-115230-authRole",
+      "Region": "ca-central-1",
+      "DeploymentBucketName": "amplify-threekitteknionui-prod-115230-deployment",
+      "UnauthRoleName": "amplify-threekitteknionui-prod-115230-unauthRole",
+      "StackName": "amplify-threekitteknionui-prod-115230",
+      "StackId": "arn:aws:cloudformation:ca-central-1:826628530756:stack/amplify-threekitteknionui-prod-115230/958171b0-a2b9-11eb-9a80-0af856d23bea",
+      "AmplifyAppId": "d2pz4ejzi7pdkt"
+    },
+    "categories": {
+      "auth": {
+        "threekitteknionui797c1001": {}
+      }
+    }
+  }
+}

@@ -1,0 +1,87 @@
+main {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 48px;
+
+  form {
+    width: 30vw;
+    min-width: 300px;
+    max-width: 500px;
+    padding: 32px;
+    border: 1px solid #29826b;
+    border-radius: 4px;
+
+    .file-upload {
+      margin-bottom: 32px;
+      .upload-complete,
+      .file-error {
+        width: 100%;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: -32px -32px 0 -32px;
+        padding: 0 32px;
+        background-color: #29826b;
+
+        h4, h2 {
+          margin: 0;
+          color: white;
+
+          &.cancel {
+            transform: rotate(45deg);
+            cursor: pointer;
+          }
+        }
+      }
+      .file-error {
+        background-color: red;
+      }
+      h2 {
+        margin-top: 0;
+
+        .file-name {
+          font-size: 16px;
+          color: black;
+        }
+      }
+
+      div.environment-select {
+        font-size: 18px;
+        margin-bottom: 16px;
+      }
+
+      input {
+        width: 100%;
+      }
+      
+      label {
+        width: 100%;
+        cursor: pointer;
+
+        .drag-and-drop {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 300px;
+          min-height: 150px;
+          border: 2px dashed #29826b;
+          background-color: white;
+        }
+
+        &.file-over,
+        &:hover {
+          .drag-and-drop {
+            background-color: #f0faf5;
+          }
+        }
+      }
+    }
+    .button-group {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+  }
+}

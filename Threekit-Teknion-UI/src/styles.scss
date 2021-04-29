@@ -1,0 +1,47 @@
+/* You can add global styles to this file, and also import other style files */
+:root{
+
+  --amplify-primary-color: #29826b;
+  --amplify-primary-tint: #f0faf5; 
+  --amplify-primary-shade: #29826b;
+}
+
+body {
+  margin: 0;
+  color: #29826b;
+  
+  .btn-primary {
+    min-height: 42px;
+    padding: 8px 16px;
+    font-family: sans-serif;
+    font-size: 14px;
+    border-radius: 4px;
+    margin-left: 8px;
+    cursor: not-allowed;
+    
+    &:not(:disabled) {
+      border: none;
+      color: white;
+      font-weight: bold;
+      background-color: #29826b;
+      cursor: pointer;
+    }
+  }
+
+  .btn-secondary {
+    min-height: 42px;
+    padding: 8px 16px;
+    font-family: sans-serif;
+    font-size: 14px;
+    border-radius: 4px;
+    cursor: not-allowed;
+    
+    &:not(:disabled) {
+      color:#29826b;
+      font-weight: bold;
+      border: 1px solid #29826b;
+      cursor: pointer;
+    }
+  }
+}
+

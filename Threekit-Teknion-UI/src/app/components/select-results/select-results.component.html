@@ -1,0 +1,37 @@
+<app-header></app-header>
+<main>
+  <h1>Select results:</h1>
+  <div class="controls">
+    <input type="text" placeholder="Search" (keydown.Enter)="getLogGroups(false)" #searchPrefixInput/>
+    <button class="btn-primary" (click)="getLogGroups(false)" (keypress.Enter)="getLogGroups(false)">Search</button>
+  </div>
+  <div class="results">
+    <h2 *ngIf="isLoading">Loading results...</h2>
+    <h2 *ngIf="imports.length === 0 && !isLoading">There are no results{{ imports.length === 0 && searchPrefixValue.length > 0 ? ' with prefix "'+searchPrefixValue+'"' : '' }}
+      {{ imports.length === 0 && searchPrefixValue.length > 0 ? '(Prefix is case sensitive).' : '' }}
+    </h2>
+    <ul *ngIf="imports.length > 0 && !isLoading" [class.done]="!nextToken">
+      <li class="import-header"><span>Import Name</span><span>Date Imported</span><span class="statusHeader">Status</span></li>
+      <app-select-results-item
+        *ngFor="let import of imports"
+        [timestamp]="import.timestamp"
+        [importName]="import.name"
+		[importValue]="import.value"
+        (selectImport)="selectImport(import.value)"
+        (deleteImport)="deleteImport(import)"></app-select-results-item>
+    </ul>
+    <div class="load-more" [class.loading]="isGettingNext" *ngIf="nextToken && !isLoading" (click)="getLogGroups(true)">
+      <span>{{ isGettingNext ? 'Loading...' : 'Click to get more results' }}</span>
+    </div>
+  </div>
+</main>
+<div *ngIf="showConfirmDeleteModal" class="confirm-delete-modal-container">
+  <div class="backdrop" (click)="closeModal()"></div>
+  <div class="confirm-delete-modal">
+    <h2>Are you sure you want to delete</h2><h3>{{ confirmDeleteImportName }}?</h3>
+    <div class="button-group">
+      <button class="btn-secondary" (click)="closeModal()">Cancel</button>
+      <button class="btn-primary delete-button" (click)="confirmDeleteImport()" [disabled]="isDeleting">{{ isDeleting ? 'Deleting...' : 'Delete' }}</button>
+    </div>
+  </div>
+</div>

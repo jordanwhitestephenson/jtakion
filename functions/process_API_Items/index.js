@@ -1,0 +1,510 @@
+// dependencies
+const fs = require('fs');
+const AWS = require('aws-sdk');
+const util = require('util');
+const axios = require('axios');
+const FormData = require('form-data');
+
+const https = require('https');
+const agent = new https.Agent({
+    keepAlive: true,
+    maxSockets: 25
+});
+const sqs = new AWS.SQS({
+  httpOptions: { agent }
+});
+
+const getParameter = require('./parameters.js').getParameter;
+const getOrgId = (environmentName) => getParameter("org-id")(environmentName);
+const getApiUrl = (environmentName) => getParameter("api-url")(environmentName);
+const getApiToken = (environmentName) => getParameter("api-token")(environmentName);
+
+const logItemEvent = require('./itemEventLog.js').logItemEvent;
+const finishLogEvents = require('./itemEventLog.js').finishLogEvents;
+const events = require('./itemEventLog.js').events;
+
+const maxQueueMessageSize = 262144 - 500;
+var itemsToQueueBuffer = [];
+var itemsToQueueBufferLength = 0;
+
+const ruleContent = fs.readFileSync('nestedAttributesRule.txt', 'utf8');
+
+exports.handler = async (event) => {
+    
+    const start = Date.now();
+    
+    /* helper functions */	   
+    
+    //create a item and assets for a group
+    function createOption (option) {
+        console.log({'event': 'createGroupOption', 'optionId': option.id});
+            
+        const item = {'query': { 'metadata' : { 'optionId': option.id }}, 'product': {}};
+        
+        if (option.im && option.materialId) {
+            item.product.asset = {
+                'assetId': option.materialId,
+                'configuration': '',
+                'type': 'material'
+            };
+        }
+        
+        if (option.subGroupOptionIds) {
+            const attrValues = option.subGroupOptionIds.map(id => {return {assetId: id};});
+            const defaultValue = attrValues.length === 1 ? attrValues[0] : {"assetId": ""};
+            item.product.attributes = [{
+                "type": "Asset",
+                "name": option.description,
+                "blacklist": [],
+                "assetType": "item",
+                "values": attrValues,
+                "defaultValue": defaultValue
+            }];
+        }
+        item.product.tags = [option.groupTag];
+        item.product.metadata = [
+            {
+                'type': 'Number',
+                'name': 'Price',
+                'blacklist': [],
+                'values': [],
+                'defaultValue': parseFloat(option.price)
+            },
+            {
+                'type': 'String',
+                'name': 'optionId',
+                'blacklist': [],
+                'values': [],
+                'defaultValue': option.id
+            },
+            {
+                'type': 'String',
+                'name': 'groupId',
+                'blacklist': [],
+                'values': [],
+                'defaultValue': option.groupId
+            },
+			{
+				'type': 'String',
+				'name': 'optionCode',
+				'blacklist': [],
+                'values': [],
+                'defaultValue': option.name
+			}
+        ];
+		if(option.thumbnailUrl) {
+			item.product.metadata.push({
+				'type': 'String',
+				'name': '_UI_thumbnailUrl',
+				'blacklist': [],
+                'values': [],
+                'defaultValue': option.thumbnailUrl
+			});
+		}
+        console.log("Attached groupId: " + option.groupId);
+        item.product.name = option.description;
+
+		if(option.prices) {
+			if(!item.product.attributes) {
+				item.product.attributes = [];
+			}
+			let pricingObj = {
+				type: 'Pricing',
+				name: 'Pricing',
+				values: []
+			};
+			let pricebookToCurrencyMap = {};
+			option.prices.forEach(price => {
+				if(!pricebookToCurrencyMap.hasOwnProperty(price.pricebookId)) {
+					//not in the map yet
+					let currencyArray = [{code: price.currencyCode, price: price.price}];
+					pricebookToCurrencyMap[price.pricebookId] = currencyArray;
+				} else {
+					//in the map already
+					let currencyArray = pricebookToCurrencyMap[price.pricebookId];
+					currencyArray.push({code: price.currencyCode, price: price.price});
+				}
+			});
+			Object.keys(pricebookToCurrencyMap).forEach(pricebookId => {
+				let priceObj = {
+					pricebook: pricebookId, 
+					currencies: {}
+				};
+				let currencyArray = pricebookToCurrencyMap[pricebookId];
+				currencyArray.forEach(curr => {
+					priceObj.currencies[curr.code] = parseFloat(curr.price);
+				});
+				
+				pricingObj.values.push(priceObj);
+			});
+			item.product.attributes.push(pricingObj);
+		}
+
+        return item;
+    }
+    
+    // create a item type product with optional id query
+    function createItem (item) {
+        console.log({'event': 'createItem', 'itemId': item.id});
+        let uploadItem = { 'query': { 'metadata': {
+            'itemId': item.id,
+            'catalog_code': item.catalog.code,
+            'catalog_year': item.catalog.year,
+            'catalog_month': item.catalog.month,
+            'catalog_day': item.catalog.day,
+            'catalog_version': item.catalog.version
+        }}};
+        
+        const product = {
+            'name': item.pn,
+            'type': 'item',
+            'orgId': getOrgId(item.destEnv),
+            'description': item.description,
+            'tags': [
+                'product',
+                `${item.catalog.code}_${item.catalog.year}-${item.catalog.month}-${item.catalog.day}_${item.catalog.version}`
+            ],
+            'metadata': [
+                {
+                    'type': 'String',
+                    'name': 'itemId',
+                    'blacklist': [],
+                    'values': [],
+                    'defaultValue': item.id
+                },
+                {
+                    'type': 'String',
+                    'name': 'catalog_code',
+                    'blacklist': [],
+                    'values': [],
+                    'defaultValue': item.catalog.code
+                },
+                {
+                    'type': 'String',
+                    'name': 'catalog_desc',
+                    'blacklist': [],
+                    'values': [],
+                    'defaultValue': item.catalog.desc
+                },
+                {
+                    'type': 'String',
+                    'name': 'catalog_year',
+                    'blacklist': [],
+                    'values': [],
+                    'defaultValue': item.catalog.year
+                },
+                {
+                    'type': 'String',
+                    'name': 'catalog_month',
+                    'blacklist': [],
+                    'values': [],
+                    'defaultValue': item.catalog.month
+                },
+                {
+                    'type': 'String',
+                    'name': 'catalog_day',
+                    'blacklist': [],
+                    'values': [],
+                    'defaultValue': item.catalog.day
+                },
+                {
+                    'type': 'String',
+                    'name': 'catalog_version',
+                    'blacklist': [],
+                    'values': [],
+                    'defaultValue': item.catalog.version
+                },
+				{
+					'type': 'String',
+					'name': '_UI_displayAttributesAs',
+					'blacklist': [],
+					'values': [],
+					'defaultValue': JSON.stringify(item.displayAttributesAs)
+				}
+            ],
+			'rules': []
+        };
+        if (item.modelId) {
+            product.asset = {
+                'assetId': item.modelId,
+                'configuration': '',
+                'type': 'model'
+            };
+        }
+        if (item.itemGroups && !item.itemGroups.some(grp => !grp.attributeIds)) {
+            product.attributes = item.itemGroups.map(att => {
+                const defaultValue = att.attributeIds.length === 1 ? att.attributeIds[0] : {"assetId": ""};
+                
+                return {
+                    'type': 'Asset',
+                    'name': att.groupName,
+                    "blacklist": [],
+                        "assetType": "item",
+                        "values": att.attributeIds,
+                        "defaultValue": defaultValue
+                };
+            });
+        }
+
+		let rule = {
+			"conditions": [],
+			"actions": [
+				{
+					"type": "custom-script",
+					"name": "custom-script",
+					"content": ruleContent,
+					"enabled": false,
+					"error": ""
+				}
+			],
+			"name": "Propagate Nested Attribute Values"
+		};
+		product.rules.push(rule);
+
+		if(item.prices) {
+			if(!product.attributes) {
+				product.attributes = [];
+			}
+			let pricingObj = {
+				type: 'Pricing',
+				name: 'Pricing',
+				values: []
+			};
+			let pricebookToCurrencyMap = {};
+			item.prices.forEach(price => {
+				if(!pricebookToCurrencyMap.hasOwnProperty(price.pricebookId)) {
+					//not in the map yet
+					let currencyArray = [{code: price.currencyCode, price: price.price}];
+					pricebookToCurrencyMap[price.pricebookId] = currencyArray;
+				} else {
+					//in the map already
+					let currencyArray = pricebookToCurrencyMap[price.pricebookId];
+					currencyArray.push({code: price.currencyCode, price: price.price});
+				}
+			});
+			Object.keys(pricebookToCurrencyMap).forEach(pricebookId => {
+				let priceObj = {
+					pricebook: pricebookId, 
+					currencies: {}
+				};
+				let currencyArray = pricebookToCurrencyMap[pricebookId];
+				currencyArray.forEach(curr => {
+					priceObj.currencies[curr.code] = parseFloat(curr.price);
+				});
+				
+				pricingObj.values.push(priceObj);
+			});
+			product.attributes.push(pricingObj);
+		}
+        uploadItem.product = product;
+        return uploadItem;
+    }
+    
+    async function sendItemToQueue(item){
+        
+        var itemLength = JSON.stringify(item).length;
+        
+        // console.log(" checking buffer size ("+itemsToQueueBuffer.length+") and length ("+(itemsToQueueBufferLength + itemLength)+") > "+maxQueueMessageSize );
+        const sendPromise = 
+            ( (itemsToQueueBuffer.length >= 10) || (itemsToQueueBufferLength + itemLength >= maxQueueMessageSize) ) ?
+            flushItemsToQueue() : null;
+                
+        // console.log(  {"event": "bufferQueue", "queueType":"needAsset", "objectType":item.type, "id":item.id} );
+        // logItemEvent( item.type == 'item' ? events.enqueueItem(item.id) : events.enqueueOption(item.id), item.sourceKey );
+        
+        itemsToQueueBuffer.push(item);
+        itemsToQueueBufferLength += itemLength;
+        
+        return sendPromise;
+        
+    }
+    
+    // send array of items that need assets created or updated to asset queue
+    function flushItemsToQueue() {
+        console.log("flushing ",itemsToQueueBuffer.length, " items to queue");
+        var params = {
+            "Entries": itemsToQueueBuffer.map( (it, i) => {
+                console.log( {"event": "enqueue", "queueType":"needAsset", "objectType":it.type, "id":it.id} );
+                logItemEvent( it.type == 'item' ? events.enqueueItem(it.id, Date.now() - start) : events.enqueueOption(it.id, Date.now() - start), it.sourceKey );
+                return {
+                    "Id":it.id,
+                    "MessageBody": JSON.stringify(it),
+                    "MessageAttributes":{"enqueueTime":{'DataType':'Number','StringValue':Date.now().toString()} }
+                };
+            }),
+            "QueueUrl" : process.env.itemsNeedingAssetsQueue//'https://sqs.us-east-1.amazonaws.com/890084055036/itemsNeedingAssets'
+        };
+        
+        console.log("sending to queue ", util.inspect(params, {depth: 5}) );
+        
+        itemsToQueueBuffer = [];
+        itemsToQueueBufferLength = 0;
+        
+        const messageSendPromise = sqs.sendMessageBatch(params).send();
+        // const messageSendPromise = Promise.resolve("sent to queue");
+        
+        return messageSendPromise;
+    }
+    
+    async function pushItemsForEnv(key) {
+        const orgId =  await getOrgId(key);
+        const apiUrl = await getApiUrl(key);
+        const apiToken = await getApiToken(key);
+        
+        const itemsToUploadEnv = itemsToUpload[key];
+        const itemsData = new FormData();
+        console.log("Uploading Ids: ", itemsToUploadEnv.map(i => i.query));
+        itemsData.append('file', JSON.stringify(itemsToUploadEnv), 'items.json');
+        const config = { 'headers': {
+            'Authorization': 'Bearer '+apiToken,
+            ...itemsData.getHeaders()
+        }};
+        console.log({'event': 'startApiCall'}, JSON.stringify(itemsToUploadEnv));
+        const t = Date.now();
+        return axios.post(
+            apiUrl+'/products/import?orgId='+orgId,
+            itemsData,
+            config
+        ).catch(error => {
+			itemsToUploadEnv.forEach(itm => {
+				let keyArray;
+				if(itm.query.metadata.itemId) {
+					keyArray = bodySourceKeys[itm.query.metadata.itemId];
+				} else {
+					keyArray = bodySourceKeys[itm.query.metadata.optionId];
+				}			
+				if (error.response) {
+					// The request was made and the server responded with a status code
+					// that falls out of the range of 2xx
+					keyArray.forEach(k => {
+						logItemEvent( events.failedApiCall(apiUrl+'/products/import?orgId='+orgId, JSON.stringify(itemsToUploadEnv), error.response.data, error.response.status, error.response.headers), k);			
+					});					
+					console.log(error.response.data);
+					console.log(error.response.status);
+					console.log(error.response.headers);
+				} else if (error.request) {
+					// The request was made but no response was received
+					// `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+					// http.ClientRequest in node.js
+					console.log(error.request);
+					keyArray.forEach(k => {
+						logItemEvent( events.noResponseApiCall(apiUrl+'/products/import?orgId='+orgId, JSON.stringify(itemsToUploadEnv), error.request), k);				
+					});
+				} else {
+					// Something happened in setting up the request that triggered an Error
+					console.log('Error', error.message);
+					keyArray.forEach(k => {
+						logItemEvent( events.unknownErrorApiCall(apiUrl+'/products/import?orgId='+orgId, JSON.stringify(itemsToUploadEnv), error.message), k);			
+					});
+				}
+			});
+			throw error;
+		})
+        .then((res) => {
+            console.log({'event': 'Successful API call'});
+            if (res && res.data && res.data.products) {
+				const productsCreated = res.data.products.map(p => {
+					if(p.metadata.itemId){
+						let sourceKeyArray = bodySourceKeys[p.metadata.itemId];	
+						sourceKeyArray.forEach(sourceKey => {
+							logItemEvent( events.createdItem(p.metadata.itemId, p.id, Date.now() - t),  sourceKey);						
+						});						
+						return p.metadata.itemId;
+					} else {
+						let sourceKeyArray = bodySourceKeys[p.metadata.optionId];	
+						sourceKeyArray.forEach(sourceKey => {					
+							logItemEvent( events.createdOption(p.metadata.optionId, p.id, Date.now() - t), sourceKey );
+						});
+						return p.metadata.optionId;
+					}					
+				});				
+				const productsFailed = itemsToUploadEnv.filter(p => {
+					const itemId = p.query.metadata.itemId ? p.query.metadata.itemId : p.query.metadata.optionId;
+					return !productsCreated.includes(itemId);
+				}).map(p => {
+					if(p.query.metadata.itemId){
+						let sourceKeyArray = bodySourceKeys[p.metadata.itemId];		
+						sourceKeyArray.forEach(sourceKey => {				
+							logItemEvent( events.errorCreatingItem(p.query.metadata.itemId), sourceKey );
+						});
+						return p.query.metadata.itemId;
+					} else {
+						let sourceKeyArray = bodySourceKeys[p.query.metadata.optionId];	
+						sourceKeyArray.forEach(sourceKey => {					
+							logItemEvent( events.errorCreatingOption(p.query.metadata.optionId),  sourceKey);
+						});
+						return p.query.metadata.optionId;
+					}
+				});
+				
+				if (productsFailed.length > 0) {
+					console.log('Items failed: ', productsFailed);
+				}
+			}
+            return res.data;
+        });
+    }
+    
+    
+    /* process event */
+    
+    let itemsToUpload = {};
+    console.log(util.inspect(event, {depth: 5}));
+    
+    const bodySourceKeys = {};
+    
+    event.Records.forEach(r => {
+        const body = JSON.parse(r.body);
+        const getQueueTime = r.messageAttributes && r.messageAttributes['enqueueTime'] && r.messageAttributes['enqueueTime'].stringValue ? () => Date.now() - Number.parseInt(r.messageAttributes['enqueueTime'].stringValue) : () => null ;
+		if(bodySourceKeys.hasOwnProperty(body.id)) {
+			let sourceKeyArray = bodySourceKeys[body.id];
+			sourceKeyArray.push(body.sourceKey);
+		} else {
+			bodySourceKeys[body.id] = [body.sourceKey];
+		}
+        if (body && body.type && body.type === 'option') {
+            logItemEvent( events.dequeueOption(body.id, getQueueTime()), body.sourceKey );
+             console.log('Option: ', body);
+            const option = createOption(body);
+            logItemEvent( events.creatingOption(body.id), body.sourceKey );
+            if (!itemsToUpload[body.destEnv]) {
+                itemsToUpload[body.destEnv] = [];
+            }
+            if ((body.im && !body.materialId && !body.assetChecked) || (body.subGroupOptions && !body.subGroupOptionIds && !body.assetChecked)) {
+                // option will get passed to asset queue
+                logItemEvent( events.needsReferencesOption(body.id, (body.im && !body.materialId), (body.subGroupOptions && !body.subGroupOptionIds)), body.sourceKey );
+                // console.log({'event': 'needsAssets', type:'option', 'optionId': body.id});
+                sendItemToQueue(body);
+            } else {
+				itemsToUpload[body.destEnv].push(option);
+			}
+        } else if (body && body.type && body.type === 'item') {
+            logItemEvent( events.dequeueItem(body.id, getQueueTime()), body.sourceKey );
+            console.log('Item: ', body);
+            const item = createItem(body);
+            logItemEvent( events.creatingItem(body.id), body.sourceKey );
+            if (!itemsToUpload[body.destEnv]) {
+                itemsToUpload[body.destEnv] = [];
+            }
+            if (!body.modelId) {
+                // item will get passed to asset queue
+                logItemEvent( events.needsReferencesItem(body.id, true), body.sourceKey );
+                // console.log({'event': 'needsAssets', type:'item', 'itemId': body.id});
+                sendItemToQueue(body);
+            } else {
+				itemsToUpload[body.destEnv].push(item);
+			}
+        }
+    });
+    
+    if (itemsToQueueBuffer.length > 0) {
+        flushItemsToQueue();
+    }
+    
+    // call product import API with complete items
+    return Promise.all(Object.keys(itemsToUpload).map(key => pushItemsForEnv(key)))
+    .then( a => {
+        return finishLogEvents().then( _ => a );
+    });
+        
+};

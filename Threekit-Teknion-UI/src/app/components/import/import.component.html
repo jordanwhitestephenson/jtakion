@@ -1,0 +1,26 @@
+<app-header></app-header>
+<main>
+  <form action="">
+    <div class="file-upload">
+      <div *ngIf="uploadComplete" class="upload-complete">
+        <h4>File uploaded successfully. (<a [href]="resultsRoute">view results</a>)</h4><h2 class="cancel" (click)="uploadComplete = false;">+</h2>
+      </div>
+      <div *ngIf="fileErrorMessage" class="file-error">
+        <h4>{{fileErrorMessage}}</h4><h2 class="cancel" (click)="fileErrorMessage = undefined;">+</h2>
+      </div>
+      <h2>Import file: <span class="file-name">{{ fileName }}</span></h2>
+      <div class="environment-select">
+        <label for="environment-select">Target Environment: </label>
+        <select name="environment-select" id="environment-select" (change)="changeEnvironment($event)">
+          <option *ngFor="let option of envOptions" [value]="option.value" [selected]="option.value === destEnv">{{ option.name }}</option>
+        </select>
+      </div>
+      <input type="file" id="fileUploadInput" name="fileUploadInput" (change)="updateFile($event)" hidden #fileUploadInput>
+      <label *ngIf="!fileAttached" for="fileUploadInput" (fileDropped)="updateFile($event)" appDragAndDrop><div class="drag-and-drop"><strong>Choose a file&nbsp;</strong><span>or drag it here</span></div></label>
+    </div>
+    <div class="button-group">
+      <button *ngIf="fileAttached" type="button" class="btn-secondary" [disabled]="isUploading" (click)="removeFile()">Remove</button>
+      <button  type="button" class="btn-primary" [disabled]="!fileAttached || isUploading" (click)="importFile()">{{isUploading ? 'Uploading...' : 'Upload'}}</button>
+    </div>
+  </form>
+</main>

@@ -1,0 +1,27 @@
+<li *ngIf="message.objectType === 'translation' && message.event !== 'error'">{{ timestamp }} - {{ parseEvent() }}</li>
+<li *ngIf="message.objectType === 'pricebook' && message.event !== 'error'">{{ timestamp }} - {{ parseEvent() }}</li>
+<li *ngIf="message.objectType === 'item' && message.event !== 'error'">{{ timestamp }} - {{ parseEvent() }} - item with item id 
+  <span class="link" (click)="emitAddFilter('item', message.objectId)">{{ message.objectId }}</span><span>{{ parseAdditionalInfo() }}</span></li>
+<li *ngIf="message.objectType === 'group' && message.event !== 'error'">{{ timestamp }} - {{ parseEvent() }} - group with group id 
+  <span class="link" (click)="emitAddFilter('group', message.objectId)">{{ message.objectId }}</span><span>{{ parseAdditionalInfo() }}</span> {{ parseOptionsCount() }} </li>
+<li *ngIf="message.objectType === 'option' && message.event !== 'error'">{{ timestamp }} - {{ parseEvent() }} - option with option id 
+  <span class="link" (click)="emitAddFilter('option', message.objectId)">{{ message.objectId }}</span><span>{{ parseAdditionalInfo() }}</span></li>
+<li *ngIf="message.objectType === 'item' && message.event === 'error'" class="error">{{ timestamp }} - {{ parseError() }} - item with item id 
+  <span class="link" (click)="emitAddFilter('item', message.objectId)">{{ message.objectId }}</span><span>{{ parseAdditionalInfo() }}</span></li>
+<li *ngIf="message.objectType === 'group' && message.event === 'error'" class="error">{{ timestamp }} - {{ parseError() }} - group with group id 
+  <span class="link" (click)="emitAddFilter('group', message.objectId)">{{ message.objectId }}</span><span>{{ parseAdditionalInfo() }}</span></li>
+<li *ngIf="message.objectType === 'option' && message.event === 'error'" class="error">{{ timestamp }} - {{ parseError() }} - option with option id 
+  <span class="link" (click)="emitAddFilter('option', message.objectId)">{{ message.objectId }}</span><span>{{ parseAdditionalInfo() }}</span></li>
+<li *ngIf="message.objectType === 'translation' && message.event === 'error'" class="error">{{ timestamp }} - {{ parseError() }} - translation 
+  <span>{{ parseAdditionalInfo() }}</span></li>
+<li *ngIf="message.objectType === 'pricebook' && message.event === 'error'" class="error">{{ timestamp }} - {{ parseError() }} - pricebook 
+	<span>{{ parseAdditionalInfo() }}</span></li>
+<li *ngIf="message.objectType === 'unexpectedError' && message.event === 'error'" class="error">{{ timestamp }} - {{ parseError() }} - Unexpected Error -  
+  <span>{{ parseAdditionalInfo() }}</span></li>
+<li *ngIf="message.objectType === 'currencyCodeMap' && message.event === 'error'" class="error">{{ timestamp }} - {{ parseError() }} - 
+	<span>{{ parseAdditionalInfo() }}</span></li>
+<li *ngIf="message.objectType === 'allPricebooks' && message.event === 'error'" class="error">{{ timestamp }} - {{ parseError() }} - 
+	<span>{{ parseAdditionalInfo() }}</span></li>
+<li *ngIf="message.objectType === 'parse' && message.event === 'error'" class="error">{{ timestamp }} - {{ parseError() }}</li>
+<li *ngIf="message.objectType === 'environment'">{{ timestamp }} - {{ parseEnvironment() }}</li>
+  

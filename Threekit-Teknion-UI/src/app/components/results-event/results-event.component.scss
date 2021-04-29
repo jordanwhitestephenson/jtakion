@@ -1,0 +1,17 @@
+li {
+  font-size: 20px;
+
+  &.error {
+    color: red;
+  }
+
+  .link {
+    color: #0052cc;
+    cursor: pointer;
+
+    &:hover {
+      color: #0065ff;
+      text-decoration: underline;
+    }
+  }
+}
