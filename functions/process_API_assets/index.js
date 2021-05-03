@@ -20,7 +20,7 @@ const getOrgId = (environmentName) => getParameter("org-id")(environmentName);
 const getApiUrl = (environmentName) => getParameter("api-url")(environmentName);
 const getApiToken = (environmentName) => getParameter("api-token")(environmentName);
 
-const RETRY_DELAY = 30; // in seconds
+const RETRY_DELAY = 60; // in seconds
 const MAX_NUMBER_OF_RETRIES = 20;
 
 const logItemEvent = require('./itemEventLog.js').logItemEvent;
