@@ -78,7 +78,9 @@ exports.handler = async (event) => {
 			console.log('completed price calls');		
 			let productNameMap = {};
 			results.forEach(res => {
-				productNameMap[res.data[0].product.name] = res.data;
+				if(res.data && res.data.length > 0) {
+					productNameMap[res.data[0].product.name] = res.data;
+				}
 			});
 			return productNameMap;
 		});
