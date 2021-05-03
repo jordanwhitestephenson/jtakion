@@ -96,7 +96,7 @@ const logEventWithBufferFlush = (event) => (prev) => {
     
     const append = Promise.resolve( prev );
     
-    if(prev.events.length >= 100 ){
+    if(prev.events.length >= 500 ){
         return append.then( flushEventsToLog );
     } else {
         return append;
