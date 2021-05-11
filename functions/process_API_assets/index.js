@@ -37,12 +37,16 @@ exports.handler = async (event) => {
 			
 			//if it needs material, it will be handled by the 
 			if(option.materialChecked){
+			    console.log('option material checked before: '+option.assetChecked+' '+option.id);
 				option.assetChecked = (option.assetChecked || 0) +1;
+				console.log('option material checked after: '+option.assetChecked+' '+option.id);
 			}
 			return option;
 		} else if(option.subGroupOptions && option.subGroupOptions.length > 0 && (!option.subGroupOptionIds || option.subGroupOptionIds.length !== option.subGroupOptions.length)) {
 			return getSubgroupOptions(option).then(opt => {
+			    console.log('suboption material checked before: '+option.assetChecked+' '+option.id);
 				opt.assetChecked = (opt.assetChecked || 0) +1;
+				console.log('suboption material checked after: '+option.assetChecked+' '+option.id);
 				return opt;
 			});
 		} else {
@@ -77,6 +81,7 @@ exports.handler = async (event) => {
         const apiToken = await getApiToken(option.destEnv);
         
         const metadata = JSON.stringify({'groupId': option.subgroupId});
+        console.log('metadata: '+metadata);
         return axios.get(
             apiUrl+'/catalog/products?orgId='+orgId+'&metadata='+metadata+"&type=item",
             { 'headers': { 'Authorization': 'Bearer '+apiToken } }
@@ -84,10 +89,19 @@ exports.handler = async (event) => {
         .then( (res) => {
             const products = res && res.data ? res.data.products : undefined;
             console.log({'event': 'subgroupQueried', 'subgroupId': option.subgroupId, 'found': JSON.stringify(products)});
-            if (products && products.length === option.subGroupOptions.length && !option.subGroupOptions.some(sgo => products.map(p => !p.metadata.optionId).includes(sgo))) {
+            console.log('subgroupoptions: '+option.id+' products'+products.length+' '+option.subGroupOptions.length+' '+option.subGroupOptions+' '+!option.subGroupOptions.some(sgo => products.map(p => !p.metadata.optionId).includes(sgo)));
+            //if (products && products.length === option.subGroupOptions.length && !option.subGroupOptions.some(sgo => products.map(p => !p.metadata.optionId).includes(sgo))) {
+            if (products && !option.subGroupOptions.some(sgo => products.map(p => !p.metadata.optionId).includes(sgo))) {
                 products.sort((a, b) => a.name.toLocaleLowerCase().localeCompare(b.name.toLocaleLowerCase(), 'en', {numeric: true}));
-                console.log({'event': 'subGroupOptionsAdded', 'optionId': option.id, 'options': products.map(p => p.name)});
-                option.subGroupOptionIds = products.map(p => p.id);
+                //console.log({'event': 'subGroupOptionsAdded', 'optionId': option.id, 'options': products.map(p => p.name)});
+                let productsFound = products.filter(p => {
+                    return option.subGroupOptions.includes(p.metadata.optionId);
+                });
+                if(productsFound.length === option.subGroupOptions.length) {
+                    option.subGroupOptionIds = productsFound.map(p => p.id);
+                    console.log({'event': 'subGroupOptionsAdded', 'optionId': option.id, 'options': products.map(p => p.name)});
+                }
+                //option.subGroupOptionIds = products.map(p => p.id);
             }
             return option;
         }).catch(error => {
@@ -132,8 +146,12 @@ exports.handler = async (event) => {
         return Promise.all(groupOptionsPromises).then(results => {
 			console.log('groupOptionsPromises', item, results);
             const productArray = results.map(r => r.data.products || []).filter(r => r.length > 0);
+            console.log(productArray);
             const itemGroupMap = productArray.reduce((agg, res) => {return {...agg, [res[0].metadata.groupId]: res.reduce((agg2, p) => {return {...agg2, [p.metadata.optionId]: p}}, {})}}, {});
+            console.log(itemGroupMap);
+            console.log(JSON.stringify(item.itemGroups));
             const hasAllGroupOptions = item.itemGroups.reduce((agg, ig) => agg && ig.groupOptionIds.reduce((agg2, optId) => agg2 && itemGroupMap[ig.id] != null && itemGroupMap[ig.id][optId] != null, true), true);
+            console.log(hasAllGroupOptions);
 			console.log('hasAllGroupOptions',hasAllGroupOptions);
             if (!hasAllGroupOptions) {
 				logItemEvent( events.notAllGroupOptionsComplete(item.id), item.sourceKey);
@@ -323,12 +341,15 @@ exports.handler = async (event) => {
     });
     
     function needsMaterial(option){
+        console.log('needsMaterial: '+option.id+' image: '+option.image+' materialId: '+option.materialId+' materialChecked: '+option.materialChecked);
         return option.image && !option.materialId && !option.materialChecked ;
     }
     function needsModel(item){
+        console.log('needsModel: '+item.id+' item.modelid: '+item.modelId);
         return item.type === 'item' && !item.modelId ;
     }
     function needsSubGroup(option){
+        console.log('needsSubGroup: '+option.id+' subGroupOptions: '+option.subGroupOptions+' subGroupOptionIds: '+option.subGroupOptionIds);
         return option.subGroupOptions && (!option.subGroupOptionIds || option.subGroupOptionIds.length !== option.subGroupOptions.length) ;
     }
     function exceedsCheckingAssets(option){

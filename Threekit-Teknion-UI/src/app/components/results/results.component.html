@@ -2,10 +2,10 @@
 <main>
 	<h1>{{ logGroupDisplayName }}</h1>
 	<div class="progressSection">
-		<h3>Import Status</h3> 
-		<div *ngIf="hasCheckedStatus">			
+		<h3>Import Status</h3>
+		<div *ngIf="hasCheckedStatus">
 			<div class="progress">
-				<div [ngStyle]="{'width': percentComplete + '%'}" class="bar">{{percentComplete | number:'1.0-1'}}%</div>
+				<div [ngStyle]="{'width': percentComplete + '%'}" class="bar">{{percentComplete | number:'1.0-2'}}%</div>
 			</div>
 		</div>
 		<div *ngIf="!hasCheckedStatus">
@@ -16,7 +16,7 @@
 		<span class="warning">&#9888;</span>
 		<span class="errorMessage">Errors detected during import. Check 'Only show errors' and click the update button to view.</span>
 	</div>
-	<div class="controls">	  
+	<div class="controls">
 		<div class="filters-container">
 			<input id="onlyErrors" type="checkbox" (change)="errorsOnlyClicked($event)"/>
 			<label for="onlyErrors">Only show errors</label>
