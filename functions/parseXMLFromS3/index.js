@@ -68,11 +68,10 @@ exports.handler = async (event) => {
         return data.Metadata;
     }).then( meta => meta && meta['destenv'] ? meta['destenv'] : 'local' );
     console.log("got destenv ",destEnv);
-
     
     const sourceKey = srcKey.split('.').slice(0,-1).join('.').replace(':','');
-
-	logItemEvent({"objectType":"environment", "IMPORT_ENVIRONMENT": destEnv}, sourceKey );
+    
+    logItemEvent({"objectType":"environment", "IMPORT_ENVIRONMENT": destEnv}, sourceKey );
 
 	const orgId =  await getOrgId(destEnv);
     const apiUrl = await getApiUrl(destEnv);
@@ -230,13 +229,35 @@ exports.handler = async (event) => {
             return Promise.resolve("flushed no items to queue");
         }
     }
+    
+    function setUiDisplayAttributesAsForOption(option, optionGroupsMap) {
+    	let displayAttributesAs = {};
+		const optionGroup = optionGroupsMap[option.subgroupId];
+		let anyOptionsHaveImage = false;
+		if(optionGroup) {
+			//console.log('ooptionGroup: ',JSON.stringify(optionGroup));
+			optionGroup.options.forEach(option => {
+				if(option.image) {
+					anyOptionsHaveImage = true;
+				}
+			});
+			if(anyOptionsHaveImage) {
+				displayAttributesAs[optionGroup.description] = {"type":"image"};
+			} else {
+				displayAttributesAs[optionGroup.description] = {"type":"dropdown"};
+			}	
+		}	
+		option['displayAttributesAs'] = displayAttributesAs;
+    }
 
 	function setUiDisplayAttributesAs(item, optionGroupsMap) {
 		let displayAttributesAs = {};
 		item.itemGroups.forEach(ig => {
+			//console.log('ig: ',JSON.stringify(ig));
 			const optionGroup = optionGroupsMap[ig.id];
 			let anyOptionsHaveImage = false;
 			if(optionGroup) {
+				//console.log('optionGroup: ',JSON.stringify(optionGroup));
 				optionGroup.options.forEach(option => {
 					if(option.image) {
 						anyOptionsHaveImage = true;
@@ -372,7 +393,7 @@ exports.handler = async (event) => {
         
         console.log( "parsed ", {parsedItems:{count:parsed.items.length},optionGroups:{count:Object.keys(parsed.optionGroupsMap).length}} );
         console.log('items: ',parsed.items);
-		console.log('optionsgroups: ',parsed.optionGroupsMap);	
+		console.log('optionsgroups: ',JSON.stringify(parsed.optionGroupsMap));	
 		parseErrorsExist = parsed.parseErrorsExist;
 		
 		parsed.items.forEach(item => {
@@ -420,6 +441,16 @@ exports.handler = async (event) => {
 		});
 		parsed.items.forEach(item => {
 			setUiDisplayAttributesAs(item, parsed.optionGroupsMap);
+		});
+		Object.keys(parsed.optionGroupsMap).forEach(key => {
+			let optionGroup = parsed.optionGroupsMap[key];
+			if(optionGroup.options) {
+				optionGroup.options.forEach(option => {
+					if(option.subgroupId) {
+						setUiDisplayAttributesAsForOption(option, parsed.optionGroupsMap);
+					}
+				});
+			}
 		});
 		
 		return handleTranslations(parsed).then(res => {

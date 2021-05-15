@@ -137,7 +137,7 @@ exports.handler = async (event) => {
 		let priceCurrencyResult1 = getPriceAndCurrency(productNameMap, obj[key].itemName, obj[key].assetId);
 		result += addSingleOsl(key, priceCurrencyResult1);
 		oslIndex++;
-		if(obj[key].configuration === '') {
+		if(obj[key].configuration === '' || obj[key].configuration === undefined) {
 			let priceCurrencyResult = getPriceAndCurrency(productNameMap, obj[key].itemName, obj[key].assetId);
 			result += addSingleOsl(obj[key].itemName, priceCurrencyResult);
 			oslIndex++;
@@ -148,6 +148,9 @@ exports.handler = async (event) => {
 	}
 
 	function addSingleOsl(value, priceCurrencyResult) {
+		if(!value) {
+			value = '';
+		}
 		return `OSL=${oslIndex}
 OG=
 ON=
@@ -158,6 +161,12 @@ END=OSL
 	}
 
 	function addOsl(key, value, priceCurrencyResult) {
+		if(!value) {
+			value = '';
+		}
+		if(!key) {
+			key = '';
+		}
 		let osl = `OSL=${oslIndex}
 OG=
 ON=

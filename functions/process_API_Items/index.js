@@ -92,6 +92,15 @@ exports.handler = async (event) => {
                 'defaultValue': option.name
 			}
         ];
+        if(option.displayAttributesAs) {
+			item.product.metadata.push({
+				'type': 'String',
+				'name': '_UI_displayAttributesAs',
+				'blacklist': [],
+				'values': [],
+				'defaultValue': JSON.stringify(option.displayAttributesAs)
+			});
+        }
 		if(option.thumbnailUrl) {
 			item.product.metadata.push({
 				'type': 'String',
