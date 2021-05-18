@@ -242,9 +242,9 @@ exports.handler = async (event) => {
 				}
 			});
 			if(anyOptionsHaveImage) {
-				displayAttributesAs[optionGroup.description] = {"type":"image"};
+				displayAttributesAs[option.description] = {"type":"image"};
 			} else {
-				displayAttributesAs[optionGroup.description] = {"type":"dropdown"};
+				displayAttributesAs[option.description] = {"type":"dropdown"};
 			}	
 		}	
 		option['displayAttributesAs'] = displayAttributesAs;
