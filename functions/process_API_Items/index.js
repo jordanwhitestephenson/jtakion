@@ -157,11 +157,11 @@ exports.handler = async (event) => {
         console.log({'event': 'createItem', 'itemId': item.id});
         let uploadItem = { 'query': { 'metadata': {
             'itemId': item.id,
-            'catalog_code': item.catalog.code,
+            'catalog_code': item.catalog.code/*,
             'catalog_year': item.catalog.year,
             'catalog_month': item.catalog.month,
             'catalog_day': item.catalog.day,
-            'catalog_version': item.catalog.version
+            'catalog_version': item.catalog.version*/
         }}};
         
         const product = {
@@ -171,7 +171,8 @@ exports.handler = async (event) => {
             'description': item.description,
             'tags': [
                 'product',
-                `${item.catalog.code}_${item.catalog.year}-${item.catalog.month}-${item.catalog.day}_${item.catalog.version}`
+                //`${item.catalog.code}_${item.catalog.year}-${item.catalog.month}-${item.catalog.day}_${item.catalog.version}`
+				`${item.catalog.code}`
             ],
             'metadata': [
                 {
