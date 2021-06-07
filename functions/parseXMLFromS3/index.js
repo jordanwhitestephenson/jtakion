@@ -28,14 +28,18 @@ const finishLogEvents = require('./itemEventLog.js').finishLogEvents;
 
 const parse = require('./parser.js').parse;
 
-const getParameter = require('./parameters.js').getParameter;
+/*const getParameter = require('./parameters.js').getParameter;
 const getOrgId = (environmentName) => getParameter("org-id")(environmentName);
 const getApiUrl = (environmentName) => getParameter("api-url")(environmentName);
-const getApiToken = (environmentName) => getParameter("api-token")(environmentName);
+const getApiToken = (environmentName) => getParameter("api-token")(environmentName);*/
 
 const parsedFilesCache = {};
 
 var totalItems = 0;
+var apiUrl;
+var orgId;
+var apiToken;
+var orgName;
 
 exports.handler = async (event) => {
     totalItems = 0;
@@ -63,19 +67,35 @@ exports.handler = async (event) => {
     };
     
     const s3GetObject = s3.getObject(s3Params); 
-    const destEnv = await s3GetObject.promise().then( data => {
+	
+    //const destEnv = await s3GetObject.promise().then( data => {
+	const metadata = await s3GetObject.promise().then( data => {
         console.log("got s3GetObject data", data);
         return data.Metadata;
-    }).then( meta => meta && meta['destenv'] ? meta['destenv'] : 'local' );
-    console.log("got destenv ",destEnv);
+    });/*.then( meta => {
+		//meta && meta['destenv'] ? meta['destenv'] : 'local' 
+		apiUrl = meta['basepath'];
+		orgId = meta['orgid'];
+		apiToken = meta['privatetoken'];
+	});*/
+	apiUrl = metadata['basepath'];
+	orgId = metadata['orgid'];
+	apiToken = metadata['privatetoken'];
+	orgName = metadata['orgname'];
+    //console.log("got destenv ",destEnv);
+	console.log('orgId', orgId);
+	console.log('apiUrl', apiUrl);
+	console.log('apiToken', apiToken);
+	console.log('orgName', orgName);
     
     const sourceKey = srcKey.split('.').slice(0,-1).join('.').replace(':','');
     
-    logItemEvent({"objectType":"environment", "IMPORT_ENVIRONMENT": destEnv}, sourceKey );
+    //logItemEvent({"objectType":"environment", "IMPORT_ENVIRONMENT": destEnv}, sourceKey );
+	logItemEvent({"objectType":"environment", "IMPORT_ENVIRONMENT": orgName}, sourceKey );
 
-	const orgId =  await getOrgId(destEnv);
+	/*const orgId =  await getOrgId(destEnv);
     const apiUrl = await getApiUrl(destEnv);
-    const apiToken = await getApiToken(destEnv);
+    const apiToken = await getApiToken(destEnv);*/
 
 	var pricebookByNameMap = {};
 	async function getAllPricebooks() {
@@ -386,7 +406,8 @@ exports.handler = async (event) => {
     /* start parsing */
     
     if( !parsedFilesCache[srcKey] ){
-        parsedFilesCache[srcKey] = parse(s3Params, sourceKey, destEnv);
+        //parsedFilesCache[srcKey] = parse(s3Params, sourceKey, destEnv);
+		parsedFilesCache[srcKey] = parse(s3Params, sourceKey, apiUrl, orgId, apiToken);
     }
 	
     return parsedFilesCache[srcKey].then( parsed => {

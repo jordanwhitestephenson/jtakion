@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import * as AWS from 'aws-sdk';
-import { Auth } from 'aws-amplify';
+//import { Auth } from 'aws-amplify';
 import { environment } from './../../environments/environment';
+import { ParamsService } from './params.service';
 
 @Injectable({
   providedIn: 'root'
@@ -13,15 +14,17 @@ export class AwsLogsService {
 
   progressQuery = 'fields @message,objectId,TOTAL_ITEMS | filter @message like /createdItem/ or @message like /createdOption/ or @message like /TOTAL_ITEMS/ | stats count(objectId) as cnt by objectId,TOTAL_ITEMS | sort TOTAL_ITEMS desc, objectId | limit 10000';
 
-  constructor() { 
+  constructor(private paramsService: ParamsService) { 
 	  this.region = environment.region;
   }
 
   getLogEvents(logGroupName, filterPattern, nextToken) {
-    return Auth.currentCredentials().then(cred => {
+    //return Auth.currentCredentials().then(cred => {
       const cloudWatchLogs = new AWS.CloudWatchLogs({
         region: this.region,
-        credentials: cred
+        //credentials: cred
+		accessKeyId: this.paramsService.awsAccessToken,
+		secretAccessKey: this.paramsService.awsSecretToken
       });
 
       const params: any = {
@@ -41,14 +44,16 @@ export class AwsLogsService {
       }
 
       return cloudWatchLogs.filterLogEvents(params).promise();
-    });
+    //});
   }
 
   getLogGroupsList(nextToken, searchParam) {
-    return Auth.currentCredentials().then(cred => {
+    //return Auth.currentCredentials().then(cred => {
       const cloudWatchLogs = new AWS.CloudWatchLogs({
         region: this.region,
-        credentials: cred
+        //credentials: cred,
+		accessKeyId: this.paramsService.awsAccessToken,
+		secretAccessKey: this.paramsService.awsSecretToken
       });
 
       const params: any = {
@@ -59,15 +64,17 @@ export class AwsLogsService {
         params.nextToken = nextToken;
       }
       return cloudWatchLogs.describeLogGroups(params).promise();
-    });
+    //});
   }
 
   deleteLogGroup(logGroupName: string) {
     if (logGroupName && logGroupName.length > 0) {
-      return Auth.currentCredentials().then(cred => {
+      //return Auth.currentCredentials().then(cred => {
         const cloudWatchLogs = new AWS.CloudWatchLogs({
           region: this.region,
-          credentials: cred
+          //credentials: cred
+		  accessKeyId: this.paramsService.awsAccessToken,
+		  secretAccessKey: this.paramsService.awsSecretToken
         });
   
         const params: any = {
@@ -75,15 +82,17 @@ export class AwsLogsService {
         };
         
         return cloudWatchLogs.deleteLogGroup(params).promise();
-      });
+      //});
     }
   }
 
   startProgressQuery(logGroupName:string) {
-	return Auth.currentCredentials().then(cred => {
+	//return Auth.currentCredentials().then(cred => {
 		const cloudWatchLogs = new AWS.CloudWatchLogs({
 		  region: this.region,
-		  credentials: cred
+		  //credentials: cred
+		  accessKeyId: this.paramsService.awsAccessToken,
+		  secretAccessKey: this.paramsService.awsSecretToken
 		});
 
 		var params: any = {
@@ -94,14 +103,16 @@ export class AwsLogsService {
 		};
 		
 		return cloudWatchLogs.startQuery(params).promise();
-	  });
+	  //});
   }
 
   getQueryResults(queryId:string) {
-	return Auth.currentCredentials().then(cred => {
+	//return Auth.currentCredentials().then(cred => {
 		const cloudWatchLogs = new AWS.CloudWatchLogs({
 		  region: this.region,
-		  credentials: cred
+		  //credentials: cred
+		  accessKeyId: this.paramsService.awsAccessToken,
+		  secretAccessKey: this.paramsService.awsSecretToken
 		});
 
 		var params = {
@@ -109,6 +120,6 @@ export class AwsLogsService {
 		};
 		
 		return cloudWatchLogs.getQueryResults(params).promise();
-	  });
+	  //});
   }
 }

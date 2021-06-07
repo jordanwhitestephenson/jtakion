@@ -14,10 +14,10 @@ const sqs = new AWS.SQS({
   httpOptions: { agent }
 });
 
-const getParameter = require('./parameters.js').getParameter;
+/*const getParameter = require('./parameters.js').getParameter;
 const getOrgId = (environmentName) => getParameter("org-id")(environmentName);
 const getApiUrl = (environmentName) => getParameter("api-url")(environmentName);
-const getApiToken = (environmentName) => getParameter("api-token")(environmentName);
+const getApiToken = (environmentName) => getParameter("api-token")(environmentName);*/
 
 const logItemEvent = require('./itemEventLog.js').logItemEvent;
 const finishLogEvents = require('./itemEventLog.js').finishLogEvents;
@@ -167,7 +167,7 @@ exports.handler = async (event) => {
         const product = {
             'name': item.pn,
             'type': 'item',
-            'orgId': getOrgId(item.destEnv),
+            'orgId': item.orgId,//getOrgId(item.destEnv),
             'description': item.description,
             'tags': [
                 'product',
@@ -357,10 +357,16 @@ exports.handler = async (event) => {
     }
     
     async function pushItemsForEnv(key) {
-        const orgId =  await getOrgId(key);
+        /*const orgId =  await getOrgId(key);
         const apiUrl = await getApiUrl(key);
-        const apiToken = await getApiToken(key);
-        
+        const apiToken = await getApiToken(key);*/
+		console.log('key: ',key);
+		const orgId = orgMap[key].orgId;
+		const apiUrl = orgMap[key].apiUrl;
+        const apiToken = orgMap[key].apiToken;
+        console.log('orgId: ',orgId);
+		console.log('apiUrl: ',apiUrl);
+		console.log('apiToken: ',apiToken);
         const itemsToUploadEnv = itemsToUpload[key];
         const itemsData = new FormData();
         console.log("Uploading Ids: ", itemsToUploadEnv.map(i => i.query));
@@ -398,7 +404,7 @@ exports.handler = async (event) => {
 					// http.ClientRequest in node.js
 					console.log(error.request);
 					keyArray.forEach(k => {
-						logItemEvent( events.noResponseApiCall(apiUrl+'/products/import?orgId='+orgId, JSON.stringify(itemsToUploadEnv), error.request), k);				
+						logItemEvent( events.noResponseApiCall(apiUrl+'/products/import?orgId='+orgId, JSON.stringify(itemsToUploadEnv), ''), k);				
 					});
 				} else {
 					// Something happened in setting up the request that triggered an Error
@@ -462,6 +468,7 @@ exports.handler = async (event) => {
     console.log(util.inspect(event, {depth: 5}));
     
     const bodySourceKeys = {};
+	const orgMap = {};
     
     event.Records.forEach(r => {
         const body = JSON.parse(r.body);
@@ -472,13 +479,21 @@ exports.handler = async (event) => {
 		} else {
 			bodySourceKeys[body.id] = [body.sourceKey];
 		}
+		if(!orgMap.hasOwnProperty(body.orgId)) {
+			orgMap[body.orgId] = {
+				"apiUrl": body.apiUrl,
+				"apiToken": body.apiToken,
+				"orgId": body.orgId
+			};
+		}
+		console.log('orgMap: ',orgMap);
         if (body && body.type && body.type === 'option') {
             logItemEvent( events.dequeueOption(body.id, getQueueTime()), body.sourceKey );
              console.log('Option: ', body);
             const option = createOption(body);
             logItemEvent( events.creatingOption(body.id), body.sourceKey );
-            if (!itemsToUpload[body.destEnv]) {
-                itemsToUpload[body.destEnv] = [];
+            if (!itemsToUpload[body.orgId]) {//body.destEnv]) {
+                itemsToUpload[body.orgId] = [];//body.destEnv] = [];
             }
             if ((body.im && !body.materialId && !body.assetChecked) || (body.subGroupOptions && !body.subGroupOptionIds && !body.assetChecked)) {
                 // option will get passed to asset queue
@@ -486,15 +501,17 @@ exports.handler = async (event) => {
                 // console.log({'event': 'needsAssets', type:'option', 'optionId': body.id});
                 sendItemToQueue(body);
             } else {
-				itemsToUpload[body.destEnv].push(option);
+				//itemsToUpload[body.destEnv].push(option);
+				itemsToUpload[body.orgId].push(option);
 			}
         } else if (body && body.type && body.type === 'item') {
             logItemEvent( events.dequeueItem(body.id, getQueueTime()), body.sourceKey );
             console.log('Item: ', body);
             const item = createItem(body);
             logItemEvent( events.creatingItem(body.id), body.sourceKey );
-            if (!itemsToUpload[body.destEnv]) {
-                itemsToUpload[body.destEnv] = [];
+            if (!itemsToUpload[body.orgId]) {//body.destEnv]) {
+                //itemsToUpload[body.destEnv] = [];
+				itemsToUpload[body.orgId] = [];
             }
             if (!body.modelId) {
                 // item will get passed to asset queue
@@ -502,7 +519,8 @@ exports.handler = async (event) => {
                 // console.log({'event': 'needsAssets', type:'item', 'itemId': body.id});
                 sendItemToQueue(body);
             } else {
-				itemsToUpload[body.destEnv].push(item);
+				//itemsToUpload[body.destEnv].push(item);
+				itemsToUpload[body.orgId].push(item);
 			}
         }
     });

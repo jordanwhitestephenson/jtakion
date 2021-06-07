@@ -18,9 +18,9 @@ const RETRY_DELAY = 20; // in seconds
 const MAX_NUMBER_OF_RETRIES = 30;
 
 const getParameter = require('./parameters.js').getParameter;
-const getOrgId = (environmentName) => getParameter("org-id")(environmentName);
+/*const getOrgId = (environmentName) => getParameter("org-id")(environmentName);
 const getApiUrl = (environmentName) => getParameter("api-url")(environmentName);
-const getApiToken = (environmentName) => getParameter("api-token")(environmentName);
+const getApiToken = (environmentName) => getParameter("api-token")(environmentName);*/
 const getDamUrl = () => getParameter("api-url")("dam");
 const getAuthHeaderForRequest = require('./oAuth-header.js').getAuthHeaderForRequest;
 
@@ -113,9 +113,12 @@ exports.handler = async (event) => {
     }
 
 	async function getThumbnailUrl(option) {
-		const orgId =  await getOrgId(option.destEnv);
+		/*const orgId =  await getOrgId(option.destEnv);
         const apiUrl = await getApiUrl(option.destEnv);
-        const apiToken = await getApiToken(option.destEnv);
+        const apiToken = await getApiToken(option.destEnv);*/
+		const orgId =  option.orgId;
+        const apiUrl = option.apiUrl;
+        const apiToken = option.apiToken;
 		let materialName = option.image.code.replace(/ /g, '-');
 		return axios.get(
 			apiUrl+'/assets?orgId='+orgId+'&name='+materialName+'&type=texture' ,
@@ -132,9 +135,12 @@ exports.handler = async (event) => {
 	}
     
     async function createOrGetMaterial(option){
-        const orgId =  await getOrgId(option.destEnv);
+        /*const orgId =  await getOrgId(option.destEnv);
         const apiUrl = await getApiUrl(option.destEnv);
-        const apiToken = await getApiToken(option.destEnv);
+        const apiToken = await getApiToken(option.destEnv);*/
+		const orgId =  option.orgId;
+        const apiUrl = option.apiUrl;
+        const apiToken = option.apiToken;
 		const sourceKey = option.sourceKey;
         
         function getMaterials(materialName){

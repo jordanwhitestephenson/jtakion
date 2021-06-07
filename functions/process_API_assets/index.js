@@ -15,10 +15,10 @@ const sqs = new AWS.SQS({
   httpOptions: { agent }
 });
 
-const getParameter = require('./parameters.js').getParameter;
+/*const getParameter = require('./parameters.js').getParameter;
 const getOrgId = (environmentName) => getParameter("org-id")(environmentName);
 const getApiUrl = (environmentName) => getParameter("api-url")(environmentName);
-const getApiToken = (environmentName) => getParameter("api-token")(environmentName);
+const getApiToken = (environmentName) => getParameter("api-token")(environmentName);*/
 
 const RETRY_DELAY = 60; // in seconds
 const MAX_NUMBER_OF_RETRIES = 20;
@@ -76,9 +76,12 @@ exports.handler = async (event) => {
 	}
     
     async function getSubgroupOptions(option) {
-        const orgId =  await getOrgId(option.destEnv);
+        /*const orgId =  await getOrgId(option.destEnv);
         const apiUrl = await getApiUrl(option.destEnv);
-        const apiToken = await getApiToken(option.destEnv);
+        const apiToken = await getApiToken(option.destEnv);*/
+		const orgId =  option.orgId;
+        const apiUrl = option.apiUrl;
+        const apiToken = option.apiToken;
         
         const metadata = JSON.stringify({'groupId': option.subgroupId});
         console.log('metadata: '+metadata);
@@ -128,9 +131,12 @@ exports.handler = async (event) => {
     
     // create a model type product with optional id query
     async function createOrUpdateModel (item) {
-        const orgId =  await getOrgId(item.destEnv);
+        /*const orgId =  await getOrgId(item.destEnv);
         const apiUrl = await getApiUrl(item.destEnv);
-        const apiToken = await getApiToken(item.destEnv);
+        const apiToken = await getApiToken(item.destEnv);*/
+		const orgId =  item.orgId;
+        const apiUrl = item.apiUrl;
+        const apiToken = item.apiToken;
         const sourceKey = item.sourceKey;
         let itemGroupIds = [];
 		item.itemGroups.forEach(ig => {

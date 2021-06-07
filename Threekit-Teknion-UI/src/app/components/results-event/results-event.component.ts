@@ -24,7 +24,8 @@ export class ResultsEventComponent implements OnInit {
   };
 
   parseEnvironment() {
-	  let envLabel = this.envs[this.message.IMPORT_ENVIRONMENT];
+	  //let envLabel = this.envs[this.message.IMPORT_ENVIRONMENT];
+	  let envLabel = this.message.IMPORT_ENVIRONMENT;
 	  return `Importing to environment: ${envLabel}`;
   }
 

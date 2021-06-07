@@ -1,5 +1,6 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { AwsS3Service } from 'src/app/services/aws-s3.service';
+import { ParamsService } from 'src/app/services/params.service';
 
 @Component({
   selector: 'app-import',
@@ -20,15 +21,23 @@ export class ImportComponent implements OnInit {
   ];
   isUploading = false;
   uploadComplete = false;
+  orgName:string = '';
+  hasParams:boolean = false;
 
   constructor(
-    private s3Service: AwsS3Service
-  ) { 
-    console.log("In constructor");
-  }
+    private s3Service: AwsS3Service,
+	private paramsService: ParamsService
+  ) { }
 
   ngOnInit(): void {
     console.log("Initializing");
+	this.orgName = this.paramsService.orgName;
+	if(this.orgName === undefined) {
+		this.hasParams = false;
+		console.error('Application parameters not passed from ThreeKit.');		
+	} else {
+		this.hasParams = true;
+	}
   }
 
   get fileName(): string {
@@ -43,7 +52,8 @@ export class ImportComponent implements OnInit {
   }
 
   get resultsRoute(): string {
-    return `/#/results/${this.fileUploadName}`;
+    //return `/#/results/${this.fileUploadName}`;
+	return `/results/${this.fileUploadName}`;
   }
 
   changeEnvironment(e) {
@@ -84,8 +94,11 @@ export class ImportComponent implements OnInit {
 
   importFile() {
     this.isUploading = true;
-    this.fileUploadName = `${this.fileUpload.name.substring(0, this.fileUpload.name.length - 4)}-${Date.now()}`;
-    this.s3Service.uploadFileToS3(this.fileUpload, this.fileUploadName, this.destEnv)
+	let uploadName = this.fileUpload.name.replace(/\)|\)/g, '_');
+    //this.fileUploadName = `${this.fileUpload.name.substring(0, this.fileUpload.name.length - 4)}-${Date.now()}`;
+	this.fileUploadName = `${uploadName.substring(0, uploadName.length - 4)}-${Date.now()}`;
+    //this.s3Service.uploadFileToS3(this.fileUpload, this.fileUploadName, this.destEnv)
+	this.s3Service.uploadFileToS3(this.fileUpload, this.fileUploadName)
     .then(res => {
       this.removeFile();
       this.uploadComplete = true;

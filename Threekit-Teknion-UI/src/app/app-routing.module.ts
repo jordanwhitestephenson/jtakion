@@ -3,14 +3,20 @@ import { Routes, RouterModule } from '@angular/router';
 import { ResultsComponent } from './components/results/results.component';
 import { ImportComponent } from './components/import/import.component';
 import { SelectResultsComponent } from './components/select-results/select-results.component';
+import { ParamsComponent } from './components/params/params.component';
 
 const defaultPath = '/import';
 
 const routes: Routes = [
   {
     path: '',
-    redirectTo: defaultPath,
+    //redirectTo: defaultPath,
+	component: ParamsComponent,
     pathMatch: 'full'
+  },
+  {
+    path: 'init/:publicToken',
+    component: ParamsComponent
   },
   {
     path: 'import',
@@ -32,7 +38,7 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  imports: [RouterModule.forRoot(routes, { useHash: true })],
+  imports: [RouterModule.forRoot(routes, { useHash: false })],
   exports: [RouterModule]
 })
 export class AppRoutingModule { }

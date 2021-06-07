@@ -7,7 +7,7 @@ AWS.config.setPromisesDependency(require('bluebird'));
 
 const logItemEvent = require('./itemEventLog.js').logItemEvent;
     
-const parse = (s3Params, sourceKey, destEnv) => {
+const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {//destEnv) => {
     
     const optionGroupsMap = {};
     const itemsToWrite = [];
@@ -82,7 +82,10 @@ const parse = (s3Params, sourceKey, destEnv) => {
             
             item.type = "item";
             item.sourceKey = sourceKey;
-            item.destEnv = destEnv;
+            //item.destEnv = destEnv;
+			item.apiToken = apiToken;
+			item.apiUrl = apiUrl;
+			item.orgId = orgId;
 
 			if(item.prices) {
 				//link each price with the zone and currency
@@ -151,7 +154,10 @@ const parse = (s3Params, sourceKey, destEnv) => {
         option.groupTag = optionGroup.id+'-'+optionGroup.description.replace(/\s/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
         option.groupName = optionGroup.description;
         option.sourceKey = sourceKey;
-        option.destEnv = destEnv;
+        //option.destEnv = destEnv;
+		option.apiToken = apiToken;
+		option.apiUrl = apiUrl;
+		option.orgId = orgId;
         
         if(option.im) {
             option.image = imagesMap[option.im];
