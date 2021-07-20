@@ -21,6 +21,7 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {//destEnv) => {
 	const languageMap = {};
 	var defaultLanguageId = null;
 	var parseErrorsExist = false;
+	var catalogCode = null;
     
     function writeImage(image) {
         // console.log("writing image",image);
@@ -272,6 +273,7 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {//destEnv) => {
                 currentCatalog.month = node.attributes.MONTH;
                 currentCatalog.day = node.attributes.DAY;
                 currentCatalog.version = node.attributes.VERSION;
+				catalogCode = node.attributes.CODE;
             case 'VIEW':
                 if(node.attributes.VIEW_CODE === '3'){
                     viewId3D = node.attributes.VIEW_ID;
@@ -341,6 +343,9 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {//destEnv) => {
                 currentOption.im = node.attributes.IM;
                 if(node.attributes.SUBGROUP_ID){
                     currentOption.subgroupId = node.attributes.SUBGROUP_ID;
+                }
+				if (currentCatalog) {
+                    currentOption.catalog = currentCatalog;
                 }
 				currentOption.translations = [];
                 currentContext = currentOption;
@@ -424,7 +429,7 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {//destEnv) => {
             
             postProcessParsedItems();
             console.log( "parsed ",itemsToWrite.length, " items, and ", Object.keys(optionGroupsMap).length, " optionGroups");
-            resolve( { "items":itemsToWrite, "optionGroupsMap":optionGroupsMap, "languageMap":languageMap, "defaultLanguageId":defaultLanguageId, "parseErrorsExist":parseErrorsExist } );
+            resolve( { "items":itemsToWrite, "optionGroupsMap":optionGroupsMap, "languageMap":languageMap, "defaultLanguageId":defaultLanguageId, "parseErrorsExist":parseErrorsExist, "catalogCode":catalogCode} );
         });
     });
 

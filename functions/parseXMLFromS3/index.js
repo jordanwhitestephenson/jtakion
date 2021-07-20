@@ -322,6 +322,7 @@ exports.handler = async (event) => {
 	}
 
 	function handleTranslations(parsed) {
+		console.log('starting translations');
 		let canonicalNames = [];
 		//create CSV file and send
 		let csvFileContent = '';
@@ -376,6 +377,65 @@ exports.handler = async (event) => {
 		return axios(config);
 	}
 
+	function sliceIntoChunks(arr, chunkSize) {
+		const res = [];
+		for (let i = 0; i < arr.length; i += chunkSize) {
+			const chunk = arr.slice(i, i + chunkSize);
+			res.push(chunk);
+		}
+		return res;
+	}
+
+	function processChunks(chunks) {
+		if(chunks && chunks.length > 0) {
+			let chunk = chunks[0];
+			let deletePromises = chunk.map(p => {
+				return axios.delete(apiUrl+'/assets/'+p.id+'?orgId='+orgId, { 'headers': { 'Authorization': 'Bearer '+apiToken }});
+			});
+			return Promise.all(deletePromises).then(results => {
+				console.log('DONE deletes chunk', results);
+				//check if results has any errors, if not remove this chunk
+				let hasErrors = false;
+				results.forEach(res => {
+					if(res.status > 399) {
+						hasErrors = true;
+					}
+				});
+				if(!hasErrors) {
+					chunks.splice(0,1);
+				}
+				console.log('chunks after splice', chunks);
+				return processChunks(chunks);
+			});
+		} else {
+			return Promise.resolve();
+		}
+	}
+
+	function handleDeletes(catalogCode) {
+		logItemEvent({"event": "deleteStart", "objectType":'optiondelete'}, sourceKey);
+		return axios.get(
+			apiUrl+'/catalog/products?orgId='+orgId+'&metadata={ "isOption": 1,"catalogCode":"'+catalogCode+'" }',
+			{ 'headers': { 'Authorization': 'Bearer '+apiToken } }
+		).then( (res) => {
+			console.log('options', res.data.products);
+			if (res && res.data && res.data.products && res.data.products.length > 0) {
+				console.log(res.data.products.length, ' options to delete');
+				let chunks = sliceIntoChunks(res.data.products, 20);
+				console.log('chunks', chunks);
+				return Promise.resolve(chunks);
+			} else {
+				Promise.resolve([]);
+			}
+		}).then(res => {
+			//should get list of chunks
+			return processChunks(res);
+        }).catch(error => {
+			logError(error, 'deleteQuery', apiUrl+'/catalog/products?orgId'+orgId+'&metadata={ "isOption": 1,"catalogCode":"'+catalogCode+'" }');
+			throw error;
+		});
+	}
+
 	function logError(error, objectType, url) {
 		if (error.response) {
 			// The request was made and the server responded with a status code
@@ -410,8 +470,7 @@ exports.handler = async (event) => {
 		parsedFilesCache[srcKey] = parse(s3Params, sourceKey, apiUrl, orgId, apiToken);
     }
 	
-    return parsedFilesCache[srcKey].then( parsed => {
-        
+    return parsedFilesCache[srcKey].then( parsed => {        
         console.log( "parsed ", {parsedItems:{count:parsed.items.length},optionGroups:{count:Object.keys(parsed.optionGroupsMap).length}} );
         console.log('items: ',parsed.items);
 		console.log('optionsgroups: ',JSON.stringify(parsed.optionGroupsMap));	
@@ -474,35 +533,44 @@ exports.handler = async (event) => {
 			}
 		});
 		
-		return handleTranslations(parsed).then(res => {
-			logItemEvent({"event": "translations-added", "objectType":'translation'}, sourceKey);
-			if(parseErrorsExist) {
-				logItemEvent({"event": "error", "errorSource": "parseErrors", "objectType":"parse"}, sourceKey);
-				return Promise.all([
-					finishLogEvents()
-				]);
-			} else {
-				return pushAllItems(parsed).then( r => {
-					console.log('total items in import',totalItems);
-					logItemEvent({"TOTAL_ITEMS": totalItems,"Id":"TOTAL_ITEMS"}, sourceKey );
+		return handleDeletes(parsed.catalogCode).then(res => {
+			console.log('finished deletes');
+			logItemEvent({"event": "deleteComplete", "objectType":'optiondelete'}, sourceKey);
+			return handleTranslations(parsed).then(res => {
+				console.log('finished translations');
+				logItemEvent({"event": "translations-added", "objectType":'translation'}, sourceKey);
+				if(parseErrorsExist) {
+					logItemEvent({"event": "error", "errorSource": "parseErrors", "objectType":"parse"}, sourceKey);
 					return Promise.all([
-						r,
-						flushItemsToQueue(), 
 						finishLogEvents()
 					]);
-				}).then( res => {
-					// console.log("FINISHED ALL for ", srcKey, util.inspect(res, {depth: 5}) );
-					console.log('res after promise all',res);
-					console.log( "queued ", {parsedItems:{count:parsed.items.length},optionGroups:{count:Object.keys(parsed.optionGroupsMap).length},queuedItems:{count:res[0].length}} );
-					return {parsedItems:{count:parsed.items.length},optionGroups:{count:Object.keys(parsed.optionGroupsMap).length},queuedItems:{count:res[0].length}};
-				});
-			}
+				} else {
+					return pushAllItems(parsed).then( r => {
+						console.log('total items in import',totalItems);
+						logItemEvent({"TOTAL_ITEMS": totalItems,"Id":"TOTAL_ITEMS"}, sourceKey );
+						return Promise.all([
+							r,
+							flushItemsToQueue(), 
+							finishLogEvents()
+						]);
+					}).then( res => {
+						// console.log("FINISHED ALL for ", srcKey, util.inspect(res, {depth: 5}) );
+						console.log('res after promise all',res);
+						console.log( "queued ", {parsedItems:{count:parsed.items.length},optionGroups:{count:Object.keys(parsed.optionGroupsMap).length},queuedItems:{count:res[0].length}} );
+						return {parsedItems:{count:parsed.items.length},optionGroups:{count:Object.keys(parsed.optionGroupsMap).length},queuedItems:{count:res[0].length}};
+					});
+				}
+			}).catch(error => {
+				console.log('error', error);
+				logTranslationError(error, apiUrl+'/products/translations?orgId='+orgId);	
+				finishLogEvents();	
+				throw error;	
+			});
 		}).catch(error => {
 			console.log('error', error);
-			logTranslationError(error, apiUrl+'/products/translations?orgId='+orgId);	
 			finishLogEvents();	
-			throw error;	
-		});
+			throw error;
+		})
     });
 
 };

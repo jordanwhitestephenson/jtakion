@@ -104,6 +104,10 @@ export class ResultsEventComponent implements OnInit {
 			return 'Translations loaded successfully';
 		case 'notAllGroupOptionsComplete':
 			return 'Not all group options are complete. Retry in 30 seconds.';
+		case 'deleteStart':
+			return 'Deleting existing options...';
+		case 'deleteComplete':
+			return 'Finished deleting existing options.';
         default:
 			console.log('unknown event',this.message);
           return 'Unknown Event';

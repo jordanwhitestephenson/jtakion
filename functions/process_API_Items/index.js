@@ -39,7 +39,7 @@ exports.handler = async (event) => {
     function createOption (option) {
         console.log({'event': 'createGroupOption', 'optionId': option.id});
             
-        const item = {'query': { 'metadata' : { 'optionId': option.id }}, 'product': {}};
+        const item = {'query': { 'metadata' : { 'optionId': option.id, 'catalogCode': option.catalog.code }}, 'product': {}};
         
         if (option.im && option.materialId) {
             item.product.asset = {
@@ -90,6 +90,20 @@ exports.handler = async (event) => {
 				'blacklist': [],
                 'values': [],
                 'defaultValue': option.name
+			},
+			{
+				'type': 'String',
+				'name': 'catalogCode',
+				'blacklist': [],
+                'values': [],
+                'defaultValue': option.catalog.code
+			},
+			{
+				'type': 'Number',
+				'name': 'isOption',
+				'blacklist': [],
+                'values': [],
+                'defaultValue': 1
 			}
         ];
         if(option.displayAttributesAs) {

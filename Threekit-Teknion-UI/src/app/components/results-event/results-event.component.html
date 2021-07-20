@@ -1,4 +1,5 @@
 <li *ngIf="message.objectType === 'translation' && message.event !== 'error'">{{ timestamp }} - {{ parseEvent() }}</li>
+<li *ngIf="message.objectType === 'optiondelete' && message.event !== 'error'">{{ timestamp }} - {{ parseEvent() }}</li>
 <li *ngIf="message.objectType === 'pricebook' && message.event !== 'error'">{{ timestamp }} - {{ parseEvent() }}</li>
 <li *ngIf="message.objectType === 'item' && message.event !== 'error'">{{ timestamp }} - {{ parseEvent() }} - item with item id 
   <span class="link" (click)="emitAddFilter('item', message.objectId)">{{ message.objectId }}</span><span>{{ parseAdditionalInfo() }}</span></li>
