@@ -228,7 +228,7 @@ exports.handler = async (event) => {
                 const layer = item.layers.find(l => l.optNo === att.optNo);
                 if (layer) {
                     const ruleName = "Apply "+att.groupName;
-                    const content = "const materialTag = '"+layer.name+"';\n\n"
+                    /*const content = "const materialTag = '"+layer.name+"';\n\n"
                         +"// Get map of all nodes in the model along with their tags\n"
                         +"const nodeTags = api.scene.getAll({from:api.instanceId, plug:'Properties', property:'tags'});\n\n"
                         +"// Now filter these to identify the nodes with the tag we want.\n"
@@ -237,7 +237,48 @@ exports.handler = async (event) => {
                         //+"const configurator = api.getConfigurator();\n"
                         //+"const materialAsset = configurator.configuration[\""+att.groupName+"\"];\n\n"
 						+"const materialAsset = api.configuration[\""+att.groupName+"\"];\n\n"
-                        +"api.scene.setAll(nodeMaterialPaths, materialAsset);";
+                        +"api.scene.setAll(nodeMaterialPaths, materialAsset);";*/
+					const content = `/* global api */
+					
+					(function main() {
+						const materialAsset = api.configuration["${att.groupName}"];
+					  
+						// First, ensure that the incoming item instance actually has a visual asset
+						// proxy (the material) to use. Some configuration options may not have any
+						// visual data, in which case it has been decided with Teknion that we do
+						// nothing (return)
+						if (materialAsset) {
+						  const proxyAsset = api.scene.get({
+							id: materialAsset,
+							plug: "Proxy",
+							property: "asset",
+						  });
+						  if (!proxyAsset.assetId) return;
+						}
+					  
+						const materialTag = "${layer.name}";
+					  
+						// Get map of all nodes in the model along with their tags
+						const nodeTags = api.scene.getAll({
+						  from: api.instanceId,
+						  plug: "Properties",
+						  property: "tags",
+						});
+					  
+						// Now filter these to identify the nodes with the tag we want.
+						const materialNodes = Object.keys(nodeTags).filter((nodeId) =>
+						  nodeTags[nodeId].includes(materialTag)
+						);
+					  
+						const nodeMaterialPaths = materialNodes.map((nodeId) => [
+						  nodeId,
+						  "plugs",
+						  "Material",
+						  0,
+						  "reference",
+						]);
+						api.scene.setAll(nodeMaterialPaths, materialAsset);
+					  })();`;
                     return {
                         "conditions": [],
                         "actions": [
