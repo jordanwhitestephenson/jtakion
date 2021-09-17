@@ -12,10 +12,11 @@ export class ParamsComponent implements OnInit {
   constructor(private route: ActivatedRoute, private router: Router, private paramsService: ParamsService) { }
 
   ngOnInit(): void {
+
 	  console.log(this.route.snapshot.queryParamMap);
 	  console.log(this.route.snapshot.paramMap);
-	  if(this.route.snapshot.queryParamMap.has('orgId') && this.route.snapshot.queryParamMap.has('appid') && this.route.snapshot.paramMap.has('publicToken')) {
-		this.paramsService.setOrigParams(this.route.snapshot.queryParamMap.get('orgId'), this.route.snapshot.queryParamMap.get('appid'), this.route.snapshot.paramMap.get('publicToken')).then(() => {
+	  if(this.route.snapshot.queryParamMap.has('orgId') && this.route.snapshot.queryParamMap.has('appid') && this.route.snapshot.paramMap.has('publicToken') && this.route.snapshot.paramMap.has('baseUrl')) {
+		this.paramsService.setOrigParams(this.route.snapshot.queryParamMap.get('orgId'), this.route.snapshot.queryParamMap.get('appid'), this.route.snapshot.paramMap.get('publicToken'), this.route.snapshot.paramMap.get('baseUrl')).then(() => {
 			this.router.navigate(['/import']);		
 		}).catch(err => {
 			console.error(err.message);

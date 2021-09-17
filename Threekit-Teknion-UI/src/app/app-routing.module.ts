@@ -15,7 +15,7 @@ const routes: Routes = [
     pathMatch: 'full'
   },
   {
-    path: 'init/:publicToken',
+    path: 'init/:publicToken/:baseUrl',
     component: ParamsComponent
   },
   {

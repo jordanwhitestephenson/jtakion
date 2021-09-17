@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { environment } from './../../environments/environment';
-import { Observable } from 'rxjs';
+//import { environment } from './../../environments/environment';
 
 
 @Injectable({
@@ -18,7 +17,7 @@ export class ParamsService {
 	private _orgName;
 
 	constructor(private http: HttpClient) { 
-		this._apiBasePath = environment.baseUrl;
+		//this._apiBasePath = environment.baseUrl;
 	}
 
 	public get orgId() {
@@ -53,7 +52,8 @@ export class ParamsService {
 		return this._orgName;
 	}
 
-	public async setOrigParams(oid:string, aid:string, tk:string) {
+	public async setOrigParams(oid:string, aid:string, tk:string, bu:string) {
+		this._apiBasePath = bu;
 		this._orgId = oid;
 		this._appId = aid;
 		this._threekitPublicToken = tk;

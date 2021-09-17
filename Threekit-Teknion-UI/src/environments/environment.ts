@@ -6,7 +6,6 @@ export const environment = {
   production: false,
   s3Bucket: 'teknionimport',//'teknioninput',
   region: 'ca-central-1',//'us-east-1',
-  baseUrl: 'https://preview.threekit.com/api'
 };
 
 /*
