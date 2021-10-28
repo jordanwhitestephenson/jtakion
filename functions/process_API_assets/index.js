@@ -21,14 +21,48 @@ const getApiUrl = (environmentName) => getParameter("api-url")(environmentName);
 const getApiToken = (environmentName) => getParameter("api-token")(environmentName);*/
 
 const RETRY_DELAY = 60; // in seconds
-const MAX_NUMBER_OF_RETRIES = 20;
+const MAX_NUMBER_OF_RETRIES = 30;
 
 const logItemEvent = require('./itemEventLog.js').logItemEvent;
 const finishLogEvents = require('./itemEventLog.js').finishLogEvents;
 
+const DEFAULT_TIMEOUT = 1000 * 60 * 2; // 2 mins
+const DEFAULT_FREQUENCY = 1000; // poll check every 1 second
+
 exports.handler = async (event) => {
     
     /* Helper functions */
+
+	function pollJob(jobId, apiUrl, apiToken, options = {}) {
+		const { timeout = DEFAULT_TIMEOUT, frequency = DEFAULT_FREQUENCY } = options;
+		const startTime = Date.now();
+		const prom = new Promise((resolve, reject) => {
+			const check = async () => {
+				const jobUrl = `${apiUrl}/jobs/${jobId}`;
+				try {
+					const res = await axios.get(jobUrl, { 'headers': { 'Authorization': 'Bearer '+apiToken } });
+					console.log('poll job response: ',res);
+					if (res.data.status === 'stopped' || Date.now() - startTime > timeout) {
+						return resolve({
+							status: res.data.status,
+							success:
+								res.data.status === 'stopped' &&
+								res.data.taskResultFailures === 0,
+						});
+					}
+				} catch (err) {
+					console.log('caught error from got job fetch', err);
+					reject(err);
+				}
+			
+				setTimeout(check, frequency);
+			};
+ 
+   			check();
+ 		});
+ 		return prom;
+	}
+
     
     //add material assets to option
     function addMaterialsToOption (option) {
@@ -75,7 +109,7 @@ exports.handler = async (event) => {
 		}
 	}
     
-    async function getSubgroupOptions(option) {
+    function getSubgroupOptions(option) {
         /*const orgId =  await getOrgId(option.destEnv);
         const apiUrl = await getApiUrl(option.destEnv);
         const apiToken = await getApiToken(option.destEnv);*/
@@ -83,14 +117,14 @@ exports.handler = async (event) => {
         const apiUrl = option.apiUrl;
         const apiToken = option.apiToken;
         
-        const metadata = JSON.stringify({'groupId': option.subgroupId});
+        const metadata = JSON.stringify({'groupId': option.subgroupId, 'catalogCode': option.catalog.code});
         console.log('metadata: '+metadata);
         return axios.get(
-            apiUrl+'/catalog/products?orgId='+orgId+'&metadata='+metadata+"&type=item",
+            apiUrl+'/assets?orgId='+orgId+'&metadata='+metadata+"&type=item&all=true",
             { 'headers': { 'Authorization': 'Bearer '+apiToken } }
         )
         .then( (res) => {
-            const products = res && res.data ? res.data.products : undefined;
+            const products = res && res.data ? res.data.assets : undefined;
             console.log({'event': 'subgroupQueried', 'subgroupId': option.subgroupId, 'found': JSON.stringify(products)});
             console.log('subgroupoptions: '+option.id+' products'+products.length+' '+option.subGroupOptions.length+' '+option.subGroupOptions+' '+!option.subGroupOptions.some(sgo => products.map(p => !p.metadata.optionId).includes(sgo)));
             //if (products && products.length === option.subGroupOptions.length && !option.subGroupOptions.some(sgo => products.map(p => !p.metadata.optionId).includes(sgo))) {
@@ -109,7 +143,7 @@ exports.handler = async (event) => {
             return option;
         }).catch(error => {
 			console.log(error);
-			logApiCallError(error, apiUrl+'/catalog/products?orgId='+orgId+'&metadata='+metadata+"&type=item", null, option.sourceKey);
+			logApiCallError(error, apiUrl+'/assets?orgId='+orgId+'&metadata='+metadata+"&type=item&all=true", null, option.sourceKey);
 			throw error;
 		});
     }
@@ -120,17 +154,17 @@ exports.handler = async (event) => {
             return agg && (!grp.groupOptionIds || (grp.groupOptions && grp.groupOptionIds.length === grp.groupOptions.length));
         }, true);
         if(!item.modelId || !hasGroupOptions){
-            return createOrUpdateModel(item).then( completeItem => {
-                console.log({'event': 'modelIdAdded', 'itemId': completeItem.id, 'modelId': completeItem.modelId});
-                return completeItem;
-            });
+			return createOrUpdateModel(item).then( completeItem => {
+				console.log({'event': 'modelIdAdded', 'itemId': completeItem.id, 'modelId': completeItem.modelId});
+				return completeItem;
+			});
         }else{
             return Promise.resolve(item);
         }
     }
     
     // create a model type product with optional id query
-    async function createOrUpdateModel (item) {
+    function createOrUpdateModel (item) {
         /*const orgId =  await getOrgId(item.destEnv);
         const apiUrl = await getApiUrl(item.destEnv);
         const apiToken = await getApiToken(item.destEnv);*/
@@ -143,15 +177,15 @@ exports.handler = async (event) => {
 			itemGroupIds.push(ig.id);
 		});
         const groupOptionsPromises = item.itemGroups.map(itemGroup => {
-            const metadata = JSON.stringify({'groupId': itemGroup.id});
+            const metadata = JSON.stringify({'groupId': itemGroup.id, 'catalogCode': item.catalog.code});
             return axios.get(
-                apiUrl+'/catalog/products?orgId='+orgId+'&metadata='+metadata+"&type=item",
+                apiUrl+'/assets?orgId='+orgId+'&metadata='+metadata+"&type=item&all=true",
                 { 'headers': { 'Authorization': 'Bearer '+apiToken } }
             );
         });
         return Promise.all(groupOptionsPromises).then(results => {
 			console.log('groupOptionsPromises', item, results);
-            const productArray = results.map(r => r.data.products || []).filter(r => r.length > 0);
+            const productArray = results.map(r => r.data.assets || []).filter(r => r.length > 0);
             console.log(productArray);
             const itemGroupMap = productArray.reduce((agg, res) => {return {...agg, [res[0].metadata.groupId]: res.reduce((agg2, p) => {return {...agg2, [p.metadata.optionId]: p}}, {})}}, {});
             console.log(itemGroupMap);
@@ -298,6 +332,8 @@ exports.handler = async (event) => {
             
             const uploadModelData = new FormData();
             uploadModelData.append('file', JSON.stringify([uploadModel]), 'items.json');
+			//make the job asynchronous
+			uploadModelData.append('sync', 'false');
             const uploadModelConfig = { 'headers': {
                 'Authorization': 'Bearer '+apiToken,
                 ...uploadModelData.getHeaders()
@@ -308,13 +344,91 @@ exports.handler = async (event) => {
                 uploadModelData, 
                 uploadModelConfig
             ).then( r => {
-                if (r.data && r.data.products && r.data.products.length > 0) {
+				//get jobId based on result
+				console.log('model job results ', r);
+				const jobId = r.data.jobId;
+				//poll for job completion
+				return pollJob(jobId, apiUrl, apiToken, {
+					timeout: 1000 * 60 * 5,
+					frequency: 200,
+				}).then(pollResult => {
+					let status = pollResult.status;
+					let success = pollResult.success;
+					if (status === 'stopped' && success) {
+						console.log('model job stopped, calling job runs api');
+						const runsUrl = `${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId}`;
+						return axios.get(runsUrl, { 'headers': { 'Authorization': 'Bearer '+apiToken } })
+							.then(res => {
+								const { runs } = res.data;
+								const { results } = runs[0];
+								const fileId = results.files[0].id;
+								console.log('fileId ', fileId);
+								return axios.get(`${apiUrl}/files/${fileId}/content`, { 'headers': { 'Authorization': 'Bearer '+apiToken } })
+									.then(fileContent => {
+										console.log('model job run results: ', fileContent);
+										//need to get the model id from the results
+										item.modelId = fileContent.data[0].id;
+										return item;
+									}).catch(error => {
+										console.log(error);
+										logApiCallError(error, `${apiUrl}/files/${fileId}/content`, '', sourceKey);
+										throw error;
+									});
+							}).catch(error => {
+								console.log(error);
+								logApiCallError(error, `${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId}`, '', sourceKey);
+								throw error;
+							});
+					} else if (status === 'pending') {
+						// reached specified timeout to check for completion but job still not done
+						console.log('model import job polling timed for item '+item.pn);
+						return item;
+					} else {
+						// error - job failed
+						console.log('model import job failed for item '+item.pn);
+						logApiCallError({'message':'job failed'}, apiUrl+'/products/import?orgId='+orgId, JSON.stringify(uploadModelData), sourceKey);					
+						return item;
+					}
+				}).catch(error => {
+					console.log('polling error ',error);
+					throw error;
+				});
+				/*const { status, success } = await pollJob(jobId, apiUrl, apiToken, {
+					timeout: 1000 * 60 * 5,
+					frequency: 200,
+				});
+				if (status === 'stopped' && success) {
+					console.log('model job stopped, calling job runs api');
+					const runsUrl = `${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId}`;
+					const res = await axios.get(runsUrl, { 'headers': { 'Authorization': 'Bearer '+apiToken } });
+					console.log('runs result: ', res);
+					const { runs } = res.data;
+					const { results } = runs[0];
+					const fileId = results.files[0].id;
+					console.log('fileId ', fileId);
+					const fileContent = await axios.get(`${apiUrl}/api/files/${fileId}/content`, { 'headers': { 'Authorization': 'Bearer '+apiToken } });
+					console.log('model job run results: ', fileContent);
+					//need to get the model id from the results
+					item.modelId = fileContent.id;
+					return item;
+				} else if (status === 'pending') {
+					// reached specified timeout to check for completion but job still not done
+					console.log('model import job polling timed for item '+item.pn);
+					return item;
+				} else {
+					// error - job failed
+					console.log('model import job failed for item '+item.pn);
+					logApiCallError(error, apiUrl+'/products/import?orgId='+orgId, JSON.stringify(uploadModelData), sourceKey);					
+					return item;
+				}*/
+			   
+                /*if (r.data && r.data.products && r.data.products.length > 0) {
                     console.log("imported model", r.data.products[0]);
                     const model = r.data.products[0];
                     item.modelId = model.id;
                     return item;
                 }
-                return item;
+                return item;*/
             }).catch(error => {
 				console.log(error);
 				logApiCallError(error, apiUrl+'/products/import?orgId='+orgId, JSON.stringify(uploadModelData), sourceKey);
@@ -322,7 +436,7 @@ exports.handler = async (event) => {
 			});
         }).catch(error => {
 			console.log(error);
-			logApiCallError(error, apiUrl+'/catalog/products?orgId='+orgId+'&metadata=[metadata]&type=item', JSON.stringify(itemGroupIds), sourceKey);
+			logApiCallError(error, apiUrl+'/assets?orgId='+orgId+'&metadata=[metadata]&type=item&all=true', JSON.stringify(itemGroupIds), sourceKey);
 			throw error;
 		});
     }

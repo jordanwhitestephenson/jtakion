@@ -415,13 +415,14 @@ exports.handler = async (event) => {
 	function handleDeletes(catalogCode) {
 		logItemEvent({"event": "deleteStart", "objectType":'optiondelete'}, sourceKey);
 		return axios.get(
-			apiUrl+'/catalog/products?orgId='+orgId+'&metadata={ "isOption": 1,"catalogCode":"'+catalogCode+'" }',
+			apiUrl+'/assets?orgId='+orgId+'&metadata={ "isOption": 1,"catalogCode":"'+catalogCode+'" }&all=true',
 			{ 'headers': { 'Authorization': 'Bearer '+apiToken } }
 		).then( (res) => {
-			console.log('options', res.data.products);
-			if (res && res.data && res.data.products && res.data.products.length > 0) {
-				console.log(res.data.products.length, ' options to delete');
-				let chunks = sliceIntoChunks(res.data.products, 20);
+			console.log('options', res.data.assets);
+			//if (res && res.data && res.data.products && res.data.products.length > 0) {
+			if (res && res.data && res.data.assets && res.data.assets.length > 0) {
+				console.log(res.data.assets.length, ' options to delete');
+				let chunks = sliceIntoChunks(res.data.assets, 20);
 				console.log('chunks', chunks);
 				return Promise.resolve(chunks);
 			} else {
@@ -431,7 +432,7 @@ exports.handler = async (event) => {
 			//should get list of chunks
 			return processChunks(res);
         }).catch(error => {
-			logError(error, 'deleteQuery', apiUrl+'/catalog/products?orgId'+orgId+'&metadata={ "isOption": 1,"catalogCode":"'+catalogCode+'" }');
+			logError(error, 'deleteQuery', apiUrl+'/assets?orgId'+orgId+'&metadata={ "isOption": 1,"catalogCode":"'+catalogCode+'" }&all=true');
 			throw error;
 		});
 	}
