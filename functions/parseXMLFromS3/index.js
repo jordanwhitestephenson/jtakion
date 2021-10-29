@@ -27,11 +27,16 @@ const logItemEvent = require('./itemEventLog.js').logItemEvent;
 const finishLogEvents = require('./itemEventLog.js').finishLogEvents;
 
 const parse = require('./parser.js').parse;
+//const { getParameter } = require('./parameters.js');
 
-/*const getParameter = require('./parameters.js').getParameter;
-const getOrgId = (environmentName) => getParameter("org-id")(environmentName);
+const rdsDataService = new AWS.RDSDataService();
+
+const getParameter = require('./parameters.js').getParameter;
+/*const getOrgId = (environmentName) => getParameter("org-id")(environmentName);
 const getApiUrl = (environmentName) => getParameter("api-url")(environmentName);
 const getApiToken = (environmentName) => getParameter("api-token")(environmentName);*/
+const getDbArn = (environmentName) => getParameter("db-arn")(environmentName);
+const getSecretArn = (environmentName) => getParameter("secret-arn")(environmentName);
 
 const parsedFilesCache = {};
 
@@ -88,7 +93,7 @@ exports.handler = async (event) => {
 	console.log('apiToken', apiToken);
 	console.log('orgName', orgName);
     
-    const sourceKey = srcKey.split('.').slice(0,-1).join('.').replace(':','');
+    const sourceKey = srcKey.split('.').slice(0,-1).join('.').replace(':nm',':total');
     
     //logItemEvent({"objectType":"environment", "IMPORT_ENVIRONMENT": destEnv}, sourceKey );
 	logItemEvent({"objectType":"environment", "IMPORT_ENVIRONMENT": orgName}, sourceKey );
@@ -96,6 +101,39 @@ exports.handler = async (event) => {
 	/*const orgId =  await getOrgId(destEnv);
     const apiUrl = await getApiUrl(destEnv);
     const apiToken = await getApiToken(destEnv);*/
+	const dbArn = await getDbArn('default');
+	const secretArn = await getSecretArn('default');
+
+	function writeJobStatusToDatabase(total, nm) {
+		console.log('writing job to db ', total, nm);
+		let sqlParams = {
+			secretArn: secretArn,
+			resourceArn: dbArn,
+			sql: 'INSERT INTO job (nm, total_items) values (:nm, :total)',
+			database: 'threekit',
+			includeResultMetadata: true,
+			parameters: [
+				{
+					'name': 'nm',
+					'value': {
+						'stringValue': nm
+					}
+				},
+				{
+					'name': 'total',
+					'value': {
+						'longValue': total
+					}
+				}
+			]
+		};
+		rdsDataService.executeStatement(sqlParams).promise()
+			.then(data => {
+				console.log(data);
+			}).catch(err => {
+				console.log(err);
+			});				
+	}
 
 	var pricebookByNameMap = {};
 	async function getAllPricebooks() {
@@ -548,11 +586,12 @@ exports.handler = async (event) => {
 				} else {
 					return pushAllItems(parsed).then( r => {
 						console.log('total items in import',totalItems);
-						logItemEvent({"TOTAL_ITEMS": totalItems,"Id":"TOTAL_ITEMS"}, sourceKey );
+						logItemEvent({"TOTAL_ITEMS": totalItems,"Id":"TOTAL_ITEMS"}, sourceKey );						
 						return Promise.all([
 							r,
 							flushItemsToQueue(), 
-							finishLogEvents()
+							finishLogEvents(),
+							writeJobStatusToDatabase(totalItems, sourceKey)
 						]);
 					}).then( res => {
 						// console.log("FINISHED ALL for ", srcKey, util.inspect(res, {depth: 5}) );

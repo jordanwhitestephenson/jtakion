@@ -14,10 +14,14 @@ const sqs = new AWS.SQS({
   httpOptions: { agent }
 });
 
-/*const getParameter = require('./parameters.js').getParameter;
-const getOrgId = (environmentName) => getParameter("org-id")(environmentName);
+const getParameter = require('./parameters.js').getParameter;
+/*const getOrgId = (environmentName) => getParameter("org-id")(environmentName);
 const getApiUrl = (environmentName) => getParameter("api-url")(environmentName);
 const getApiToken = (environmentName) => getParameter("api-token")(environmentName);*/
+
+const getDbArn = (environmentName) => getParameter("db-arn")(environmentName);
+const getSecretArn = (environmentName) => getParameter("secret-arn")(environmentName);
+const rdsDataService = new AWS.RDSDataService();
 
 const logItemEvent = require('./itemEventLog.js').logItemEvent;
 const finishLogEvents = require('./itemEventLog.js').finishLogEvents;
@@ -35,8 +39,49 @@ const DEFAULT_FREQUENCY = 1000; // poll check every 1 second
 exports.handler = async (event) => {
     
     const start = Date.now();
+
+	const dbArn = await getDbArn('default');
+	const secretArn = await getSecretArn('default');
     
-    /* helper functions */	   
+    /* helper functions */
+	
+	function writeCompletedItemToDatabase(id, type, sourceKey) {
+		console.log('writing conpleted item to db ', id, type, sourceKey);
+		let sqlParams = {
+			secretArn: secretArn,
+			resourceArn: dbArn,
+			sql: 'INSERT INTO job_item (jid, object_id, item_type) values ((SELECT jid FROM job WHERE nm = :jobname), :objectid, :itemtype)',
+			database: 'threekit',
+			includeResultMetadata: true,
+			parameters: [
+				{
+					'name': 'jobname',
+					'value': {
+						'stringValue': sourceKey
+					}
+				},
+				{
+					'name': 'objectid',
+					'value': {
+						'stringValue': id
+					}
+				},
+				{
+					'name': 'itemtype',
+					'value': {
+						'stringValue': type
+					}
+				}
+			]
+		};
+		rdsDataService.executeStatement(sqlParams, function(err, data) {
+			if (err) {
+				console.log(err, err.stack);				
+			 } else {
+				console.log(data); 				
+			 }             
+		});
+	}
 
 	function pollJob(jobId, apiUrl, apiToken, options = {}) {
 		const { timeout = DEFAULT_TIMEOUT, frequency = DEFAULT_FREQUENCY } = options;
@@ -436,258 +481,264 @@ exports.handler = async (event) => {
 		console.log('apiUrl: ',apiUrl);
 		console.log('apiToken: ',apiToken);
         const itemsToUploadEnv = itemsToUpload[key];
-        const itemsData = new FormData();
-        console.log("Uploading Ids: ", itemsToUploadEnv.map(i => i.query));
-        itemsData.append('file', JSON.stringify(itemsToUploadEnv), 'items.json');
-		itemsData.append('sync', 'false');
-        const config = { 'headers': {
-            'Authorization': 'Bearer '+apiToken,
-            ...itemsData.getHeaders()
-        }};
-        console.log({'event': 'startApiCall'}, JSON.stringify(itemsToUploadEnv));
-        const t = Date.now();
-        return axios.post(
-            apiUrl+'/products/import?orgId='+orgId,
-            itemsData,
-            config
-        ).catch(error => {
-			itemsToUploadEnv.forEach(itm => {
-				let keyArray;
-				if(itm.query.metadata.itemId) {
-					keyArray = bodySourceKeys[itm.query.metadata.itemId];
-				} else {
-					keyArray = bodySourceKeys[itm.query.metadata.optionId];
-				}			
-				if (error.response) {
-					// The request was made and the server responded with a status code
-					// that falls out of the range of 2xx
-					keyArray.forEach(k => {
-						logItemEvent( events.failedApiCall(apiUrl+'/products/import?orgId='+orgId, JSON.stringify(itemsToUploadEnv), error.response.data, error.response.status, error.response.headers), k);			
-					});					
-					console.log(error.response.data);
-					console.log(error.response.status);
-					console.log(error.response.headers);
-				} else if (error.request) {
-					// The request was made but no response was received
-					// `error.request` is an instance of XMLHttpRequest in the browser and an instance of
-					// http.ClientRequest in node.js
-					console.log(error.request);
-					keyArray.forEach(k => {
-						logItemEvent( events.noResponseApiCall(apiUrl+'/products/import?orgId='+orgId, JSON.stringify(itemsToUploadEnv), ''), k);				
-					});
-				} else {
-					// Something happened in setting up the request that triggered an Error
-					console.log('Error', error.message);
-					keyArray.forEach(k => {
-						logItemEvent( events.unknownErrorApiCall(apiUrl+'/products/import?orgId='+orgId, JSON.stringify(itemsToUploadEnv), error.message), k);			
-					});
-				}
-			});
-			throw error;
-		})
-        .then((res) => {
-            console.log({'event': 'Successful API call'});
-			//get jobId based on result
-			const jobId = res.data.jobId;
-			//poll for job completion
-			return pollJob(jobId, apiUrl, apiToken, {
-				timeout: 1000 * 60 * 5,
-				frequency: 200,
-			}).then(pollResult => {
-				let status = pollResult.status;
-				let success = pollResult.success;
-				if (status === 'stopped' && success) {
-					console.log('items import job stopped, calling job runs api');
-					const runsUrl = `${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId}`;
-					return axios.get(runsUrl, { 'headers': { 'Authorization': 'Bearer '+apiToken } })
-						.then(res => {
-							const { runs } = res.data;
-							const { results } = runs[0];
-							const fileId = results.files[0].id;
-							console.log('fileId ', fileId);
-							return axios.get(`${apiUrl}/files/${fileId}/content`, { 'headers': { 'Authorization': 'Bearer '+apiToken } })
-								.then(fileContent => {
-									console.log('item import job run results: ', fileContent);
-									if(fileContent && fileContent.data) {
-										const productsCreated = fileContent.data.map(p => {
-											if(p.metadata.itemId){
-												let sourceKeyArray = bodySourceKeys[p.metadata.itemId];	
-												sourceKeyArray.forEach(sourceKey => {
-													logItemEvent( events.createdItem(p.metadata.itemId, p.id, Date.now() - t),  sourceKey);						
-												});						
-												return p.metadata.itemId;
-											} else {
-												let sourceKeyArray = bodySourceKeys[p.metadata.optionId];	
-												sourceKeyArray.forEach(sourceKey => {					
-													logItemEvent( events.createdOption(p.metadata.optionId, p.id, Date.now() - t), sourceKey );
-												});
-												return p.metadata.optionId;
-											}					
-										});
-										const productsFailed = itemsToUploadEnv.filter(p => {
-											const itemId = p.query.metadata.itemId ? p.query.metadata.itemId : p.query.metadata.optionId;
-											return !productsCreated.includes(itemId);
-										}).map(p => {
-											if(p.query.metadata.itemId){
-												let sourceKeyArray = bodySourceKeys[p.metadata.itemId];		
-												sourceKeyArray.forEach(sourceKey => {				
-													logItemEvent( events.errorCreatingItem(p.query.metadata.itemId), sourceKey );
-												});
-												return p.query.metadata.itemId;
-											} else {
-												let sourceKeyArray = bodySourceKeys[p.query.metadata.optionId];	
-												sourceKeyArray.forEach(sourceKey => {					
-													logItemEvent( events.errorCreatingOption(p.query.metadata.optionId),  sourceKey);
-												});
-												return p.query.metadata.optionId;
-											}
-										});
-										
-										if (productsFailed.length > 0) {
-											console.log('Items failed: ', productsFailed);
-										}
-									}
-									return fileContent.data;
-								}).catch(error => {
-									console.log(error);
-									//logApiCallError(error, `${apiUrl}/files/${fileId}/content`, '', sourceKey);
-									itemsToUploadEnv.forEach(itm => {
-										let keyArray;
-										if(itm.query.metadata.itemId) {
-											keyArray = bodySourceKeys[itm.query.metadata.itemId];
-										} else {
-											keyArray = bodySourceKeys[itm.query.metadata.optionId];
-										}			
-										if (error.response) {
-											// The request was made and the server responded with a status code
-											// that falls out of the range of 2xx
-											keyArray.forEach(k => {
-												logItemEvent( events.failedApiCall(`${apiUrl}/files/${fileId}/content`, '', error.response.data, error.response.status, error.response.headers), k);			
-											});					
-											console.log(error.response.data);
-											console.log(error.response.status);
-											console.log(error.response.headers);
-										} else if (error.request) {
-											// The request was made but no response was received
-											// `error.request` is an instance of XMLHttpRequest in the browser and an instance of
-											// http.ClientRequest in node.js
-											console.log(error.request);
-											keyArray.forEach(k => {
-												logItemEvent( events.noResponseApiCall(`${apiUrl}/files/${fileId}/content`, '', ''), k);				
-											});
-										} else {
-											// Something happened in setting up the request that triggered an Error
-											console.log('Error', error.message);
-											keyArray.forEach(k => {
-												logItemEvent( events.unknownErrorApiCall(`${apiUrl}/files/${fileId}/content`, '', error.message), k);			
-											});
-										}
-									});
-									throw error;
-								});
-						}).catch(error => {
-							console.log(error);
-							//logApiCallError(error, `${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId}`, '', sourceKey);
-							itemsToUploadEnv.forEach(itm => {
-								let keyArray;
-								if(itm.query.metadata.itemId) {
-									keyArray = bodySourceKeys[itm.query.metadata.itemId];
-								} else {
-									keyArray = bodySourceKeys[itm.query.metadata.optionId];
-								}			
-								if (error.response) {
-									// The request was made and the server responded with a status code
-									// that falls out of the range of 2xx
-									keyArray.forEach(k => {
-										logItemEvent( events.failedApiCall(`${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId}`, '', error.response.data, error.response.status, error.response.headers), k);			
-									});					
-									console.log(error.response.data);
-									console.log(error.response.status);
-									console.log(error.response.headers);
-								} else if (error.request) {
-									// The request was made but no response was received
-									// `error.request` is an instance of XMLHttpRequest in the browser and an instance of
-									// http.ClientRequest in node.js
-									console.log(error.request);
-									keyArray.forEach(k => {
-										logItemEvent( events.noResponseApiCall(`${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId}`, '', ''), k);				
-									});
-								} else {
-									// Something happened in setting up the request that triggered an Error
-									console.log('Error', error.message);
-									keyArray.forEach(k => {
-										logItemEvent( events.unknownErrorApiCall(`${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId}`, '', error.message), k);			
-									});
-								}
-							});
-							throw error;
-						});
-				} else if (status === 'pending') {
-					// reached specified timeout to check for completion but job still not done
-					console.log('item import job polling timed for items '+itemsToUploadEnv.map(i => i.query));
-					//return item;
-				} else {
-					// error - job failed
-					console.log('item import job failed for items '+itemsToUploadEnv.map(i => i.query));
-					//logApiCallError({'message':'job failed'}, apiUrl+'/products/import?orgId='+orgId, JSON.stringify(itemsToUploadEnv), sourceKey);					
-					itemsToUploadEnv.forEach(itm => {
-						let keyArray;
-						if(itm.query.metadata.itemId) {
-							keyArray = bodySourceKeys[itm.query.metadata.itemId];
-						} else {
-							keyArray = bodySourceKeys[itm.query.metadata.optionId];
-						}
+		if(itemsToUploadEnv.length > 0) {
+			const itemsData = new FormData();
+			console.log("Uploading Ids: ", itemsToUploadEnv.map(i => i.query));
+			itemsData.append('file', JSON.stringify(itemsToUploadEnv), 'items.json');
+			itemsData.append('sync', 'false');
+			const config = { 'headers': {
+				'Authorization': 'Bearer '+apiToken,
+				...itemsData.getHeaders()
+			}};
+			console.log({'event': 'startApiCall'}, JSON.stringify(itemsToUploadEnv));
+			const t = Date.now();
+			return axios.post(
+				apiUrl+'/products/import?orgId='+orgId,
+				itemsData,
+				config
+			).catch(error => {
+				itemsToUploadEnv.forEach(itm => {
+					let keyArray;
+					if(itm.query.metadata.itemId) {
+						keyArray = bodySourceKeys[itm.query.metadata.itemId];
+					} else {
+						keyArray = bodySourceKeys[itm.query.metadata.optionId];
+					}			
+					if (error.response) {
+						// The request was made and the server responded with a status code
+						// that falls out of the range of 2xx
 						keyArray.forEach(k => {
-							logItemEvent( events.unknownErrorApiCall(apiUrl+'/products/import?orgId='+orgId, JSON.stringify(itemsToUploadEnv), 'job failed'), k);			
-						});						
-					});
-					//return item;
-				}
-			}).catch(error => {
-				console.log('polling error ',error);
-				throw error;
-			});
-            /*if (res && res.data && res.data.products) {
-				const productsCreated = res.data.products.map(p => {
-					if(p.metadata.itemId){
-						let sourceKeyArray = bodySourceKeys[p.metadata.itemId];	
-						sourceKeyArray.forEach(sourceKey => {
-							logItemEvent( events.createdItem(p.metadata.itemId, p.id, Date.now() - t),  sourceKey);						
-						});						
-						return p.metadata.itemId;
+							logItemEvent( events.failedApiCall(apiUrl+'/products/import?orgId='+orgId, JSON.stringify(itemsToUploadEnv), error.response.data, error.response.status, error.response.headers), k);			
+						});					
+						console.log(error.response.data);
+						console.log(error.response.status);
+						console.log(error.response.headers);
+					} else if (error.request) {
+						// The request was made but no response was received
+						// `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+						// http.ClientRequest in node.js
+						console.log(error.request);
+						keyArray.forEach(k => {
+							logItemEvent( events.noResponseApiCall(apiUrl+'/products/import?orgId='+orgId, JSON.stringify(itemsToUploadEnv), ''), k);				
+						});
 					} else {
-						let sourceKeyArray = bodySourceKeys[p.metadata.optionId];	
-						sourceKeyArray.forEach(sourceKey => {					
-							logItemEvent( events.createdOption(p.metadata.optionId, p.id, Date.now() - t), sourceKey );
+						// Something happened in setting up the request that triggered an Error
+						console.log('Error', error.message);
+						keyArray.forEach(k => {
+							logItemEvent( events.unknownErrorApiCall(apiUrl+'/products/import?orgId='+orgId, JSON.stringify(itemsToUploadEnv), error.message), k);			
 						});
-						return p.metadata.optionId;
-					}					
-				});				
-				const productsFailed = itemsToUploadEnv.filter(p => {
-					const itemId = p.query.metadata.itemId ? p.query.metadata.itemId : p.query.metadata.optionId;
-					return !productsCreated.includes(itemId);
-				}).map(p => {
-					if(p.query.metadata.itemId){
-						let sourceKeyArray = bodySourceKeys[p.metadata.itemId];		
-						sourceKeyArray.forEach(sourceKey => {				
-							logItemEvent( events.errorCreatingItem(p.query.metadata.itemId), sourceKey );
-						});
-						return p.query.metadata.itemId;
-					} else {
-						let sourceKeyArray = bodySourceKeys[p.query.metadata.optionId];	
-						sourceKeyArray.forEach(sourceKey => {					
-							logItemEvent( events.errorCreatingOption(p.query.metadata.optionId),  sourceKey);
-						});
-						return p.query.metadata.optionId;
 					}
 				});
-				
-				if (productsFailed.length > 0) {
-					console.log('Items failed: ', productsFailed);
+				throw error;
+			})
+			.then((res) => {
+				console.log({'event': 'Successful API call'});
+				//get jobId based on result
+				const jobId = res.data.jobId;
+				//poll for job completion
+				return pollJob(jobId, apiUrl, apiToken, {
+					timeout: 1000 * 60 * 5,
+					frequency: 200,
+				}).then(pollResult => {
+					let status = pollResult.status;
+					let success = pollResult.success;
+					if (status === 'stopped' && success) {
+						console.log('items import job stopped, calling job runs api');
+						const runsUrl = `${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId}`;
+						return axios.get(runsUrl, { 'headers': { 'Authorization': 'Bearer '+apiToken } })
+							.then(res => {
+								const { runs } = res.data;
+								const { results } = runs[0];
+								const fileId = results.files[0].id;
+								console.log('fileId ', fileId);
+								return axios.get(`${apiUrl}/files/${fileId}/content`, { 'headers': { 'Authorization': 'Bearer '+apiToken } })
+									.then(fileContent => {
+										console.log('item import job run results: ', fileContent);
+										if(fileContent && fileContent.data) {
+											const productsCreated = fileContent.data.map(p => {
+												if(p.metadata.itemId){
+													let sourceKeyArray = bodySourceKeys[p.metadata.itemId];	
+													sourceKeyArray.forEach(sourceKey => {
+														logItemEvent( events.createdItem(p.metadata.itemId, p.id, Date.now() - t),  sourceKey);	
+														writeCompletedItemToDatabase(p.metadata.itemId, 'item', sourceKey);					
+													});						
+													return p.metadata.itemId;
+												} else {
+													let sourceKeyArray = bodySourceKeys[p.metadata.optionId];	
+													sourceKeyArray.forEach(sourceKey => {					
+														logItemEvent( events.createdOption(p.metadata.optionId, p.id, Date.now() - t), sourceKey );
+														writeCompletedItemToDatabase(p.metadata.optionId, 'option', sourceKey);
+													});
+													return p.metadata.optionId;
+												}					
+											});
+											const productsFailed = itemsToUploadEnv.filter(p => {
+												const itemId = p.query.metadata.itemId ? p.query.metadata.itemId : p.query.metadata.optionId;
+												return !productsCreated.includes(itemId);
+											}).map(p => {
+												if(p.query.metadata.itemId){
+													let sourceKeyArray = bodySourceKeys[p.metadata.itemId];		
+													sourceKeyArray.forEach(sourceKey => {				
+														logItemEvent( events.errorCreatingItem(p.query.metadata.itemId), sourceKey );
+													});
+													return p.query.metadata.itemId;
+												} else {
+													let sourceKeyArray = bodySourceKeys[p.query.metadata.optionId];	
+													sourceKeyArray.forEach(sourceKey => {					
+														logItemEvent( events.errorCreatingOption(p.query.metadata.optionId),  sourceKey);
+													});
+													return p.query.metadata.optionId;
+												}
+											});
+											
+											if (productsFailed.length > 0) {
+												console.log('Items failed: ', productsFailed);
+											}
+										}
+										return fileContent.data;
+									}).catch(error => {
+										console.log(error);
+										//logApiCallError(error, `${apiUrl}/files/${fileId}/content`, '', sourceKey);
+										itemsToUploadEnv.forEach(itm => {
+											let keyArray;
+											if(itm.query.metadata.itemId) {
+												keyArray = bodySourceKeys[itm.query.metadata.itemId];
+											} else {
+												keyArray = bodySourceKeys[itm.query.metadata.optionId];
+											}			
+											if (error.response) {
+												// The request was made and the server responded with a status code
+												// that falls out of the range of 2xx
+												keyArray.forEach(k => {
+													logItemEvent( events.failedApiCall(`${apiUrl}/files/${fileId}/content`, '', error.response.data, error.response.status, error.response.headers), k);			
+												});					
+												console.log(error.response.data);
+												console.log(error.response.status);
+												console.log(error.response.headers);
+											} else if (error.request) {
+												// The request was made but no response was received
+												// `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+												// http.ClientRequest in node.js
+												console.log(error.request);
+												keyArray.forEach(k => {
+													logItemEvent( events.noResponseApiCall(`${apiUrl}/files/${fileId}/content`, '', ''), k);				
+												});
+											} else {
+												// Something happened in setting up the request that triggered an Error
+												console.log('Error', error.message);
+												keyArray.forEach(k => {
+													logItemEvent( events.unknownErrorApiCall(`${apiUrl}/files/${fileId}/content`, '', error.message), k);			
+												});
+											}
+										});
+										throw error;
+									});
+							}).catch(error => {
+								console.log(error);
+								//logApiCallError(error, `${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId}`, '', sourceKey);
+								itemsToUploadEnv.forEach(itm => {
+									let keyArray;
+									if(itm.query.metadata.itemId) {
+										keyArray = bodySourceKeys[itm.query.metadata.itemId];
+									} else {
+										keyArray = bodySourceKeys[itm.query.metadata.optionId];
+									}			
+									if (error.response) {
+										// The request was made and the server responded with a status code
+										// that falls out of the range of 2xx
+										keyArray.forEach(k => {
+											logItemEvent( events.failedApiCall(`${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId}`, '', error.response.data, error.response.status, error.response.headers), k);			
+										});					
+										console.log(error.response.data);
+										console.log(error.response.status);
+										console.log(error.response.headers);
+									} else if (error.request) {
+										// The request was made but no response was received
+										// `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+										// http.ClientRequest in node.js
+										console.log(error.request);
+										keyArray.forEach(k => {
+											logItemEvent( events.noResponseApiCall(`${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId}`, '', ''), k);				
+										});
+									} else {
+										// Something happened in setting up the request that triggered an Error
+										console.log('Error', error.message);
+										keyArray.forEach(k => {
+											logItemEvent( events.unknownErrorApiCall(`${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId}`, '', error.message), k);			
+										});
+									}
+								});
+								throw error;
+							});
+					} else if (status === 'pending') {
+						// reached specified timeout to check for completion but job still not done
+						console.log('item import job polling timed for items '+itemsToUploadEnv.map(i => i.query));
+						//return item;
+					} else {
+						// error - job failed
+						console.log('item import job failed for items '+itemsToUploadEnv.map(i => i.query));
+						//logApiCallError({'message':'job failed'}, apiUrl+'/products/import?orgId='+orgId, JSON.stringify(itemsToUploadEnv), sourceKey);					
+						itemsToUploadEnv.forEach(itm => {
+							let keyArray;
+							if(itm.query.metadata.itemId) {
+								keyArray = bodySourceKeys[itm.query.metadata.itemId];
+							} else {
+								keyArray = bodySourceKeys[itm.query.metadata.optionId];
+							}
+							keyArray.forEach(k => {
+								logItemEvent( events.unknownErrorApiCall(apiUrl+'/products/import?orgId='+orgId, JSON.stringify(itemsToUploadEnv), 'job failed'), k);			
+							});						
+						});
+						//return item;
+					}
+				}).catch(error => {
+					console.log('polling error ',error);
+					throw error;
+				});
+				/*if (res && res.data && res.data.products) {
+					const productsCreated = res.data.products.map(p => {
+						if(p.metadata.itemId){
+							let sourceKeyArray = bodySourceKeys[p.metadata.itemId];	
+							sourceKeyArray.forEach(sourceKey => {
+								logItemEvent( events.createdItem(p.metadata.itemId, p.id, Date.now() - t),  sourceKey);						
+							});						
+							return p.metadata.itemId;
+						} else {
+							let sourceKeyArray = bodySourceKeys[p.metadata.optionId];	
+							sourceKeyArray.forEach(sourceKey => {					
+								logItemEvent( events.createdOption(p.metadata.optionId, p.id, Date.now() - t), sourceKey );
+							});
+							return p.metadata.optionId;
+						}					
+					});				
+					const productsFailed = itemsToUploadEnv.filter(p => {
+						const itemId = p.query.metadata.itemId ? p.query.metadata.itemId : p.query.metadata.optionId;
+						return !productsCreated.includes(itemId);
+					}).map(p => {
+						if(p.query.metadata.itemId){
+							let sourceKeyArray = bodySourceKeys[p.metadata.itemId];		
+							sourceKeyArray.forEach(sourceKey => {				
+								logItemEvent( events.errorCreatingItem(p.query.metadata.itemId), sourceKey );
+							});
+							return p.query.metadata.itemId;
+						} else {
+							let sourceKeyArray = bodySourceKeys[p.query.metadata.optionId];	
+							sourceKeyArray.forEach(sourceKey => {					
+								logItemEvent( events.errorCreatingOption(p.query.metadata.optionId),  sourceKey);
+							});
+							return p.query.metadata.optionId;
+						}
+					});
+					
+					if (productsFailed.length > 0) {
+						console.log('Items failed: ', productsFailed);
+					}
 				}
-			}
-            return res.data;*/
-        });
+				return res.data;*/
+			});
+		} else {
+			console.log('no items to upload, skipping job api call');
+		}
     }
     
     

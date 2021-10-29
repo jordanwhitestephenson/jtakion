@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { AwsLogsService } from 'src/app/services/aws-logs.service';
 import { LocalStorageService } from 'src/app/services/localStorage.service';
+import { AwsDbService } from 'src/app/services/aws-db.service';
 
 @Component({
 	selector: 'app-results',
@@ -25,7 +26,6 @@ export class ResultsComponent implements OnInit {
 	hasCheckedStatus:boolean = false;
 	percentComplete: number = 0;
 	refreshProgressTimeout;
-	queryResultTimeout;
 
 	hasErrors = false;
 	hasErrorsTimeout;
@@ -35,7 +35,8 @@ export class ResultsComponent implements OnInit {
 	constructor(
 		private logsService: AwsLogsService,
 		private route: ActivatedRoute,
-		private localStorageService: LocalStorageService
+		private localStorageService: LocalStorageService,
+		private dbService: AwsDbService
 	) { }
 
 	ngOnInit(): void {		
@@ -162,65 +163,48 @@ export class ResultsComponent implements OnInit {
 			this.hasCheckedStatus = true;
 			this.percentComplete = 100;
 		} else {
-			this.logsService.startProgressQuery(this.logStreamName)
-			.then(log => {
-				console.log('progress', log);
-				this.queryId = log.queryId;
-				if(this.isActive === true) {
-					this.queryResultTimeout = setTimeout(() => this.waitForQueryResult(), 5000);
+			console.log('getting progress for job', this.logStreamName);
+			this.dbService.getProgressForJob(this.logStreamName)
+			.then(data => {
+				if(data.length > 0) {
+					let result = data[0];
+					let total = 0;
+					if(result['total_items']) {
+						total = parseInt(result['total_items']);
+					}
+					let numLines = null;
+					if(result['count']) {
+						numLines = parseInt(result['count']);
+					}
+					console.log('total', total);
+					console.log('numLines', numLines);
+					if(numLines != null) {
+						if(total === 0) {
+							this.percentComplete = 0;
+						} else {
+							this.percentComplete = (numLines/total)*100;
+						}
+						this.hasCheckedStatus = true;
+					}
 				}
-			}).catch(error => {
+				if(this.percentComplete < 100) {
+					if(this.isActive === true) {
+						this.refreshProgressTimeout = setTimeout(() => this.refreshProgress(), 20000);
+					}
+				} else {
+					this.localStorageService.setStatusOfImport(this.logStreamName, 'Complete');
+				}
+			}).catch(err => {
+				console.log(err);
 				if(this.isActive === true) {
-					this.refreshProgressTimeout = setTimeout(() => this.refreshProgress(), 5000);
+					this.refreshProgressTimeout = setTimeout(() => this.refreshProgress(), 20000);
 				}
 			});
 		}
 	}
 
-	waitForQueryResult() {
-		this.logsService.getQueryResults(this.queryId).then(res => {
-			console.log('res', res);
-			if(res.status === 'Running' || res.status === 'Scheduled') {
-				if(this.isActive === true) {
-					this.queryResultTimeout = setTimeout(() => this.waitForQueryResult(), 5000);
-				}
-			} else if(res.status === 'Complete') {
-				let total = 0;
-				let totalObj = res.results[0];
-				if(totalObj) {
-					console.log(totalObj);
-					let i=0;
-					for(i;i<totalObj.length;i++) {
-						if(totalObj[i].field === "TOTAL_ITEMS") {
-							total = parseInt(totalObj[i].value);
-							break;
-						}
-					}
-					console.log('total',total);
-					console.log('num lines', res.results.length-1);
-					if(total === 0) {
-						this.percentComplete = 0;
-					} else {
-						this.percentComplete = ((res.results.length-1)/total)*100;
-					}
-					this.hasCheckedStatus = true;
-				}
-				if(this.percentComplete < 100) {
-					if(this.isActive === true) {
-						this.queryResultTimeout = setTimeout(() => this.refreshProgress(), 5000);
-					}
-				} else {
-					this.localStorageService.setStatusOfImport(this.logStreamName, 'Complete');
-				}
-			}
-		});
-	}
-
 	ngOnDestroy() {
 		this.isActive = false;
-		if(this.queryResultTimeout) {
-			clearTimeout(this.queryResultTimeout);
-		}
 		if(this.refreshProgressTimeout) {
 			clearTimeout(this.refreshProgressTimeout);
 		}

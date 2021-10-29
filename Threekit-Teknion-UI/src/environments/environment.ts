@@ -5,7 +5,8 @@
 export const environment = {
   production: false,
   s3Bucket: 'teknionimport',//'teknioninput',
-  region: 'ca-central-1',//'us-east-1',
+  region: 'ca-central-1',//'us-east-1'
+  jobEndpoint: 'https://3z0k0sxd5k.execute-api.us-east-1.amazonaws.com'
 };
 
 /*
