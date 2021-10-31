@@ -13,7 +13,7 @@ exports.handler = async (event) => {
     let sqlParams = {
 		secretArn: secretArn,
 		resourceArn: dbArn,
-		sql: 'select job.nm, job.total_items, count(DISTINCT job_item.object_id) FROM job, job_item WHERE job.jid = job_item.jid and job.nm = :jobname GROUP BY job.nm, job.total_items;',
+		sql: 'select job.nm, job.total_items, job.stat, count(DISTINCT job_item.object_id) FROM job LEFT JOIN job_item ON job.jid = job_item.jid WHERE job.nm = :jobname GROUP BY job.nm, job.total_items, job.stat;',
 		database: 'threekit',
 		includeResultMetadata: true,
 		parameters: [
@@ -35,6 +35,60 @@ exports.handler = async (event) => {
         });
         return obj;
     });
+	if(data.length > 0) {
+		//check stat column
+		if(data[0]['stat'] == 'pending') {
+			//no status yet, check counts
+			if(data[0]['total_items'] === data[0]['count']) {
+				//all have been processed, set stat = 'complete'
+				let updatesqlParams = {
+					secretArn: secretArn,
+					resourceArn: dbArn,
+					sql: 'UPDATE job SET stat = :s WHERE job.nm = :jobname;',
+					database: 'threekit',
+					includeResultMetadata: true,
+					parameters: [
+						{
+							'name': 's',
+							'value': {
+								'stringValue': 'complete'
+							}
+						},
+						{
+							'name': 'jobname',
+							'value': {
+								'stringValue': jobName
+							}
+						}
+					]
+				};
+				let updateresp = await rdsDataService.executeStatement(updatesqlParams).promise();
+				console.log('updated job status', updateresp);
+				//delete job items
+				let deletesqlParams = {
+					secretArn: secretArn,
+					resourceArn: dbArn,
+					sql: 'DELETE FROM job_item WHERE jid = (SELECT jid FROM job WHERE nm = :jobname);',
+					database: 'threekit',
+					includeResultMetadata: true,
+					parameters: [
+						{
+							'name': 'jobname',
+							'value': {
+								'stringValue': jobName
+							}
+						}
+					]
+				};
+				let deleteresp = await rdsDataService.executeStatement(deletesqlParams).promise();
+				console.log('deleted job items', deleteresp);
+			}
+		} else {
+			//is complete, set count = total items
+			data[0]['count'] = data[0]['total_items'];
+		}
+	}
+
 	const response = {
 		statusCode: 200,
 		body: JSON.stringify(data)

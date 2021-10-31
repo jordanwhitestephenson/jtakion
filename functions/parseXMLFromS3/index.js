@@ -109,7 +109,7 @@ exports.handler = async (event) => {
 		let sqlParams = {
 			secretArn: secretArn,
 			resourceArn: dbArn,
-			sql: 'INSERT INTO job (nm, total_items) values (:nm, :total)',
+			sql: 'INSERT INTO job (nm, total_items, stat) values (:nm, :total, :stat)',
 			database: 'threekit',
 			includeResultMetadata: true,
 			parameters: [
@@ -123,6 +123,12 @@ exports.handler = async (event) => {
 					'name': 'total',
 					'value': {
 						'longValue': total
+					}
+				},
+				{
+					'name': 'stat',
+					'value': {
+						'stringValue': 'pending'
 					}
 				}
 			]

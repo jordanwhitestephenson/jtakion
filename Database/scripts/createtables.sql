@@ -11,3 +11,5 @@ CREATE TABLE job_item (
 );
 
 CREATE UNIQUE INDEX job_name_idx ON job (nm);
+
+ALTER TABLE job ADD COLUMN stat	varchar(255);
