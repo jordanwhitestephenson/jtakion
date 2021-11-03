@@ -32,6 +32,8 @@ export class ResultsComponent implements OnInit {
 
 	isActive = false;
 
+	isCanceled = false;
+
 	constructor(
 		private logsService: AwsLogsService,
 		private route: ActivatedRoute,
@@ -141,7 +143,6 @@ export class ResultsComponent implements OnInit {
 		filterArray.push('$.event = "error"');
 		this.logsService.getLogEvents(this.logStreamName, filterArray.length > 0 ? `{${filterArray.join(' && ')}}` : undefined, undefined)
 		.then(log => {
-			console.log('checkIfErrors', log);
 			if(log && log.events && log.events.length > 0) {
 				this.hasErrors = true;
 			} else {
@@ -159,16 +160,19 @@ export class ResultsComponent implements OnInit {
 
 	refreshProgress() {
 		let importStatuses = this.localStorageService.getImportStatuses();
-		if(importStatuses.hasOwnProperty(this.logStreamName)) {
+		if(importStatuses.hasOwnProperty(this.logStreamName) && importStatuses[this.logStreamName] === 'Complete') {
 			this.hasCheckedStatus = true;
 			this.percentComplete = 100;
 		} else {
-			console.log('getting progress for job', this.logStreamName);
 			this.dbService.getProgressForJob(this.logStreamName)
 			.then(data => {
 				if(data.length > 0) {
 					let result = data[0];
 					let total = 0;
+					let stat = result.stat;
+					if(stat === 'cancelled') {
+						this.isCanceled = true;
+					}
 					if(result['total_items']) {
 						total = parseInt(result['total_items']);
 					}
@@ -176,20 +180,22 @@ export class ResultsComponent implements OnInit {
 					if(result['count']) {
 						numLines = parseInt(result['count']);
 					}
-					console.log('total', total);
-					console.log('numLines', numLines);
-					if(numLines != null) {
-						if(total === 0) {
-							this.percentComplete = 0;
-						} else {
-							this.percentComplete = (numLines/total)*100;
-						}
-						this.hasCheckedStatus = true;
+					if(numLines === null) {
+						numLines = 0;
 					}
+					if(total === 0) {
+						this.percentComplete = 0;
+					} else {
+						this.percentComplete = (numLines/total)*100;
+					}
+					this.hasCheckedStatus = true;
 				}
 				if(this.percentComplete < 100) {
-					if(this.isActive === true) {
+					if(this.isActive === true && !this.isCanceled) {
 						this.refreshProgressTimeout = setTimeout(() => this.refreshProgress(), 20000);
+					}
+					if(this.isCanceled === true) {
+						this.localStorageService.setStatusOfImport(this.logStreamName, 'Cancelled');
 					}
 				} else {
 					this.localStorageService.setStatusOfImport(this.logStreamName, 'Complete');

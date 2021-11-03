@@ -13,6 +13,7 @@ export class SelectResultsItemComponent implements OnInit {
 	@Input() importValue: string;
 	@Output() selectImport: EventEmitter<void> = new EventEmitter<void>();
 	@Output() deleteImport: EventEmitter<void> = new EventEmitter<void>();
+	@Output() cancelImport: EventEmitter<void> = new EventEmitter<void>();
 
 	importStatus:string = 'Checking...';
 	queryId:string;
@@ -36,6 +37,11 @@ export class SelectResultsItemComponent implements OnInit {
 		this.deleteImport.emit();
 	}
 
+	emitCancelImport(e) {
+		e.stopPropagation();
+		this.cancelImport.emit();
+	}
+
 	checkStatus() {
 		//check if in localStorage
 		let importStatuses = this.localStorageService.getImportStatuses();
@@ -50,11 +56,15 @@ export class SelectResultsItemComponent implements OnInit {
 	}
 
 	refreshProgress() {
-		console.log('getting progress for job', this.importValue);
 		this.dbService.getProgressForJob(this.importValue)
-		.then(data => {
+		.then(data => {			
 			if(data.length > 0) {
+				this.importStatus = 'In Progress';
 				let result = data[0];
+				let stat = result.stat;
+				if(stat === 'cancelled') {
+					this.importStatus = 'Cancelled';
+				}
 				let total = 0;
 				if(result['total_items']) {
 					total = parseInt(result['total_items']);
@@ -63,8 +73,6 @@ export class SelectResultsItemComponent implements OnInit {
 				if(result['count']) {
 					numLines = parseInt(result['count']);
 				}
-				console.log('total', total);
-				console.log('numLines', numLines);
 				if(numLines != null) {
 					if(total === 0) {
 						this.percentComplete = 0;
@@ -74,9 +82,11 @@ export class SelectResultsItemComponent implements OnInit {
 				}
 			}
 			if(this.percentComplete < 100) {
-				this.importStatus = 'In Progress';
-				if(this.isActive === true) {
+				if(this.isActive === true && this.importStatus !== 'Cancelled') {
 					this.refreshProgressTimeout = setTimeout(() => this.refreshProgress(), 20000);
+				}
+				if(this.importStatus === 'Cancelled') {
+					this.localStorageService.setStatusOfImport(this.importValue, 'Cancelled');
 				}
 			} else {
 				this.importStatus = 'Complete';

@@ -42,6 +42,41 @@ exports.handler = async (event) => {
 
 	const dbArn = await getDbArn('default');
 	const secretArn = await getSecretArn('default');
+
+	async function checkIfJobCancelled(jobName) {
+		let sqlParams = {
+			secretArn: secretArn,
+			resourceArn: dbArn,
+			sql: 'SELECT stat FROM job WHERE nm = :jobname;',
+			database: 'threekit',
+			includeResultMetadata: true,
+			parameters: [
+				{
+					'name': 'jobname',
+					'value': {
+						'stringValue': jobName
+					}
+				}
+			]
+		};
+		let resp = await rdsDataService.executeStatement(sqlParams).promise();
+		console.log('check cancel resp', resp);
+		let columns = resp.columnMetadata.map(c => c.name);
+		let data = resp.records.map(r => {
+			let obj = {};
+			r.map((v, i) => {
+				obj[columns[i]] = Object.values(v)[0];
+			});
+			return obj;
+		});
+		if(data[0]['stat'] === 'cancelled') {
+			console.log('job cancelled');
+			return false;
+		} else {
+			console.log('job not cancelled');
+			return true;
+		}
+	}
     
     /* helper functions */
 	
@@ -138,7 +173,7 @@ exports.handler = async (event) => {
     function createOption (option) {
         console.log({'event': 'createGroupOption', 'optionId': option.id});
             
-        const item = {'query': { 'metadata' : { 'optionId': option.id, 'catalogCode': option.catalog.code }}, 'product': {}};
+        const item = {'m':{'optionId':option.id},'product': {}};
         
         if (option.im && option.materialId) {
             item.product.asset = {
@@ -268,7 +303,7 @@ exports.handler = async (event) => {
     // create a item type product with optional id query
     function createItem (item) {
         console.log({'event': 'createItem', 'itemId': item.id});
-        let uploadItem = { 'query': { 'metadata': {
+        let uploadItem = { 'm':{'itemId':item.id},'query': { 'metadata': {
             'itemId': item.id,
             'catalog_code': item.catalog.code/*,
             'catalog_year': item.catalog.year,
@@ -483,7 +518,7 @@ exports.handler = async (event) => {
         const itemsToUploadEnv = itemsToUpload[key];
 		if(itemsToUploadEnv.length > 0) {
 			const itemsData = new FormData();
-			console.log("Uploading Ids: ", itemsToUploadEnv.map(i => i.query));
+			console.log("Uploading Ids: ", itemsToUploadEnv.map(i => i.m));
 			itemsData.append('file', JSON.stringify(itemsToUploadEnv), 'items.json');
 			itemsData.append('sync', 'false');
 			const config = { 'headers': {
@@ -499,10 +534,10 @@ exports.handler = async (event) => {
 			).catch(error => {
 				itemsToUploadEnv.forEach(itm => {
 					let keyArray;
-					if(itm.query.metadata.itemId) {
-						keyArray = bodySourceKeys[itm.query.metadata.itemId];
+					if(itm.m.itemId) {
+						keyArray = bodySourceKeys[itm.m.itemId];
 					} else {
-						keyArray = bodySourceKeys[itm.query.metadata.optionId];
+						keyArray = bodySourceKeys[itm.m.optionId];
 					}			
 					if (error.response) {
 						// The request was made and the server responded with a status code
@@ -573,21 +608,23 @@ exports.handler = async (event) => {
 												}					
 											});
 											const productsFailed = itemsToUploadEnv.filter(p => {
-												const itemId = p.query.metadata.itemId ? p.query.metadata.itemId : p.query.metadata.optionId;
+												console.log(p);
+												const itemId = p.m.itemId ? p.m.itemId : p.m.optionId;
 												return !productsCreated.includes(itemId);
 											}).map(p => {
-												if(p.query.metadata.itemId){
+												console.log(p.m);
+												if(p.m.itemId){
 													let sourceKeyArray = bodySourceKeys[p.metadata.itemId];		
 													sourceKeyArray.forEach(sourceKey => {				
-														logItemEvent( events.errorCreatingItem(p.query.metadata.itemId), sourceKey );
+														logItemEvent( events.errorCreatingItem(p.m.itemId), sourceKey );
 													});
-													return p.query.metadata.itemId;
+													return p.m.itemId;
 												} else {
-													let sourceKeyArray = bodySourceKeys[p.query.metadata.optionId];	
+													let sourceKeyArray = bodySourceKeys[p.m.optionId];	
 													sourceKeyArray.forEach(sourceKey => {					
-														logItemEvent( events.errorCreatingOption(p.query.metadata.optionId),  sourceKey);
+														logItemEvent( events.errorCreatingOption(p.m.optionId),  sourceKey);
 													});
-													return p.query.metadata.optionId;
+													return p.m.optionId;
 												}
 											});
 											
@@ -601,10 +638,10 @@ exports.handler = async (event) => {
 										//logApiCallError(error, `${apiUrl}/files/${fileId}/content`, '', sourceKey);
 										itemsToUploadEnv.forEach(itm => {
 											let keyArray;
-											if(itm.query.metadata.itemId) {
-												keyArray = bodySourceKeys[itm.query.metadata.itemId];
+											if(itm.m.itemId) {
+												keyArray = bodySourceKeys[itm.m.itemId];
 											} else {
-												keyArray = bodySourceKeys[itm.query.metadata.optionId];
+												keyArray = bodySourceKeys[itm.m.optionId];
 											}			
 											if (error.response) {
 												// The request was made and the server responded with a status code
@@ -638,10 +675,10 @@ exports.handler = async (event) => {
 								//logApiCallError(error, `${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId}`, '', sourceKey);
 								itemsToUploadEnv.forEach(itm => {
 									let keyArray;
-									if(itm.query.metadata.itemId) {
-										keyArray = bodySourceKeys[itm.query.metadata.itemId];
+									if(itm.m.itemId) {
+										keyArray = bodySourceKeys[itm.m.itemId];
 									} else {
-										keyArray = bodySourceKeys[itm.query.metadata.optionId];
+										keyArray = bodySourceKeys[itm.m.optionId];
 									}			
 									if (error.response) {
 										// The request was made and the server responded with a status code
@@ -680,10 +717,10 @@ exports.handler = async (event) => {
 						//logApiCallError({'message':'job failed'}, apiUrl+'/products/import?orgId='+orgId, JSON.stringify(itemsToUploadEnv), sourceKey);					
 						itemsToUploadEnv.forEach(itm => {
 							let keyArray;
-							if(itm.query.metadata.itemId) {
-								keyArray = bodySourceKeys[itm.query.metadata.itemId];
+							if(itm.m.itemId) {
+								keyArray = bodySourceKeys[itm.m.itemId];
 							} else {
-								keyArray = bodySourceKeys[itm.query.metadata.optionId];
+								keyArray = bodySourceKeys[itm.m.optionId];
 							}
 							keyArray.forEach(k => {
 								logItemEvent( events.unknownErrorApiCall(apiUrl+'/products/import?orgId='+orgId, JSON.stringify(itemsToUploadEnv), 'job failed'), k);			
@@ -749,61 +786,66 @@ exports.handler = async (event) => {
     
     const bodySourceKeys = {};
 	const orgMap = {};
-    
-    event.Records.forEach(r => {
+    for(let i=0; i<event.Records.length; i++) {
+    	let r = event.Records[i];
         const body = JSON.parse(r.body);
-        const getQueueTime = r.messageAttributes && r.messageAttributes['enqueueTime'] && r.messageAttributes['enqueueTime'].stringValue ? () => Date.now() - Number.parseInt(r.messageAttributes['enqueueTime'].stringValue) : () => null ;
-		if(bodySourceKeys.hasOwnProperty(body.id)) {
-			let sourceKeyArray = bodySourceKeys[body.id];
-			sourceKeyArray.push(body.sourceKey);
+		let notCancelled = await checkIfJobCancelled(body.sourceKey);
+		if(notCancelled) {
+			const getQueueTime = r.messageAttributes && r.messageAttributes['enqueueTime'] && r.messageAttributes['enqueueTime'].stringValue ? () => Date.now() - Number.parseInt(r.messageAttributes['enqueueTime'].stringValue) : () => null ;
+			if(bodySourceKeys.hasOwnProperty(body.id)) {
+				let sourceKeyArray = bodySourceKeys[body.id];
+				sourceKeyArray.push(body.sourceKey);
+			} else {
+				bodySourceKeys[body.id] = [body.sourceKey];
+			}
+			if(!orgMap.hasOwnProperty(body.orgId)) {
+				orgMap[body.orgId] = {
+					"apiUrl": body.apiUrl,
+					"apiToken": body.apiToken,
+					"orgId": body.orgId
+				};
+			}
+			console.log('orgMap: ',orgMap);
+			if (body && body.type && body.type === 'option') {
+				logItemEvent( events.dequeueOption(body.id, getQueueTime()), body.sourceKey );
+				console.log('Option: ', body);
+				const option = createOption(body);
+				logItemEvent( events.creatingOption(body.id), body.sourceKey );
+				if (!itemsToUpload[body.orgId]) {//body.destEnv]) {
+					itemsToUpload[body.orgId] = [];//body.destEnv] = [];
+				}
+				if ((body.im && !body.materialId && !body.assetChecked) || (body.subGroupOptions && !body.subGroupOptionIds && !body.assetChecked)) {
+					// option will get passed to asset queue
+					logItemEvent( events.needsReferencesOption(body.id, (body.im && !body.materialId), (body.subGroupOptions && !body.subGroupOptionIds)), body.sourceKey );
+					// console.log({'event': 'needsAssets', type:'option', 'optionId': body.id});
+					sendItemToQueue(body);
+				} else {
+					//itemsToUpload[body.destEnv].push(option);
+					itemsToUpload[body.orgId].push(option);
+				}
+			} else if (body && body.type && body.type === 'item') {
+				logItemEvent( events.dequeueItem(body.id, getQueueTime()), body.sourceKey );
+				console.log('Item: ', body);
+				const item = createItem(body);
+				logItemEvent( events.creatingItem(body.id), body.sourceKey );
+				if (!itemsToUpload[body.orgId]) {//body.destEnv]) {
+					//itemsToUpload[body.destEnv] = [];
+					itemsToUpload[body.orgId] = [];
+				}
+				if (!body.modelId) {
+					// item will get passed to asset queue
+					logItemEvent( events.needsReferencesItem(body.id, true), body.sourceKey );
+					// console.log({'event': 'needsAssets', type:'item', 'itemId': body.id});
+					sendItemToQueue(body);
+				} else {
+					//itemsToUpload[body.destEnv].push(item);
+					itemsToUpload[body.orgId].push(item);
+				}
+			}
 		} else {
-			bodySourceKeys[body.id] = [body.sourceKey];
+			console.log('job cancelled, skipping processing', body);
 		}
-		if(!orgMap.hasOwnProperty(body.orgId)) {
-			orgMap[body.orgId] = {
-				"apiUrl": body.apiUrl,
-				"apiToken": body.apiToken,
-				"orgId": body.orgId
-			};
-		}
-		console.log('orgMap: ',orgMap);
-        if (body && body.type && body.type === 'option') {
-            logItemEvent( events.dequeueOption(body.id, getQueueTime()), body.sourceKey );
-             console.log('Option: ', body);
-            const option = createOption(body);
-            logItemEvent( events.creatingOption(body.id), body.sourceKey );
-            if (!itemsToUpload[body.orgId]) {//body.destEnv]) {
-                itemsToUpload[body.orgId] = [];//body.destEnv] = [];
-            }
-            if ((body.im && !body.materialId && !body.assetChecked) || (body.subGroupOptions && !body.subGroupOptionIds && !body.assetChecked)) {
-                // option will get passed to asset queue
-                logItemEvent( events.needsReferencesOption(body.id, (body.im && !body.materialId), (body.subGroupOptions && !body.subGroupOptionIds)), body.sourceKey );
-                // console.log({'event': 'needsAssets', type:'option', 'optionId': body.id});
-                sendItemToQueue(body);
-            } else {
-				//itemsToUpload[body.destEnv].push(option);
-				itemsToUpload[body.orgId].push(option);
-			}
-        } else if (body && body.type && body.type === 'item') {
-            logItemEvent( events.dequeueItem(body.id, getQueueTime()), body.sourceKey );
-            console.log('Item: ', body);
-            const item = createItem(body);
-            logItemEvent( events.creatingItem(body.id), body.sourceKey );
-            if (!itemsToUpload[body.orgId]) {//body.destEnv]) {
-                //itemsToUpload[body.destEnv] = [];
-				itemsToUpload[body.orgId] = [];
-            }
-            if (!body.modelId) {
-                // item will get passed to asset queue
-                logItemEvent( events.needsReferencesItem(body.id, true), body.sourceKey );
-                // console.log({'event': 'needsAssets', type:'item', 'itemId': body.id});
-                sendItemToQueue(body);
-            } else {
-				//itemsToUpload[body.destEnv].push(item);
-				itemsToUpload[body.orgId].push(item);
-			}
-        }
-    });
+    }
     
     if (itemsToQueueBuffer.length > 0) {
         flushItemsToQueue();

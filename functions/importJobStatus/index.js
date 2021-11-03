@@ -83,6 +83,8 @@ exports.handler = async (event) => {
 				let deleteresp = await rdsDataService.executeStatement(deletesqlParams).promise();
 				console.log('deleted job items', deleteresp);
 			}
+		} else if(data[0]['stat'] === 'cancelled') {
+			//do nothing
 		} else {
 			//is complete, set count = total items
 			data[0]['count'] = data[0]['total_items'];

@@ -4,4 +4,7 @@
     <span class="import-timestamp">{{ timestamp }}</span>
 	<span class="import-status">{{ importStatus }}<span *ngIf="importStatus === 'In Progress'"> - {{percentComplete | number:'1.0-2'}}%</span></span>
   </div>
-  <button type="button" class="btn-primary delete-button" (click)="emitDeleteImport($event)">Delete</button></li>
+  <button type="button" *ngIf="importStatus === 'In Progress'" class="btn-primary cancel-button" (click)="emitCancelImport($event)">Cancel</button>
+  <button type="button" *ngIf="importStatus !== 'In Progress'" disabled="disabled" class="btn-primary cancel-button" (click)="emitCancelImport($event)">Cancel</button>
+  <button type="button" class="btn-primary delete-button" (click)="emitDeleteImport($event)">Delete</button>
+</li>

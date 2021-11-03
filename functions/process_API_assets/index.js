@@ -15,6 +15,7 @@ const sqs = new AWS.SQS({
   httpOptions: { agent }
 });
 
+const getParameter = require('./parameters.js').getParameter;
 /*const getParameter = require('./parameters.js').getParameter;
 const getOrgId = (environmentName) => getParameter("org-id")(environmentName);
 const getApiUrl = (environmentName) => getParameter("api-url")(environmentName);
@@ -22,6 +23,10 @@ const getApiToken = (environmentName) => getParameter("api-token")(environmentNa
 
 const RETRY_DELAY = 60; // in seconds
 const MAX_NUMBER_OF_RETRIES = 30;
+
+const getDbArn = (environmentName) => getParameter("db-arn")(environmentName);
+const getSecretArn = (environmentName) => getParameter("secret-arn")(environmentName);
+const rdsDataService = new AWS.RDSDataService();
 
 const logItemEvent = require('./itemEventLog.js').logItemEvent;
 const finishLogEvents = require('./itemEventLog.js').finishLogEvents;
@@ -31,7 +36,45 @@ const DEFAULT_FREQUENCY = 1000; // poll check every 1 second
 
 exports.handler = async (event) => {
     
+	const dbArn = await getDbArn('default');
+	const secretArn = await getSecretArn('default');
+	
     /* Helper functions */
+
+	async function checkIfJobCancelled(jobName) {
+		let sqlParams = {
+			secretArn: secretArn,
+			resourceArn: dbArn,
+			sql: 'SELECT stat FROM job WHERE nm = :jobname;',
+			database: 'threekit',
+			includeResultMetadata: true,
+			parameters: [
+				{
+					'name': 'jobname',
+					'value': {
+						'stringValue': jobName
+					}
+				}
+			]
+		};
+		let resp = await rdsDataService.executeStatement(sqlParams).promise();
+		console.log('check cancel resp', resp);
+		let columns = resp.columnMetadata.map(c => c.name);
+		let data = resp.records.map(r => {
+			let obj = {};
+			r.map((v, i) => {
+				obj[columns[i]] = Object.values(v)[0];
+			});
+			return obj;
+		});
+		if(data[0]['stat'] === 'cancelled') {
+			console.log('job cancelled');
+			return false;
+		} else {
+			console.log('job not cancelled');
+			return true;
+		}
+	}
 
 	function pollJob(jobId, apiUrl, apiToken, options = {}) {
 		const { timeout = DEFAULT_TIMEOUT, frequency = DEFAULT_FREQUENCY } = options;
@@ -476,30 +519,37 @@ exports.handler = async (event) => {
     
     // console.log(event.Records);
     
-    event.Records.forEach(r => {
+    //event.Records.forEach(r => {
+	for(let i=0; i<event.Records.length; i++) {
+		let r = event.Records[i];
         const body = JSON.parse(r.body);
         console.log('Body: ', body);
-        if (body && body.type && body.type === 'option') {
-            
-            logItemEvent( events.dequeueOption(body.id, getQueueTime(r)), body.sourceKey);
-            
-            //TODO refactor to seperate getting material from getting subgroups
-            
-            // console.log('Group: ', body);
-            const option = addMaterialsToOption(body);
-            itemsToUpload.push(option);
-        } else if (body && body.type && body.type === 'item') {
-            console.log('Item: ', body);
-            
-            logItemEvent( events.dequeueItem(body.id, getQueueTime(r)), body.sourceKey);
-            
-            //TODO refactor to seperate getting subGroups from creating/updating model
-            
-            const item = addModelToItem(body);
-            console.log({'event': 'modelIdAdded', 'itemId': item.id, 'modelId': item.modelId});
-            itemsToUpload.push(item);
-        }
-    });
+		let notCancelled = await checkIfJobCancelled(body.sourceKey);
+		if(notCancelled) {
+			if (body && body.type && body.type === 'option') {
+				
+				logItemEvent( events.dequeueOption(body.id, getQueueTime(r)), body.sourceKey);
+				
+				//TODO refactor to seperate getting material from getting subgroups
+				
+				// console.log('Group: ', body);
+				const option = addMaterialsToOption(body);
+				itemsToUpload.push(option);
+			} else if (body && body.type && body.type === 'item') {
+				console.log('Item: ', body);
+				
+				logItemEvent( events.dequeueItem(body.id, getQueueTime(r)), body.sourceKey);
+				
+				//TODO refactor to seperate getting subGroups from creating/updating model
+				
+				const item = addModelToItem(body);
+				console.log({'event': 'modelIdAdded', 'itemId': item.id, 'modelId': item.modelId});
+				itemsToUpload.push(item);
+			}
+		} else {
+			console.log('job cancelled, skipping processing', body);
+		}
+    };
     
     function needsMaterial(option){
         console.log('needsMaterial: '+option.id+' image: '+option.image+' materialId: '+option.materialId+' materialChecked: '+option.materialChecked);

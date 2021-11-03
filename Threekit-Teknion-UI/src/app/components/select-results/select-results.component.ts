@@ -1,6 +1,7 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AwsLogsService } from 'src/app/services/aws-logs.service';
+import { AwsDbService } from 'src/app/services/aws-db.service';
 
 @Component({
   selector: 'app-select-results',
@@ -18,10 +19,16 @@ export class SelectResultsComponent implements OnInit {
   confirmDeleteImportValue: string;
   showConfirmDeleteModal = false;
 
+  confirmCancelImportName: string;
+  confirmCancelImportValue: string;
+  showConfirmCancelModal = false;
+  isCanceling = false;
+
   constructor(
     private logsService: AwsLogsService,
     private router: Router,
-    private route: ActivatedRoute) { }
+    private route: ActivatedRoute,
+	private dbService: AwsDbService) { }
 
   ngOnInit(): void {
     this.getLogGroups(false);
@@ -118,6 +125,32 @@ export class SelectResultsComponent implements OnInit {
       })
       .finally(() => {
         this.isDeleting = false;
+      });
+    }
+  }
+
+  cancelImport(importObject) {
+    this.confirmCancelImportName = importObject.name;
+    this.confirmCancelImportValue = importObject.value;
+    this.showConfirmCancelModal = true;
+  }
+
+  closeCancelModal() {
+    this.confirmCancelImportName = undefined;
+    this.confirmCancelImportValue = undefined;
+    this.showConfirmCancelModal = false;
+  }
+
+  confirmCancelImport() {
+    if (this.confirmCancelImportValue && this.confirmCancelImportValue.length > 0) {
+      this.isCanceling = true;
+	  this.dbService.cancelJob(this.confirmCancelImportValue)
+      .then(res => {
+        this.closeCancelModal();
+        this.getLogGroups(false);
+      })
+      .finally(() => {
+        this.isCanceling = false;
       });
     }
   }

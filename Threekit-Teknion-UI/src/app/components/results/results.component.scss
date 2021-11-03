@@ -87,6 +87,10 @@ main {
 				transition : width 1s ease;
 			}
 		}
+		.canceled {
+			margin-top: 4px;
+			color: red;
+		}
 	}
 
   .results {
