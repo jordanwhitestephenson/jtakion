@@ -42,7 +42,7 @@ main {
 
         &.import-header {          
           margin-top: -34px;
-          padding-right: 80px;
+          padding-right: 133px;
           color: white;
           background-color: #29826b;
           border-top-left-radius: 4px;
@@ -120,6 +120,9 @@ main {
       .delete-button {
         background-color: red;
       }
+	  .cancel-button {
+		  background-color: orange;
+	  }
     }
   }
 }

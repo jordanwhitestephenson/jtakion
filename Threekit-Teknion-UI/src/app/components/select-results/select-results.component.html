@@ -18,7 +18,8 @@
         [importName]="import.name"
 		[importValue]="import.value"
         (selectImport)="selectImport(import.value)"
-        (deleteImport)="deleteImport(import)"></app-select-results-item>
+        (deleteImport)="deleteImport(import)"
+		(cancelImport)="cancelImport(import)"></app-select-results-item>
     </ul>
     <div class="load-more" [class.loading]="isGettingNext" *ngIf="nextToken && !isLoading" (click)="getLogGroups(true)">
       <span>{{ isGettingNext ? 'Loading...' : 'Click to get more results' }}</span>
@@ -35,3 +36,13 @@
     </div>
   </div>
 </div>
+<div *ngIf="showConfirmCancelModal" class="confirm-delete-modal-container">
+	<div class="backdrop" (click)="closeCancelModal()"></div>
+	<div class="confirm-delete-modal">
+	  <h2>Are you sure you want to cancel job</h2><h3>{{ confirmCancelImportName }}?</h3>
+	  <div class="button-group">
+		<button class="btn-secondary" (click)="closeCancelModal()">Close</button>
+		<button class="btn-primary cancel-button" (click)="confirmCancelImport()" [disabled]="isCanceling">{{ isCanceling ? 'Canceling job...' : 'Cancel Job' }}</button>
+	  </div>
+	</div>
+  </div>

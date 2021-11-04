@@ -7,6 +7,9 @@
 			<div class="progress">
 				<div [ngStyle]="{'width': percentComplete + '%'}" class="bar">{{percentComplete | number:'1.0-2'}}%</div>
 			</div>
+			<div class="canceled" *ngIf="isCanceled">
+				Import Cancelled
+			</div>
 		</div>
 		<div *ngIf="!hasCheckedStatus">
 			Checking status...
