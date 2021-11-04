@@ -13,3 +13,14 @@ CREATE TABLE job_item (
 CREATE UNIQUE INDEX job_name_idx ON job (nm);
 
 ALTER TABLE job ADD COLUMN stat	varchar(255);
+
+
+CREATE TABLE asset_lookup (
+	jid				integer REFERENCES job (jid),
+	group_id		varchar(255),
+	catalog_code	varchar(255),
+	asset_id		varchar(255)
+);
+CREATE INDEX asset_group_cat_idx ON asset_lookup (jid, group_id, catalog_code);
+ALTER TABLE asset_lookup ADD COLUMN option_id varchar(255);
+ALTER TABLE asset_lookup ADD COLUMN nm varchar(255);

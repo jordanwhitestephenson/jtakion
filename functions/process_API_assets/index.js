@@ -106,6 +106,36 @@ exports.handler = async (event) => {
  		return prom;
 	}
 
+	function lookupAsset(sourceKey, groupId, catalogCode) {
+		let sqlParams = {
+			secretArn: secretArn,
+			resourceArn: dbArn,
+			sql: 'SELECT asset_id, option_id, asset_lookup.group_id, asset_lookup.nm FROM job JOIN asset_lookup ON job.jid = asset_lookup.jid WHERE job.nm = :jobname AND asset_lookup.group_id = :groupId AND asset_lookup.catalog_code = :catCode;',
+			database: 'threekit',
+			includeResultMetadata: true,
+			parameters: [
+				{
+					'name': 'jobname',
+					'value': {
+						'stringValue': sourceKey
+					}
+				},
+				{
+					'name': 'groupId',
+					'value': {
+						'stringValue': groupId
+					}
+				},
+				{
+					'name': 'catCode',
+					'value': {
+						'stringValue': catalogCode
+					}
+				}
+			]
+		};
+		return rdsDataService.executeStatement(sqlParams).promise();
+	}
     
     //add material assets to option
     function addMaterialsToOption (option) {
@@ -152,42 +182,36 @@ exports.handler = async (event) => {
 		}
 	}
     
-    function getSubgroupOptions(option) {
-        /*const orgId =  await getOrgId(option.destEnv);
-        const apiUrl = await getApiUrl(option.destEnv);
-        const apiToken = await getApiToken(option.destEnv);*/
-		const orgId =  option.orgId;
-        const apiUrl = option.apiUrl;
-        const apiToken = option.apiToken;
-        
+    function getSubgroupOptions(option) {        
         const metadata = JSON.stringify({'groupId': option.subgroupId, 'catalogCode': option.catalog.code});
-        console.log('metadata: '+metadata);
-        return axios.get(
-            apiUrl+'/assets?orgId='+orgId+'&metadata='+metadata+"&type=item&all=true",
-            { 'headers': { 'Authorization': 'Bearer '+apiToken } }
-        )
+        console.log('metadata: '+metadata);		
+		return lookupAsset(option.sourceKey, option.subgroupId, option.catalog.code)
         .then( (res) => {
-            const products = res && res.data ? res.data.assets : undefined;
-            console.log({'event': 'subgroupQueried', 'subgroupId': option.subgroupId, 'found': JSON.stringify(products)});
-            console.log('subgroupoptions: '+option.id+' products'+products.length+' '+option.subGroupOptions.length+' '+option.subGroupOptions+' '+!option.subGroupOptions.some(sgo => products.map(p => !p.metadata.optionId).includes(sgo)));
-            //if (products && products.length === option.subGroupOptions.length && !option.subGroupOptions.some(sgo => products.map(p => !p.metadata.optionId).includes(sgo))) {
-            if (products && !option.subGroupOptions.some(sgo => products.map(p => !p.metadata.optionId).includes(sgo))) {
-                products.sort((a, b) => a.name.toLocaleLowerCase().localeCompare(b.name.toLocaleLowerCase(), 'en', {numeric: true}));
-                //console.log({'event': 'subGroupOptionsAdded', 'optionId': option.id, 'options': products.map(p => p.name)});
-                let productsFound = products.filter(p => {
-                    return option.subGroupOptions.includes(p.metadata.optionId);
+			console.log('query results', res);
+			let columns = res.columnMetadata.map(c => c.name);
+			let data = res.records.map(r => {
+				let obj = {};
+				r.map((v, i) => {
+					obj[columns[i]] = Object.values(v)[0];
+				});
+				return obj;
+			});
+			console.log(data);
+			console.log(option, option.subGroupOptions);
+			console.log('subgroupoptions: '+option.id+' products'+data.length+' '+option.subGroupOptions.length+' '+option.subGroupOptions+' '+!option.subGroupOptions.some(sgo => data.map(p => !p['option_id']).includes(sgo)));
+			if(data && !option.subGroupOptions.some(sgo => data.map(p => !p['option_id']).includes(sgo))) {
+				let productsFound = data.filter(p => {
+                    return option.subGroupOptions.includes(p['option_id']);
                 });
-                if(productsFound.length === option.subGroupOptions.length) {
-                    option.subGroupOptionIds = productsFound.map(p => p.id);
-                    console.log({'event': 'subGroupOptionsAdded', 'optionId': option.id, 'options': products.map(p => p.name)});
+				if(productsFound.length === option.subGroupOptions.length) {
+                    option.subGroupOptionIds = productsFound.map(p => p['asset_id']);
+                    console.log({'event': 'subGroupOptionsAdded', 'optionId': option.id, 'options': data.map(p => p['nm'])});
                 }
-                //option.subGroupOptionIds = products.map(p => p.id);
-            }
+			}            
             return option;
         }).catch(error => {
 			console.log(error);
-			logApiCallError(error, apiUrl+'/assets?orgId='+orgId+'&metadata='+metadata+"&type=item&all=true", null, option.sourceKey);
-			throw error;
+			return option;
 		});
     }
     
@@ -208,9 +232,6 @@ exports.handler = async (event) => {
     
     // create a model type product with optional id query
     function createOrUpdateModel (item) {
-        /*const orgId =  await getOrgId(item.destEnv);
-        const apiUrl = await getApiUrl(item.destEnv);
-        const apiToken = await getApiToken(item.destEnv);*/
 		const orgId =  item.orgId;
         const apiUrl = item.apiUrl;
         const apiToken = item.apiToken;
@@ -220,18 +241,51 @@ exports.handler = async (event) => {
 			itemGroupIds.push(ig.id);
 		});
         const groupOptionsPromises = item.itemGroups.map(itemGroup => {
-            const metadata = JSON.stringify({'groupId': itemGroup.id, 'catalogCode': item.catalog.code});
-            return axios.get(
-                apiUrl+'/assets?orgId='+orgId+'&metadata='+metadata+"&type=item&all=true",
-                { 'headers': { 'Authorization': 'Bearer '+apiToken } }
-            );
+			return lookupAsset(sourceKey, itemGroup.id, item.catalog.code);
         });
         return Promise.all(groupOptionsPromises).then(results => {
 			console.log('groupOptionsPromises', item, results);
-            const productArray = results.map(r => r.data.assets || []).filter(r => r.length > 0);
-            console.log(productArray);
-            const itemGroupMap = productArray.reduce((agg, res) => {return {...agg, [res[0].metadata.groupId]: res.reduce((agg2, p) => {return {...agg2, [p.metadata.optionId]: p}}, {})}}, {});
-            console.log(itemGroupMap);
+			console.log('groupOptionQuery results ',JSON.stringify(results));
+			let data = results.map(r => {
+				let columns = r.columnMetadata.map(c => c.name);
+				let data = r.records.map(r => {
+					let obj = {};
+					r.map((v, i) => {
+						obj[columns[i]] = Object.values(v)[0];
+					});
+					return obj;
+				});
+				return data;
+			});			
+			console.log('groupOptionQueryData', data);
+			let itemGroupMap = {};
+			for(let i=0; i<data.length; i++) {
+				let arr = data[i];
+				for(let j=0; j<arr.length; j++) {
+					let obj = arr[j];
+					let groupId = obj['group_id'];
+					let optionId = obj['option_id'];
+					let nm = obj['nm'];
+					let assetId = obj['asset_id'];
+					if(itemGroupMap.hasOwnProperty(groupId)) {
+						let optionObj = itemGroupMap[groupId];
+						optionObj[optionId] = {
+							'id': assetId,
+							'name': nm
+						};
+						itemGroupMap[groupId] = optionObj;
+					} else {
+						let optionObj = {};
+						optionObj[optionId] = {
+							'id': assetId,
+							'name': nm
+						};
+						itemGroupMap[groupId] = optionObj;
+					}
+				}
+			}
+
+			console.log(itemGroupMap);
             console.log(JSON.stringify(item.itemGroups));
             const hasAllGroupOptions = item.itemGroups.reduce((agg, ig) => agg && ig.groupOptionIds.reduce((agg2, optId) => agg2 && itemGroupMap[ig.id] != null && itemGroupMap[ig.id][optId] != null, true), true);
             console.log(hasAllGroupOptions);
@@ -434,53 +488,16 @@ exports.handler = async (event) => {
 					}
 				}).catch(error => {
 					console.log('polling error ',error);
-					throw error;
-				});
-				/*const { status, success } = await pollJob(jobId, apiUrl, apiToken, {
-					timeout: 1000 * 60 * 5,
-					frequency: 200,
-				});
-				if (status === 'stopped' && success) {
-					console.log('model job stopped, calling job runs api');
-					const runsUrl = `${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId}`;
-					const res = await axios.get(runsUrl, { 'headers': { 'Authorization': 'Bearer '+apiToken } });
-					console.log('runs result: ', res);
-					const { runs } = res.data;
-					const { results } = runs[0];
-					const fileId = results.files[0].id;
-					console.log('fileId ', fileId);
-					const fileContent = await axios.get(`${apiUrl}/api/files/${fileId}/content`, { 'headers': { 'Authorization': 'Bearer '+apiToken } });
-					console.log('model job run results: ', fileContent);
-					//need to get the model id from the results
-					item.modelId = fileContent.id;
 					return item;
-				} else if (status === 'pending') {
-					// reached specified timeout to check for completion but job still not done
-					console.log('model import job polling timed for item '+item.pn);
-					return item;
-				} else {
-					// error - job failed
-					console.log('model import job failed for item '+item.pn);
-					logApiCallError(error, apiUrl+'/products/import?orgId='+orgId, JSON.stringify(uploadModelData), sourceKey);					
-					return item;
-				}*/
-			   
-                /*if (r.data && r.data.products && r.data.products.length > 0) {
-                    console.log("imported model", r.data.products[0]);
-                    const model = r.data.products[0];
-                    item.modelId = model.id;
-                    return item;
-                }
-                return item;*/
+				});				
             }).catch(error => {
 				console.log(error);
 				logApiCallError(error, apiUrl+'/products/import?orgId='+orgId, JSON.stringify(uploadModelData), sourceKey);
-				throw error;
+				return item;
 			});
         }).catch(error => {
 			console.log(error);
-			logApiCallError(error, apiUrl+'/assets?orgId='+orgId+'&metadata=[metadata]&type=item&all=true', JSON.stringify(itemGroupIds), sourceKey);
-			throw error;
+			return item;
 		});
     }
     

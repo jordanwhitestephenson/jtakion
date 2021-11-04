@@ -82,6 +82,24 @@ exports.handler = async (event) => {
 				};
 				let deleteresp = await rdsDataService.executeStatement(deletesqlParams).promise();
 				console.log('deleted job items', deleteresp);
+				//delete asset lookup
+				let deleteassetsqlParams = {
+					secretArn: secretArn,
+					resourceArn: dbArn,
+					sql: 'DELETE FROM asset_lookup WHERE jid = (SELECT jid FROM job WHERE nm = :jobname);',
+					database: 'threekit',
+					includeResultMetadata: true,
+					parameters: [
+						{
+							'name': 'jobname',
+							'value': {
+								'stringValue': jobName
+							}
+						}
+					]
+				};
+				let deleteassetresp = await rdsDataService.executeStatement(deleteassetsqlParams).promise();
+				console.log('deleted asset lookup', deleteassetresp);				
 			}
 		} else if(data[0]['stat'] === 'cancelled') {
 			//do nothing

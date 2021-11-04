@@ -109,13 +109,57 @@ exports.handler = async (event) => {
 				}
 			]
 		};
-		rdsDataService.executeStatement(sqlParams, function(err, data) {
-			if (err) {
-				console.log(err, err.stack);				
-			 } else {
-				console.log(data); 				
-			 }             
-		});
+		return rdsDataService.executeStatement(sqlParams).promise();
+	}
+
+	function writeAssetLookup(sourceKey, assetId, groupId, catalogCode, optionId, nm) {
+		console.log('writing asset lookup to db ', assetId, groupId, catalogCode, sourceKey);
+		let sqlParams = {
+			secretArn: secretArn,
+			resourceArn: dbArn,
+			sql: 'INSERT INTO asset_lookup (jid, group_id, catalog_code, asset_id, option_id, nm) values ((SELECT jid FROM job WHERE nm = :jobname), :groupId, :catalogCode, :assetId, :optionId, :nm)',
+			database: 'threekit',
+			includeResultMetadata: true,
+			parameters: [
+				{
+					'name': 'jobname',
+					'value': {
+						'stringValue': sourceKey
+					}
+				},
+				{
+					'name': 'groupId',
+					'value': {
+						'stringValue': groupId
+					}
+				},
+				{
+					'name': 'catalogCode',
+					'value': {
+						'stringValue': catalogCode
+					}
+				},
+				{
+					'name': 'assetId',
+					'value': {
+						'stringValue': assetId
+					}
+				},
+				{
+					'name': 'optionId',
+					'value': {
+						'stringValue': optionId
+					}
+				},
+				{
+					'name': 'nm',
+					'value': {
+						'stringValue': nm
+					}
+				}
+			]
+		};
+		return rdsDataService.executeStatement(sqlParams).promise();
 	}
 
 	function pollJob(jobId, apiUrl, apiToken, options = {}) {
@@ -595,14 +639,21 @@ exports.handler = async (event) => {
 													let sourceKeyArray = bodySourceKeys[p.metadata.itemId];	
 													sourceKeyArray.forEach(sourceKey => {
 														logItemEvent( events.createdItem(p.metadata.itemId, p.id, Date.now() - t),  sourceKey);	
-														writeCompletedItemToDatabase(p.metadata.itemId, 'item', sourceKey);					
+														writeCompletedItemToDatabase(p.metadata.itemId, 'item', sourceKey).then(res => {
+															console.log('wrote completed item to db', res);
+														});				
 													});						
 													return p.metadata.itemId;
 												} else {
 													let sourceKeyArray = bodySourceKeys[p.metadata.optionId];	
 													sourceKeyArray.forEach(sourceKey => {					
 														logItemEvent( events.createdOption(p.metadata.optionId, p.id, Date.now() - t), sourceKey );
-														writeCompletedItemToDatabase(p.metadata.optionId, 'option', sourceKey);
+														writeCompletedItemToDatabase(p.metadata.optionId, 'option', sourceKey).then(res => {
+															console.log('wrote completed item to db', res);
+														});
+														writeAssetLookup(sourceKey, p.id, p.metadata.groupId, p.metadata.catalogCode, p.metadata.optionId, p.name).then(res => {
+															console.log('wrote asset lookup to db', res);
+														});
 													});
 													return p.metadata.optionId;
 												}					
@@ -614,7 +665,7 @@ exports.handler = async (event) => {
 											}).map(p => {
 												console.log(p.m);
 												if(p.m.itemId){
-													let sourceKeyArray = bodySourceKeys[p.metadata.itemId];		
+													let sourceKeyArray = bodySourceKeys[p.m.itemId];		
 													sourceKeyArray.forEach(sourceKey => {				
 														logItemEvent( events.errorCreatingItem(p.m.itemId), sourceKey );
 													});
@@ -731,47 +782,7 @@ exports.handler = async (event) => {
 				}).catch(error => {
 					console.log('polling error ',error);
 					throw error;
-				});
-				/*if (res && res.data && res.data.products) {
-					const productsCreated = res.data.products.map(p => {
-						if(p.metadata.itemId){
-							let sourceKeyArray = bodySourceKeys[p.metadata.itemId];	
-							sourceKeyArray.forEach(sourceKey => {
-								logItemEvent( events.createdItem(p.metadata.itemId, p.id, Date.now() - t),  sourceKey);						
-							});						
-							return p.metadata.itemId;
-						} else {
-							let sourceKeyArray = bodySourceKeys[p.metadata.optionId];	
-							sourceKeyArray.forEach(sourceKey => {					
-								logItemEvent( events.createdOption(p.metadata.optionId, p.id, Date.now() - t), sourceKey );
-							});
-							return p.metadata.optionId;
-						}					
-					});				
-					const productsFailed = itemsToUploadEnv.filter(p => {
-						const itemId = p.query.metadata.itemId ? p.query.metadata.itemId : p.query.metadata.optionId;
-						return !productsCreated.includes(itemId);
-					}).map(p => {
-						if(p.query.metadata.itemId){
-							let sourceKeyArray = bodySourceKeys[p.metadata.itemId];		
-							sourceKeyArray.forEach(sourceKey => {				
-								logItemEvent( events.errorCreatingItem(p.query.metadata.itemId), sourceKey );
-							});
-							return p.query.metadata.itemId;
-						} else {
-							let sourceKeyArray = bodySourceKeys[p.query.metadata.optionId];	
-							sourceKeyArray.forEach(sourceKey => {					
-								logItemEvent( events.errorCreatingOption(p.query.metadata.optionId),  sourceKey);
-							});
-							return p.query.metadata.optionId;
-						}
-					});
-					
-					if (productsFailed.length > 0) {
-						console.log('Items failed: ', productsFailed);
-					}
-				}
-				return res.data;*/
+				});				
 			});
 		} else {
 			console.log('no items to upload, skipping job api call');
