@@ -187,7 +187,7 @@ Resources:
     inputS3Bucket:
         Type: "AWS::S3::Bucket"
         Properties:
-            BucketName: !Sub "${S3_INPUT_BUCKET_NAME}"
+            BucketName: !Sub "${S3INPUTBUCKETNAME}"
             CorsConfiguration: 
                 CorsRules: 
                   - 
@@ -226,7 +226,7 @@ Resources:
     S3Bucket:
         Type: "AWS::S3::Bucket"
         Properties:
-            BucketName: !Sub "${S3_UI_BUCKET_NAME}"
+            BucketName: !Sub "${S3UIBUCKETNAME}"
             WebsiteConfiguration: 
                 IndexDocument: "index.html"
                 ErrorDocument: "index.html"
