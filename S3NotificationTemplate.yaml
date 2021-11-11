@@ -866,8 +866,8 @@ Resources:
             DatabaseName: "threekit"
             DBClusterIdentifier: !Sub "threekit-import-cluster-${environment}"
             Engine: "aurora-postgresql"
-            MasterUsername: "postgres"
-            MasterUserPassword: "trifecta00"
+            MasterUsername: !Join ['', ['{{resolve:secretsmanager:', !Ref SecretsManagerSecret, ':SecretString:username}}' ]]
+            MasterUserPassword: !Join ['', ['{{resolve:secretsmanager:', !Ref SecretsManagerSecret, ':SecretString:password}}' ]]
             StorageEncrypted: true
             EngineVersion: "10.14"
             EnableIAMDatabaseAuthentication: false
@@ -883,8 +883,19 @@ Resources:
     SecretsManagerSecret:
         Type: "AWS::SecretsManager::Secret"
         Properties:
+            GenerateSecretString:
+                SecretStringTemplate: '{"username": "postgres"}'
+                GenerateStringKey: "password"
+                PasswordLength: 16
+                ExcludeCharacters: '"@/\'
             Name: !Sub "threekit-import-db-secret-pass-${environment}"
-            SecretString: "trifecta00"
+         
+    DbSecretAttachment:
+        Type: "AWS::SecretsManager::SecretTargetAttachment"
+        Properties:
+            SecretId: !Ref SecretsManagerSecret
+            TargetId: !Ref RDSDBCluster
+            TargetType: "AWS::RDS::DBCluster"
 
     CloudFrontDistribution:
         Type: "AWS::CloudFront::Distribution"

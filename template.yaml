@@ -882,7 +882,6 @@ Resources:
                 PasswordLength: 16
                 ExcludeCharacters: '"@/\'
             Name: !Sub "threekit-import-db-secret-pass-${environment}"
-            SecretString: "trifecta00"  
          
     DbSecretAttachment:
         Type: "AWS::SecretsManager::SecretTargetAttachment"
