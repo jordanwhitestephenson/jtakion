@@ -22,7 +22,7 @@ const getApiUrl = (environmentName) => getParameter("api-url")(environmentName);
 const getApiToken = (environmentName) => getParameter("api-token")(environmentName);*/
 
 const RETRY_DELAY = 60; // in seconds
-const MAX_NUMBER_OF_RETRIES = 30;
+const MAX_NUMBER_OF_RETRIES = 10080; // 1 week at 60-sec delay
 
 const getDbArn = (environmentName) => getParameter("db-arn")(environmentName);
 const getSecretArn = (environmentName) => getParameter("secret-arn")(environmentName);
