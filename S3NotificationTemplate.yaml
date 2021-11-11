@@ -12,6 +12,9 @@ Parameters:
     S3UIBUCKETNAME:
         Type: "String"
         Default: "teknionui-test"
+    S3RESOURCEBUCKET:
+        Type: "String"
+        Default: "teknionimporterbuildresources"
 
 Resources:
 
@@ -256,7 +259,7 @@ Resources:
             Architectures: 
               - "x86_64"
             Code: 
-                S3Bucket: "importerstackresources"
+                S3Bucket: !Sub "${S3RESOURCEBUCKET}"
                 S3Key: "orderExport.zip"
             MemorySize: 128
             Role: 
@@ -284,7 +287,7 @@ Resources:
             Architectures: 
               - "x86_64"
             Code: 
-                S3Bucket: "importerstackresources"
+                S3Bucket: !Sub "${S3RESOURCEBUCKET}"
                 S3Key: "parseXMLFromS3.zip"
             MemorySize: 3008
             Role: 
@@ -305,7 +308,7 @@ Resources:
             Architectures: 
               - "x86_64"
             Code: 
-                S3Bucket: "importerstackresources"
+                S3Bucket: !Sub "${S3RESOURCEBUCKET}"
                 S3Key: "processAPIItemsError.zip"
             MemorySize: 128
             Role: 
@@ -330,7 +333,7 @@ Resources:
             Architectures: 
               - "x86_64"
             Code: 
-                S3Bucket: "importerstackresources"
+                S3Bucket: !Sub "${S3RESOURCEBUCKET}"
                 S3Key: "importJobStatus.zip"
             MemorySize: 128
             Role: 
@@ -358,7 +361,7 @@ Resources:
             Architectures: 
               - "x86_64"
             Code: 
-                S3Bucket: "importerstackresources"
+                S3Bucket: !Sub "${S3RESOURCEBUCKET}"
                 S3Key: "createAndIdMaterial.zip"
             MemorySize: 512
             Role: 
@@ -384,7 +387,7 @@ Resources:
             Architectures: 
               - "x86_64"
             Code: 
-                S3Bucket: "importerstackresources"
+                S3Bucket: !Sub "${S3RESOURCEBUCKET}"
                 S3Key: "processAPIItems.zip"
             MemorySize: 256
             Role: 
@@ -409,7 +412,7 @@ Resources:
             Architectures: 
               - "x86_64"
             Code: 
-                S3Bucket: "importerstackresources"
+                S3Bucket: !Sub "${S3RESOURCEBUCKET}"
                 S3Key: "cancelImport.zip"
             MemorySize: 128
             Role: 
@@ -437,7 +440,7 @@ Resources:
             Architectures: 
               - "x86_64"
             Code: 
-                S3Bucket: "importerstackresources"
+                S3Bucket: !Sub "${S3RESOURCEBUCKET}"
                 S3Key: "processAPIAssets.zip"
             MemorySize: 512
             Role: 
