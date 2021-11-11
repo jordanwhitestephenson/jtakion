@@ -15,7 +15,7 @@ const sqs = new AWS.SQS({
   httpOptions: { agent }
 });
 
-const getParameter = require('./parameters.js').getParameter;
+//const getParameter = require('./parameters.js').getParameter;
 /*const getParameter = require('./parameters.js').getParameter;
 const getOrgId = (environmentName) => getParameter("org-id")(environmentName);
 const getApiUrl = (environmentName) => getParameter("api-url")(environmentName);
@@ -24,8 +24,6 @@ const getApiToken = (environmentName) => getParameter("api-token")(environmentNa
 const RETRY_DELAY = 60; // in seconds
 const MAX_NUMBER_OF_RETRIES = 10080; // 1 week at 60-sec delay
 
-const getDbArn = (environmentName) => getParameter("db-arn")(environmentName);
-const getSecretArn = (environmentName) => getParameter("secret-arn")(environmentName);
 const rdsDataService = new AWS.RDSDataService();
 
 const logItemEvent = require('./itemEventLog.js').logItemEvent;
@@ -36,8 +34,8 @@ const DEFAULT_FREQUENCY = 1000; // poll check every 1 second
 
 exports.handler = async (event) => {
     
-	const dbArn = await getDbArn('default');
-	const secretArn = await getSecretArn('default');
+	const dbArn = process.env.dbArn;
+	const secretArn = process.env.secretArn;
 	
     /* Helper functions */
 
