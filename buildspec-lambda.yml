@@ -19,23 +19,23 @@ phases:
   build:
     commands:
       - echo "zipping functions..."
-      - zip -r cancelImport.zip functions/cancelImport/*
-      - zip -r createAndIdMaterial.zip functions/createAndId_material/*
-      - zip -r importJobStatus.zip functions/importJobStatus/*
-      - zip -r orderExport.zip functions/orderExport/*
-      - zip -r parseXMLFromS3.zip functions/parseXMLFromS3/*
-      - zip -r processAPIAssets.zip functions/process_API_assets/*
-      - zip -r processAPIItems.zip functions/process_API_Items/*
-      - zip -r processAPIItemsError.zip functions/process_API_Items_Error/*
+      - (cd functions && zip -r cancelImport.zip cancelImport)
+      - (cd functions && zip -r createAndIdMaterial.zip createAndId_material)
+      - (cd functions && zip -r importJobStatus.zip importJobStatus)
+      - (cd functions && zip -r orderExport.zip orderExport)
+      - (cd functions && zip -r parseXMLFromS3.zip parseXMLFromS3)
+      - (cd functions && zip -r processAPIAssets.zip process_API_assets)
+      - (cd functions && zip -r processAPIItems.zip process_API_Items)
+      - (cd functions && zip -r processAPIItemsError.zip process_API_Items_Error)
       - echo "done zipping functions, sending to aws..."
-      - aws lambda update-function-code --function-name parseXMLFromS3-$environment --zip-file fileb://parseXMLFromS3.zip
-      - aws lambda update-function-code --function-name cancelImport-$environment --zip-file fileb://cancelImport.zip
-      - aws lambda update-function-code --function-name createAndId_material-$environment --zip-file fileb://createAndIdMaterial.zip
-      - aws lambda update-function-code --function-name importJobStatus-$environment --zip-file fileb://importJobStatus.zip
-      - aws lambda update-function-code --function-name orderExport-$environment --zip-file fileb://orderExport.zip
-      - aws lambda update-function-code --function-name process_API_assets-$environment --zip-file fileb://processAPIAssets.zip
-      - aws lambda update-function-code --function-name process_API_Items-$environment --zip-file fileb://processAPIItems.zip
-      - aws lambda update-function-code --function-name process_API_Items_Error-$environment --zip-file fileb://processAPIItemsError.zip
+      - aws lambda update-function-code --function-name parseXMLFromS3-$environment --zip-file fileb://functions/parseXMLFromS3.zip
+      - aws lambda update-function-code --function-name cancelImport-$environment --zip-file fileb://functions/cancelImport.zip
+      - aws lambda update-function-code --function-name createAndId_material-$environment --zip-file fileb://functions/createAndIdMaterial.zip
+      - aws lambda update-function-code --function-name importJobStatus-$environment --zip-file fileb://functions/importJobStatus.zip
+      - aws lambda update-function-code --function-name orderExport-$environment --zip-file fileb://functions/orderExport.zip
+      - aws lambda update-function-code --function-name process_API_assets-$environment --zip-file fileb://functions/processAPIAssets.zip
+      - aws lambda update-function-code --function-name process_API_Items-$environment --zip-file fileb://functions/processAPIItems.zip
+      - aws lambda update-function-code --function-name process_API_Items_Error-$environment --zip-file fileb://functions/processAPIItemsError.zip
       - aws s3 cp Threekit-Teknion-UI/dist/Threekit-Teknion-UI s3://$S3_BUCKET_UI --recursive
       - echo "done sending to aws."
     
