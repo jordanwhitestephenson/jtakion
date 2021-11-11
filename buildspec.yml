@@ -1,0 +1,16 @@
+version: 0.2
+phases:
+  install: 
+    runtime-versions:
+      nodejs: 12
+    commands:
+      - chmod +x ./deploy.sh
+      - ./deploy.sh
+      - aws cloudformation package --template-file template.yaml --s3-bucket $S3_BUCKET --output-template-file outputTemplate.yaml
+      - aws cloudformation package --template-file S3NotificationTemplate.yaml --s3-bucket $S3_BUCKET --output-template-file outputTemplateS3.yaml
+
+artifacts:
+  files:
+    - template.yaml
+    - outputTemplate.yaml
+    - outputTemplateS3.yaml

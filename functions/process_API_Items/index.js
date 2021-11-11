@@ -14,13 +14,13 @@ const sqs = new AWS.SQS({
   httpOptions: { agent }
 });
 
-const getParameter = require('./parameters.js').getParameter;
+//const getParameter = require('./parameters.js').getParameter;
 /*const getOrgId = (environmentName) => getParameter("org-id")(environmentName);
 const getApiUrl = (environmentName) => getParameter("api-url")(environmentName);
 const getApiToken = (environmentName) => getParameter("api-token")(environmentName);*/
 
-const getDbArn = (environmentName) => getParameter("db-arn")(environmentName);
-const getSecretArn = (environmentName) => getParameter("secret-arn")(environmentName);
+//const getDbArn = (environmentName) => getParameter("db-arn")(environmentName);
+//const getSecretArn = (environmentName) => getParameter("secret-arn")(environmentName);
 const rdsDataService = new AWS.RDSDataService();
 
 const logItemEvent = require('./itemEventLog.js').logItemEvent;
@@ -40,8 +40,8 @@ exports.handler = async (event) => {
     
     const start = Date.now();
 
-	const dbArn = await getDbArn('default');
-	const secretArn = await getSecretArn('default');
+	const dbArn = process.env.dbArn;//await getDbArn('default');
+	const secretArn = process.env.secretArn;//await getSecretArn('default');
 
 	async function checkIfJobCancelled(jobName) {
 		let sqlParams = {

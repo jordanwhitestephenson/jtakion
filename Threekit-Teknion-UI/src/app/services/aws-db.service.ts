@@ -1,25 +1,21 @@
 import { Injectable } from '@angular/core';
-import { environment } from './../../environments/environment';
 import { HttpClient } from '@angular/common/http';
+import { ParamsService } from './params.service';
 
 @Injectable({
 	providedIn: 'root'
 })
 export class AwsDbService {
-	jobEndpoint = '';
-	cancelEndpoint = '';
 
 
-	constructor(private http: HttpClient) { 
-		this.jobEndpoint = environment.jobEndpoint;
-		this.cancelEndpoint = environment.cancelEndpoint;
+	constructor(private http: HttpClient, private paramsService: ParamsService) { 
 	}
 
 	getProgressForJob(logGroupName:string) {
-		return this.http.get<any>(this.jobEndpoint+`/import/job/${logGroupName}`).toPromise();
+		return this.http.get<any>(this.paramsService.jobEndpoint+`/import/job/${logGroupName}`).toPromise();
 	}
 
 	cancelJob(logGroupName:string) {
-		return this.http.get<any>(this.cancelEndpoint+`/cancel/import/${logGroupName}`).toPromise();
+		return this.http.get<any>(this.paramsService.cancelEndpoint+`/cancel/import/${logGroupName}`).toPromise();
 	}
 }

@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-//import { environment } from './../../environments/environment';
 
 
 @Injectable({
@@ -15,9 +14,12 @@ export class ParamsService {
 	private _threekitPublicToken;
 	private _threekitPrivateToken;
 	private _orgName;
+	private _bucketName;
+	private _region;
+	private _jobEndpoint;
+	private _cancelEndpoint;
 
 	constructor(private http: HttpClient) { 
-		//this._apiBasePath = environment.baseUrl;
 	}
 
 	public get orgId() {
@@ -52,6 +54,22 @@ export class ParamsService {
 		return this._orgName;
 	}
 
+	public get bucketName() {
+		return this._bucketName;
+	}
+
+	public get region() {
+		return this._region;
+	}
+
+	public get jobEndpoint() {
+		return this._jobEndpoint;
+	}
+
+	public get cancelEndpoint() {
+		return this._cancelEndpoint;
+	}
+
 	public async setOrigParams(oid:string, aid:string, tk:string, bu:string) {
 		this._apiBasePath = bu;
 		this._orgId = oid;
@@ -63,6 +81,10 @@ export class ParamsService {
 		this._awsSecretToken = data.configuration.st;
 		this._threekitPrivateToken = data.configuration.pt;
 		this._orgName = data.configuration.orgName;
+		this._bucketName = data.configuration.bucket;
+		this._region = data.configuration.region;
+		this._jobEndpoint = data.configuration.jobEndpoint;
+		this._cancelEndpoint = data.configuration.cancelEndpoint;
 		return Promise.resolve();
 	}
 }

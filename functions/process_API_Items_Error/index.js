@@ -3,14 +3,14 @@ const AWS = require('aws-sdk');
 const logProgressEvent = require('./progressEventLog.js').logProgressEvent;
 const finishProgressLogEvents = require('./progressEventLog.js').finishLogEvents;
 const progressEvents = require('./progressEventLog.js').events;
-const getParameter = require('./parameters.js').getParameter;
-const getDbArn = (environmentName) => getParameter("db-arn")(environmentName);
-const getSecretArn = (environmentName) => getParameter("secret-arn")(environmentName);
+//const getParameter = require('./parameters.js').getParameter;
+//const getDbArn = (environmentName) => getParameter("db-arn")(environmentName);
+//const getSecretArn = (environmentName) => getParameter("secret-arn")(environmentName);
 const rdsDataService = new AWS.RDSDataService();
 
 exports.handler = async (event) => {
-	const dbArn = await getDbArn('default');
-	const secretArn = await getSecretArn('default');
+	const dbArn = process.env.dbArn;//await getDbArn('default');
+	const secretArn = process.env.secretArn;//await getSecretArn('default');
 
 	for(let i=0; i<event.Records.length; i++) {
     	let r = event.Records[i];

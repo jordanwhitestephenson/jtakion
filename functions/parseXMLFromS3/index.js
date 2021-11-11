@@ -31,12 +31,12 @@ const parse = require('./parser.js').parse;
 
 const rdsDataService = new AWS.RDSDataService();
 
-const getParameter = require('./parameters.js').getParameter;
+//const getParameter = require('./parameters.js').getParameter;
 /*const getOrgId = (environmentName) => getParameter("org-id")(environmentName);
 const getApiUrl = (environmentName) => getParameter("api-url")(environmentName);
 const getApiToken = (environmentName) => getParameter("api-token")(environmentName);*/
-const getDbArn = (environmentName) => getParameter("db-arn")(environmentName);
-const getSecretArn = (environmentName) => getParameter("secret-arn")(environmentName);
+//const getDbArn = (environmentName) => getParameter("db-arn")(environmentName);
+//const getSecretArn = (environmentName) => getParameter("secret-arn")(environmentName);
 
 const parsedFilesCache = {};
 
@@ -101,8 +101,8 @@ exports.handler = async (event) => {
 	/*const orgId =  await getOrgId(destEnv);
     const apiUrl = await getApiUrl(destEnv);
     const apiToken = await getApiToken(destEnv);*/
-	const dbArn = await getDbArn('default');
-	const secretArn = await getSecretArn('default');
+	const dbArn = process.env.dbArn;//await getDbArn('default');
+	const secretArn = process.env.secretArn;//await getSecretArn('default');
 
 	function writeJobStatusToDatabase(total, nm) {
 		console.log('writing job to db ', total, nm);

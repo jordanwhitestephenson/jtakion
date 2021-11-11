@@ -1,0 +1,934 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Metadata:
+    Generator: "former2" 
+Description: ""
+Parameters:
+    environment:
+        Type: "String"
+        Default: "test"
+
+Resources:
+
+    readParamsIAMManagedPolicy:
+        Type: "AWS::IAM::ManagedPolicy"
+        Properties:
+            ManagedPolicyName: !Sub "read-threekitImport_parameters${environment}"
+            Path: "/"
+            PolicyDocument: !Sub |
+                {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "VisualEditor0",
+                            "Effect": "Allow",
+                            "Action": [
+                                "ssm:GetParametersByPath",
+                                "ssm:GetParameters"
+                            ],
+                            "Resource": "arn:aws:ssm:*:${AWS::AccountId}:parameter/*"
+                        }
+                    ]
+                }
+
+    logStreamIAMManagedPolicy:
+        Type: "AWS::IAM::ManagedPolicy"
+        Properties:
+            ManagedPolicyName: !Sub "CreateAndWriteTo_LogStream${environment}"
+            Path: "/"
+            PolicyDocument: !Sub |
+                {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "VisualEditor0",
+                            "Effect": "Allow",
+                            "Action": "logs:PutLogEvents",
+                            "Resource": "arn:aws:logs:*:${AWS::AccountId}:log-group:*:log-stream:*"
+                        },
+                        {
+                            "Sid": "VisualEditor1",
+                            "Effect": "Allow",
+                            "Action": [
+                                "logs:CreateLogStream",
+                                "logs:CreateLogGroup"
+                            ],
+                            "Resource": "arn:aws:logs:*:${AWS::AccountId}:log-group:*"
+                        }
+                    ]
+                }
+
+    orderExportLambdaIAMRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+            Path: "/service-role/"
+            RoleName: !Sub "orderExport-${environment}-role"
+            AssumeRolePolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"lambda.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}"
+            MaxSessionDuration: 3600
+            ManagedPolicyArns: 
+              - !Ref readParamsIAMManagedPolicy
+              - !Sub "arn:aws:iam::${AWS::AccountId}:policy/service-role/AWSLambdaBasicExecutionRole-1677c18f-6e6d-4e7e-bc21-3c7865b390fd"
+              - !Ref logStreamIAMManagedPolicy
+
+    parseXMLFromS3IAMRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+            Path: "/service-role/"
+            RoleName: !Sub "parseXMLFromS3-${environment}-role"
+            AssumeRolePolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"lambda.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}"
+            MaxSessionDuration: 3600
+            ManagedPolicyArns: 
+              - !Ref readParamsIAMManagedPolicy
+              - !Ref logStreamIAMManagedPolicy
+              - "arn:aws:iam::aws:policy/AmazonRDSFullAccess"
+              - "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
+              - "arn:aws:iam::aws:policy/AmazonSQSFullAccess"
+              - "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
+              - "arn:aws:iam::aws:policy/AmazonRDSDataFullAccess"
+              - "arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole"
+              - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+
+    processAPIItemsErrorIAMRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+            Path: "/service-role/"
+            RoleName: !Sub "processAPIItemsError-${environment}-role"
+            AssumeRolePolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"lambda.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}"
+            MaxSessionDuration: 3600
+            ManagedPolicyArns: 
+              - !Ref readParamsIAMManagedPolicy
+              - !Ref logStreamIAMManagedPolicy
+              - "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
+              - "arn:aws:iam::aws:policy/AmazonSQSFullAccess"
+              - "arn:aws:iam::aws:policy/AmazonRDSDataFullAccess"
+              - "arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole"
+              - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+
+    importJobStatusIAMRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+            Path: "/service-role/"
+            RoleName: !Sub "importJobStatus-${environment}-role"
+            AssumeRolePolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"lambda.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}"
+            MaxSessionDuration: 3600
+            ManagedPolicyArns: 
+              - !Ref readParamsIAMManagedPolicy
+              - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+              - "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
+              - "arn:aws:iam::aws:policy/AmazonRDSDataFullAccess"
+
+    createAndIdMaterialIAMRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+            Path: "/service-role/"
+            RoleName: !Sub "createAndId_material-${environment}-role"
+            AssumeRolePolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"lambda.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}"
+            MaxSessionDuration: 3600
+            ManagedPolicyArns: 
+              - !Ref readParamsIAMManagedPolicy
+              - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+              - !Ref logStreamIAMManagedPolicy
+              - "arn:aws:iam::aws:policy/AmazonSQSFullAccess"
+              - "arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole"
+
+    processAPIItemsIAMRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+            Path: "/service-role/"
+            RoleName: !Sub "process_API_Items-${environment}-role"
+            AssumeRolePolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"lambda.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}"
+            MaxSessionDuration: 3600
+            ManagedPolicyArns: 
+              - !Ref readParamsIAMManagedPolicy
+              - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+              - !Ref logStreamIAMManagedPolicy
+              - "arn:aws:iam::aws:policy/AmazonRDSFullAccess"
+              - "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
+              - "arn:aws:iam::aws:policy/AmazonSQSFullAccess"
+              - "arn:aws:iam::aws:policy/AmazonRDSDataFullAccess"
+              - "arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole"
+
+    cancelImportIAMRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+            Path: "/service-role/"
+            RoleName: !Sub "cancelImport-${environment}-role"
+            AssumeRolePolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"lambda.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}"
+            MaxSessionDuration: 3600
+            ManagedPolicyArns: 
+              - !Ref readParamsIAMManagedPolicy
+              - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+              - !Ref logStreamIAMManagedPolicy
+              - "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
+              - "arn:aws:iam::aws:policy/AmazonRDSDataFullAccess"
+
+    processAPIAssetsIAMRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+            Path: "/service-role/"
+            RoleName: !Sub "process_API_assets-${environment}-role"
+            AssumeRolePolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"lambda.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}"
+            MaxSessionDuration: 3600
+            ManagedPolicyArns: 
+              - !Ref readParamsIAMManagedPolicy
+              - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+              - !Ref logStreamIAMManagedPolicy
+              - "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
+              - "arn:aws:iam::aws:policy/AmazonSQSFullAccess"
+              - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+              - "arn:aws:iam::aws:policy/AmazonRDSDataFullAccess"
+              - "arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole"
+
+    inputS3Bucket:
+        Type: "AWS::S3::Bucket"
+        Properties:
+            BucketName: !Sub "teknioninput-${environment}"
+            CorsConfiguration: 
+                CorsRules: 
+                  - 
+                    AllowedHeaders: 
+                      - "*"
+                    AllowedMethods: 
+                      - "PUT"
+                    AllowedOrigins: 
+                      - "*"
+            NotificationConfiguration:
+                LambdaConfigurations:
+                  - Event: s3:ObjectCreated:*  
+                    Filter:
+                      S3Key:
+                        Rules:
+                          - Name: suffix
+                            Value: .xml               
+                    Function: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:parseXMLFromS3-${environment}"
+            
+    inputS3BucketPolicy:
+        Type: "AWS::S3::BucketPolicy"
+        Properties:
+            Bucket: !Ref inputS3Bucket
+            PolicyDocument: 
+                Version: "2012-10-17"
+                Statement: 
+                  - 
+                    Effect: "Allow"
+                    Principal: 
+                        AWS: 
+                          Fn::Sub:
+                            "arn:aws:iam::${AWS::AccountId}:role/Teknion-Portal-User-Role"
+                    Action: "s3:PutObject"
+                    Resource: !Sub "arn:aws:s3:::${inputS3Bucket}/*"
+
+    S3Bucket:
+        Type: "AWS::S3::Bucket"
+        Properties:
+            BucketName: !Sub "teknion-ui-${environment}"
+            WebsiteConfiguration: 
+                IndexDocument: "index.html"
+                ErrorDocument: "index.html"
+
+
+    S3BucketPolicy:
+        Type: "AWS::S3::BucketPolicy"
+        Properties:
+            Bucket: !Ref S3Bucket
+            PolicyDocument: 
+                Version: "2012-10-17"
+                Statement: 
+                  - 
+                    Sid: "AddPermission"
+                    Effect: "Allow"
+                    Principal: "*"
+                    Action: "s3:GetObject"
+                    Resource: !Sub "arn:aws:s3:::${S3Bucket}/*"
+
+
+    orderExportLambdaFunction:
+        Type: "AWS::Lambda::Function"
+        Properties:
+            Description: ""
+            FunctionName: !Sub "orderExport-${environment}"
+            Handler: "index.handler"
+            Architectures: 
+              - "x86_64"
+            Code: 
+                S3Bucket: "importerstackresources"
+                S3Key: "orderExport.zip"
+            MemorySize: 128
+            Role: 
+              Fn::GetAtt:
+                - orderExportLambdaIAMRole
+                - "Arn"
+            Runtime: "nodejs12.x"
+            Timeout: 25
+            TracingConfig: 
+                Mode: "PassThrough"
+
+    parseXMLFromS3LambdaFunction:
+        Type: "AWS::Lambda::Function"
+        Properties:
+            Description: ""
+            ReservedConcurrentExecutions: 1
+            Environment: 
+                Variables: 
+                    parsedItemsQueue: !Sub "https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${parsedAPIItemsSQSQueue.QueueName}"
+                    foundItemsQueue: !Sub "https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${foundItemsSQSQueue.QueueName}"
+                    dbArn: !Sub "arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:cluster:${RDSDBCluster}"
+                    secretArn: !Ref SecretsManagerSecret
+            FunctionName: !Sub "parseXMLFromS3-${environment}"
+            Handler: "index.handler"
+            Architectures: 
+              - "x86_64"
+            Code: 
+                S3Bucket: "importerstackresources"
+                S3Key: "parseXMLFromS3.zip"
+            MemorySize: 3008
+            Role: 
+              Fn::GetAtt:
+                - parseXMLFromS3IAMRole
+                - "Arn"
+            Runtime: "nodejs12.x"
+            Timeout: 900
+            TracingConfig: 
+                Mode: "PassThrough"
+
+    processAPIItemsErrorLambdaFunction:
+        Type: "AWS::Lambda::Function"
+        Properties:
+            Description: ""
+            FunctionName: !Sub "process_API_Items_Error-${environment}"
+            Handler: "index.handler"
+            Architectures: 
+              - "x86_64"
+            Code: 
+                S3Bucket: "importerstackresources"
+                S3Key: "processAPIItemsError.zip"
+            MemorySize: 128
+            Role: 
+              Fn::GetAtt:
+                - processAPIItemsErrorIAMRole
+                - "Arn"
+            Runtime: "nodejs14.x"
+            Timeout: 3
+            TracingConfig: 
+                Mode: "PassThrough"
+
+    importJobStatusLambdaFunction:
+        Type: "AWS::Lambda::Function"
+        Properties:
+            Description: ""
+            Environment: 
+                Variables:                     
+                    dbArn: !Sub "arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:cluster:${RDSDBCluster}"
+                    secretArn: !Ref SecretsManagerSecret
+            FunctionName: !Sub "importJobStatus-${environment}"
+            Handler: "index.handler"
+            Architectures: 
+              - "x86_64"
+            Code: 
+                S3Bucket: "importerstackresources"
+                S3Key: "importJobStatus.zip"
+            MemorySize: 128
+            Role: 
+              Fn::GetAtt:
+                - importJobStatusIAMRole
+                - "Arn"
+            Runtime: "nodejs14.x"
+            Timeout: 30
+            TracingConfig: 
+                Mode: "PassThrough"
+
+    createAndIdMaterialLambdaFunction:
+        Type: "AWS::Lambda::Function"
+        Properties:
+            Description: ""
+            Environment: 
+                Variables:                     
+                    MaterialFoundQueue: !Sub "https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${itemsNeedingAssetsSQSQueue.QueueName}"
+                    MaterialNotFoundQueue: !Sub "https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${itemsNeedingAssetsSQSQueue.QueueName}"
+                    MaterialRetryQueue: !Sub "https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${optionsNeedingMaterialRetrySQSQueue.QueueName}"
+                    dbArn: !Sub "arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:cluster:${RDSDBCluster}"
+                    secretArn: !Ref SecretsManagerSecret
+            FunctionName: !Sub "createAndId_material-${environment}"
+            Handler: "index.handler"
+            Architectures: 
+              - "x86_64"
+            Code: 
+                S3Bucket: "importerstackresources"
+                S3Key: "createAndIdMaterial.zip"
+            MemorySize: 512
+            Role: 
+              Fn::GetAtt:
+                - createAndIdMaterialIAMRole
+                - "Arn"
+            Runtime: "nodejs12.x"
+            Timeout: 30
+            TracingConfig: 
+                Mode: "PassThrough"
+
+    processAPIItemsLambdaFunction:
+        Type: "AWS::Lambda::Function"
+        Properties:
+            Description: ""
+            Environment: 
+                Variables: 
+                    itemsNeedingAssetsQueue: !Sub "https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${itemsNeedingAssetsSQSQueue.QueueName}"
+                    dbArn: !Sub "arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:cluster:${RDSDBCluster}"
+                    secretArn: !Ref SecretsManagerSecret
+            FunctionName: !Sub "process_API_Items-${environment}"
+            Handler: "index.handler"
+            Architectures: 
+              - "x86_64"
+            Code: 
+                S3Bucket: "importerstackresources"
+                S3Key: "processAPIItems.zip"
+            MemorySize: 256
+            Role: 
+              Fn::GetAtt:
+                - processAPIItemsIAMRole
+                - "Arn"
+            Runtime: "nodejs12.x"
+            Timeout: 60
+            TracingConfig: 
+                Mode: "PassThrough"
+
+    cancelImportLambdaFunction:
+        Type: "AWS::Lambda::Function"
+        Properties:
+            Description: ""
+            Environment: 
+                Variables:                     
+                    dbArn: !Sub "arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:cluster:${RDSDBCluster}"
+                    secretArn: !Ref SecretsManagerSecret
+            FunctionName: !Sub "cancelImport-${environment}"
+            Handler: "index.handler"
+            Architectures: 
+              - "x86_64"
+            Code: 
+                S3Bucket: "importerstackresources"
+                S3Key: "cancelImport.zip"
+            MemorySize: 128
+            Role: 
+              Fn::GetAtt:
+                - cancelImportIAMRole
+                - "Arn"
+            Runtime: "nodejs14.x"
+            Timeout: 30
+            TracingConfig: 
+                Mode: "PassThrough"
+
+    processAPIAssetsLambdaFunction:
+        Type: "AWS::Lambda::Function"
+        Properties:
+            Description: ""
+            Environment: 
+                Variables: 
+                    itemsNeedingAssetsQueue: !Sub "https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${itemsNeedingAssetsSQSQueue.QueueName}"
+                    parsedItemsQueue: !Sub "https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${parsedAPIItemsSQSQueue.QueueName}"
+                    optionsNeedingMaterialQueue: !Sub "https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${optionsNeedingMaterialSQSQueue.QueueName}"
+                    dbArn: !Sub "arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:cluster:${RDSDBCluster}"
+                    secretArn: !Ref SecretsManagerSecret
+            FunctionName: !Sub "process_API_assets-${environment}"
+            Handler: "index.handler"
+            Architectures: 
+              - "x86_64"
+            Code: 
+                S3Bucket: "importerstackresources"
+                S3Key: "processAPIAssets.zip"
+            MemorySize: 512
+            Role: 
+              Fn::GetAtt:
+                - processAPIAssetsIAMRole
+                - "Arn"
+            Runtime: "nodejs12.x"
+            Timeout: 150
+            TracingConfig: 
+                Mode: "PassThrough"
+
+    deadLetterSQSQueue:
+        Type: "AWS::SQS::Queue"
+        Properties:
+            DelaySeconds: "0"
+            MaximumMessageSize: "262144"
+            MessageRetentionPeriod: "345600"
+            ReceiveMessageWaitTimeSeconds: "0"
+            VisibilityTimeout: "30"
+            QueueName: !Sub "dead-letter-queue-${environment}"
+
+    foundItemsSQSQueue:
+        Type: "AWS::SQS::Queue"
+        Properties:
+            DelaySeconds: "0"
+            MaximumMessageSize: "262144"
+            MessageRetentionPeriod: "345600"
+            ReceiveMessageWaitTimeSeconds: "0"
+            VisibilityTimeout: "900"
+            QueueName: !Sub "foundItems-${environment}"
+
+    itemsNeedingAssetsSQSQueue:
+        Type: "AWS::SQS::Queue"
+        DependsOn: deadLetterSQSQueue
+        Properties:
+            DelaySeconds: "0"
+            MaximumMessageSize: "262144"
+            MessageRetentionPeriod: "345600"
+            ReceiveMessageWaitTimeSeconds: "0"
+            VisibilityTimeout: "150"
+            QueueName: !Sub "itemsNeedingAssets-${environment}"
+            RedrivePolicy: 
+              deadLetterTargetArn:
+                Fn::GetAtt:
+                  - deadLetterSQSQueue
+                  - "Arn"
+              maxReceiveCount: 10            
+
+    parsedAPIItemsSQSQueue:
+        Type: "AWS::SQS::Queue"
+        DependsOn: processItemFailureSQSQueue
+        Properties:
+            DelaySeconds: "0"
+            MaximumMessageSize: "262144"
+            MessageRetentionPeriod: "345600"
+            ReceiveMessageWaitTimeSeconds: "0"
+            VisibilityTimeout: "120"
+            QueueName: !Sub "parsedAPIItems-${environment}"
+            RedrivePolicy: 
+              deadLetterTargetArn:
+                Fn::GetAtt:
+                  - processItemFailureSQSQueue
+                  - "Arn"
+              maxReceiveCount: 10
+
+    optionsNeedingMaterialRetrySQSQueue:
+        Type: "AWS::SQS::Queue"
+        Properties:
+            DelaySeconds: "0"
+            MaximumMessageSize: "262144"
+            MessageRetentionPeriod: "345600"
+            ReceiveMessageWaitTimeSeconds: "0"
+            VisibilityTimeout: "120"
+            QueueName: !Sub "optionsNeedingMaterialRetry-${environment}"
+
+    optionsNeedingMaterialSQSQueue:
+        Type: "AWS::SQS::Queue"
+        Properties:
+            DelaySeconds: "0"
+            MaximumMessageSize: "262144"
+            MessageRetentionPeriod: "345600"
+            ReceiveMessageWaitTimeSeconds: "0"
+            VisibilityTimeout: "120"
+            QueueName: !Sub "optionsNeedingMaterial-${environment}"
+
+    processItemFailureSQSQueue:
+        Type: "AWS::SQS::Queue"
+        Properties:
+            DelaySeconds: "0"
+            MaximumMessageSize: "262144"
+            MessageRetentionPeriod: "345600"
+            ReceiveMessageWaitTimeSeconds: "0"
+            VisibilityTimeout: "30"
+            QueueName: !Sub "processItemFailure-${environment}"
+
+    deadLetterSQSQueuePolicy:
+        Type: "AWS::SQS::QueuePolicy"
+        Properties:
+            PolicyDocument: !Sub "{\"Version\":\"2008-10-17\",\"Id\":\"__default_policy_ID\",\"Statement\":[{\"Sid\":\"__owner_statement\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${AWS::AccountId}:root\"},\"Action\":\"SQS:*\",\"Resource\":\"${deadLetterSQSQueue}\"}]}"
+            Queues: 
+              - !Sub "https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${deadLetterSQSQueue.QueueName}"
+
+    foundItemsSQSQueuePolicy:
+        Type: "AWS::SQS::QueuePolicy"
+        Properties:
+            PolicyDocument: !Sub "{\"Version\":\"2008-10-17\",\"Id\":\"__default_policy_ID\",\"Statement\":[{\"Sid\":\"__owner_statement\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${AWS::AccountId}:root\"},\"Action\":\"SQS:*\",\"Resource\":\"${foundItemsSQSQueue}\"}]}"
+            Queues: 
+              - !Sub "https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${foundItemsSQSQueue.QueueName}"
+
+    itemsNeedingAssetsSQSQueuePolicy:
+        Type: "AWS::SQS::QueuePolicy"
+        Properties:
+            PolicyDocument: !Sub "{\"Version\":\"2008-10-17\",\"Id\":\"__default_policy_ID\",\"Statement\":[{\"Sid\":\"__owner_statement\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${AWS::AccountId}:root\"},\"Action\":\"SQS:*\",\"Resource\":\"${itemsNeedingAssetsSQSQueue}\"}]}"
+            Queues: 
+              - !Sub "https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${itemsNeedingAssetsSQSQueue.QueueName}"
+
+    parsedAPIItemsSQSQueuePolicy:
+        Type: "AWS::SQS::QueuePolicy"
+        Properties:
+            PolicyDocument: !Sub "{\"Version\":\"2008-10-17\",\"Id\":\"__default_policy_ID\",\"Statement\":[{\"Sid\":\"__owner_statement\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${AWS::AccountId}:root\"},\"Action\":\"SQS:*\",\"Resource\":\"${parsedAPIItemsSQSQueue}\"}]}"
+            Queues: 
+              - !Sub "https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${parsedAPIItemsSQSQueue.QueueName}"
+
+    optionsNeedingMaterialRetrySQSQueuePolicy:
+        Type: "AWS::SQS::QueuePolicy"
+        Properties:
+            PolicyDocument: !Sub "{\"Version\":\"2008-10-17\",\"Id\":\"__default_policy_ID\",\"Statement\":[{\"Sid\":\"__owner_statement\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${AWS::AccountId}:root\"},\"Action\":\"SQS:*\",\"Resource\":\"${optionsNeedingMaterialRetrySQSQueue}\"}]}"
+            Queues: 
+              - !Sub "https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${optionsNeedingMaterialRetrySQSQueue.QueueName}"
+
+    optionsNeedingMaterialSQSQueuePolicy:
+        Type: "AWS::SQS::QueuePolicy"
+        Properties:
+            PolicyDocument: !Sub "{\"Version\":\"2008-10-17\",\"Id\":\"__default_policy_ID\",\"Statement\":[{\"Sid\":\"__owner_statement\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${AWS::AccountId}:root\"},\"Action\":\"SQS:*\",\"Resource\":\"${optionsNeedingMaterialSQSQueue}\"}]}"
+            Queues: 
+              - !Sub "https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${optionsNeedingMaterialSQSQueue.QueueName}"
+
+    procesItemFailureSQSQueuePolicy:
+        Type: "AWS::SQS::QueuePolicy"
+        Properties:
+            PolicyDocument: !Sub "{\"Version\":\"2008-10-17\",\"Id\":\"__default_policy_ID\",\"Statement\":[{\"Sid\":\"__owner_statement\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${AWS::AccountId}:root\"},\"Action\":\"SQS:*\",\"Resource\":\"${processItemFailureSQSQueue}\"}]}"
+            Queues: 
+              - !Sub "https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${processItemFailureSQSQueue.QueueName}"
+
+    parseXMLFromS3LambdaEventSourceMapping:
+        Type: "AWS::Lambda::EventSourceMapping"
+        Properties:
+            BatchSize: 1
+            EventSourceArn: !GetAtt foundItemsSQSQueue.Arn
+            FunctionName: !GetAtt parseXMLFromS3LambdaFunction.Arn
+            Enabled: true
+            MaximumBatchingWindowInSeconds: 0
+
+    createAndIdMaterialRetryLambdaEventSourceMapping:
+        Type: "AWS::Lambda::EventSourceMapping"
+        Properties:
+            BatchSize: 1
+            EventSourceArn: !GetAtt optionsNeedingMaterialRetrySQSQueue.Arn
+            FunctionName: !GetAtt createAndIdMaterialLambdaFunction.Arn
+            Enabled: true
+            MaximumBatchingWindowInSeconds: 0
+
+    createAndIdMaterialLambdaEventSourceMapping:
+        Type: "AWS::Lambda::EventSourceMapping"
+        Properties:
+            BatchSize: 1
+            EventSourceArn: !GetAtt optionsNeedingMaterialSQSQueue.Arn
+            FunctionName: !GetAtt createAndIdMaterialLambdaFunction.Arn
+            Enabled: true
+            MaximumBatchingWindowInSeconds: 0
+
+    processAPIAssetsLambdaEventSourceMapping:
+        Type: "AWS::Lambda::EventSourceMapping"
+        Properties:
+            BatchSize: 1
+            EventSourceArn: !GetAtt itemsNeedingAssetsSQSQueue.Arn
+            FunctionName: !GetAtt processAPIAssetsLambdaFunction.Arn
+            Enabled: true
+            MaximumBatchingWindowInSeconds: 0
+
+    processAPIItemsErrorLambdaEventSourceMapping:
+        Type: "AWS::Lambda::EventSourceMapping"
+        Properties:
+            BatchSize: 1
+            EventSourceArn: !GetAtt processItemFailureSQSQueue.Arn
+            FunctionName: !GetAtt processAPIItemsErrorLambdaFunction.Arn
+            Enabled: true
+            MaximumBatchingWindowInSeconds: 0
+
+    processAPIItemsLambdaEventSourceMapping:
+        Type: "AWS::Lambda::EventSourceMapping"
+        Properties:
+            BatchSize: 1
+            EventSourceArn: !GetAtt parsedAPIItemsSQSQueue.Arn
+            FunctionName: !GetAtt processAPIItemsLambdaFunction.Arn
+            Enabled: true
+            MaximumBatchingWindowInSeconds: 0
+
+    importJobStatusApiGatewayV2Api:
+        Type: "AWS::ApiGatewayV2::Api"
+        Properties:
+            Name: !Sub "Import Job Status - ${environment}"
+            ProtocolType: "HTTP"
+            RouteSelectionExpression: "$request.method $request.path"
+            CorsConfiguration: 
+                AllowCredentials: false
+                AllowHeaders: 
+                  - "*"
+                AllowMethods: 
+                  - "*"
+                AllowOrigins: 
+                  - "*"
+                MaxAge: 0
+            DisableExecuteApiEndpoint: false
+
+    cancelImportApiGatewayV2Api:
+        Type: "AWS::ApiGatewayV2::Api"
+        Properties:
+            Name: !Sub "Cancel Import - ${environment}"
+            ProtocolType: "HTTP"
+            RouteSelectionExpression: "$request.method $request.path"
+            CorsConfiguration: 
+                AllowCredentials: false
+                AllowHeaders: 
+                  - "*"
+                AllowMethods: 
+                  - "*"
+                AllowOrigins: 
+                  - "*"
+                MaxAge: 0
+            DisableExecuteApiEndpoint: false
+
+    orderExportApiGatewayV2Api:
+        Type: "AWS::ApiGatewayV2::Api"
+        Properties:
+            Name: !Sub "Order Export API - ${environment}"
+            ProtocolType: "HTTP"
+            RouteSelectionExpression: "$request.method $request.path"
+            CorsConfiguration: 
+                AllowCredentials: false
+                AllowHeaders: 
+                  - "*"
+                AllowMethods: 
+                  - "*"
+                AllowOrigins: 
+                  - "*"
+                MaxAge: 0
+            DisableExecuteApiEndpoint: false
+
+    ApiGatewayV2Route:
+        Type: "AWS::ApiGatewayV2::Route"
+        Properties:
+            ApiId: !Ref orderExportApiGatewayV2Api
+            ApiKeyRequired: false
+            AuthorizationType: "NONE"
+            RequestParameters: {}
+            RouteKey: "ANY /order/{orderId}/sif"
+            Target: !Sub "integrations/${ApiGatewayV2Integration3}"
+
+    ApiGatewayV2Route2:
+        Type: "AWS::ApiGatewayV2::Route"
+        Properties:
+            ApiId: !Ref importJobStatusApiGatewayV2Api
+            ApiKeyRequired: false
+            AuthorizationType: "NONE"
+            RouteKey: "ANY /import/job/{jobName}"
+            Target: !Sub "integrations/${ApiGatewayV2Integration}"
+
+    ApiGatewayV2Route3:
+        Type: "AWS::ApiGatewayV2::Route"
+        Properties:
+            ApiId: !Ref cancelImportApiGatewayV2Api
+            ApiKeyRequired: false
+            AuthorizationType: "NONE"
+            RouteKey: "ANY /cancel/import/{jobName}"
+            Target: !Sub "integrations/${ApiGatewayV2Integration4}"
+
+    ApiGatewayV2Integration:
+        Type: "AWS::ApiGatewayV2::Integration"
+        Properties:
+            ApiId: !Ref importJobStatusApiGatewayV2Api
+            ConnectionType: "INTERNET"
+            IntegrationMethod: "POST"
+            IntegrationType: "AWS_PROXY"
+            IntegrationUri: !GetAtt importJobStatusLambdaFunction.Arn
+            TimeoutInMillis: 30000
+            PayloadFormatVersion: "2.0"
+
+    ApiGatewayV2Integration2:
+        Type: "AWS::ApiGatewayV2::Integration"
+        Properties:
+            ApiId: !Ref importJobStatusApiGatewayV2Api
+            ConnectionType: "INTERNET"
+            IntegrationMethod: "POST"
+            IntegrationType: "AWS_PROXY"
+            IntegrationUri: !GetAtt importJobStatusLambdaFunction.Arn
+            TimeoutInMillis: 30000
+            PayloadFormatVersion: "1.0"
+
+    ApiGatewayV2Integration3:
+        Type: "AWS::ApiGatewayV2::Integration"
+        Properties:
+            ApiId: !Ref orderExportApiGatewayV2Api
+            ConnectionType: "INTERNET"
+            IntegrationMethod: "POST"
+            IntegrationType: "AWS_PROXY"
+            IntegrationUri: !GetAtt orderExportLambdaFunction.Arn
+            RequestParameters: 
+                "append:querystring.environment": "default"
+            TimeoutInMillis: 30000
+            PayloadFormatVersion: "2.0"
+
+    ApiGatewayV2Integration4:
+        Type: "AWS::ApiGatewayV2::Integration"
+        Properties:
+            ApiId: !Ref cancelImportApiGatewayV2Api
+            ConnectionType: "INTERNET"
+            IntegrationMethod: "POST"
+            IntegrationType: "AWS_PROXY"
+            IntegrationUri: !GetAtt cancelImportLambdaFunction.Arn
+            TimeoutInMillis: 30000
+            PayloadFormatVersion: "2.0"
+
+    orderExportApiGatewayV2Deployment:
+        Type: "AWS::ApiGatewayV2::Deployment"
+        DependsOn: ApiGatewayV2Route
+        Properties:
+            ApiId: !Ref orderExportApiGatewayV2Api            
+            Description: "Automatic deployment triggered by changes to the Api configuration"
+
+    cancelImportApiGatewayV2Deployment:
+        Type: "AWS::ApiGatewayV2::Deployment"
+        DependsOn: ApiGatewayV2Route3
+        Properties:
+            ApiId: !Ref cancelImportApiGatewayV2Api            
+            Description: "Automatic deployment triggered by changes to the Api configuration"
+
+    importJobStatusApiGatewayV2Deployment:
+        Type: "AWS::ApiGatewayV2::Deployment"
+        DependsOn: ApiGatewayV2Route2
+        Properties:
+            ApiId: !Ref importJobStatusApiGatewayV2Api            
+            Description: "Automatic deployment triggered by changes to the Api configuration"
+
+    orderExportApiGatewayV2Stage:
+        Type: "AWS::ApiGatewayV2::Stage"
+        Properties:
+            StageName: "$default"
+            StageVariables: {}
+            ApiId: !Ref orderExportApiGatewayV2Api
+            DeploymentId: !Ref orderExportApiGatewayV2Deployment
+            RouteSettings: {}
+            DefaultRouteSettings: 
+                DetailedMetricsEnabled: false
+            AccessLogSettings: 
+                DestinationArn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:import_access"
+                Format: "{ \"requestId\":\"$context.requestId\", \"ip\": \"$context.identity.sourceIp\", \"requestTime\":\"$context.requestTime\", \"httpMethod\":\"$context.httpMethod\",\"routeKey\":\"$context.routeKey\", \"status\":\"$context.status\",\"protocol\":\"$context.protocol\", \"responseLength\":\"$context.responseLength\" }"
+            AutoDeploy: true
+
+    cancelImportApiGatewayV2Stage:
+        Type: "AWS::ApiGatewayV2::Stage"
+        Properties:
+            StageName: "$default"
+            StageVariables: {}
+            ApiId: !Ref cancelImportApiGatewayV2Api
+            DeploymentId: !Ref cancelImportApiGatewayV2Deployment
+            RouteSettings: {}
+            DefaultRouteSettings: 
+                DetailedMetricsEnabled: false
+            AccessLogSettings: 
+                DestinationArn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:import_access"
+                Format: "{ \"requestId\":\"$context.requestId\", \"ip\": \"$context.identity.sourceIp\", \"requestTime\":\"$context.requestTime\", \"httpMethod\":\"$context.httpMethod\",\"routeKey\":\"$context.routeKey\", \"status\":\"$context.status\",\"protocol\":\"$context.protocol\", \"responseLength\":\"$context.responseLength\" }"
+            AutoDeploy: true
+
+    importJobStatusApiGatewayV2Stage:
+        Type: "AWS::ApiGatewayV2::Stage"
+        Properties:
+            StageName: "$default"
+            StageVariables: {}
+            ApiId: !Ref importJobStatusApiGatewayV2Api
+            DeploymentId: !Ref importJobStatusApiGatewayV2Deployment
+            RouteSettings: {}
+            DefaultRouteSettings: 
+                DetailedMetricsEnabled: false
+            AccessLogSettings: 
+                DestinationArn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:import_access"
+                Format: "{ \"requestId\":\"$context.requestId\", \"ip\": \"$context.identity.sourceIp\", \"requestTime\":\"$context.requestTime\", \"httpMethod\":\"$context.httpMethod\",\"routeKey\":\"$context.routeKey\", \"status\":\"$context.status\",\"protocol\":\"$context.protocol\", \"responseLength\":\"$context.responseLength\" }"
+            AutoDeploy: true
+
+    parseXMLFromS3LambdaPermission:
+        Type: "AWS::Lambda::Permission"
+        Properties:
+            Action: "lambda:InvokeFunction"
+            FunctionName: !GetAtt parseXMLFromS3LambdaFunction.Arn
+            Principal: "s3.amazonaws.com"
+            SourceArn: !Sub "arn:aws:s3:::${inputS3Bucket}"
+
+    orderExportLambdaPermission:
+        Type: "AWS::Lambda::Permission"
+        Properties:
+            Action: "lambda:InvokeFunction"
+            FunctionName: !GetAtt orderExportLambdaFunction.Arn
+            Principal: "apigateway.amazonaws.com"
+            SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${orderExportApiGatewayV2Api}/*/*/order/{orderId}/sif"
+
+    importJobStatusLambdaPermission:
+        Type: "AWS::Lambda::Permission"
+        Properties:
+            Action: "lambda:InvokeFunction"
+            FunctionName: !GetAtt importJobStatusLambdaFunction.Arn
+            Principal: "apigateway.amazonaws.com"
+            SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${importJobStatusApiGatewayV2Api}/*/*/import/job/{jobName}"
+
+    cancelImportLambdaPermission:
+        Type: "AWS::Lambda::Permission"
+        Properties:
+            Action: "lambda:InvokeFunction"
+            FunctionName: !GetAtt cancelImportLambdaFunction.Arn
+            Principal: "apigateway.amazonaws.com"
+            SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${cancelImportApiGatewayV2Api}/*/*/cancel/import/{jobName}"
+
+    RDSDBCluster:
+        Type: "AWS::RDS::DBCluster"
+        Properties:
+            BackupRetentionPeriod: 7
+            DatabaseName: "threekit"
+            DBClusterIdentifier: !Sub "threekit-import-cluster-${environment}"
+            Engine: "aurora-postgresql"
+            MasterUsername: "postgres"
+            MasterUserPassword: "trifecta00"
+            StorageEncrypted: true
+            EngineVersion: "10.14"
+            EnableIAMDatabaseAuthentication: false
+            EngineMode: "serverless"
+            ScalingConfiguration: 
+                MinCapacity: 2
+                MaxCapacity: 2
+                AutoPause: true
+                SecondsUntilAutoPause: 300
+            DeletionProtection: false
+            EnableHttpEndpoint: true
+
+    SecretsManagerSecret:
+        Type: "AWS::SecretsManager::Secret"
+        Properties:
+            Name: !Sub "threekit-import-db-secret-pass-${environment}"
+            SecretString: "trifecta00"
+
+    CloudFrontDistribution:
+        Type: "AWS::CloudFront::Distribution"
+        Properties:
+            DistributionConfig: 
+                Origins: 
+                  - 
+                    ConnectionAttempts: 3
+                    ConnectionTimeout: 10
+                    CustomOriginConfig: 
+                        HTTPPort: 80
+                        HTTPSPort: 443
+                        OriginKeepaliveTimeout: 5
+                        OriginProtocolPolicy: "http-only"
+                        OriginReadTimeout: 30
+                        OriginSSLProtocols: 
+                          - "TLSv1"
+                          - "TLSv1.1"
+                          - "TLSv1.2"
+                    DomainName: !Sub "${S3Bucket}.s3-website-${AWS::Region}.amazonaws.com"
+                    Id: !Sub "S3-Website-${S3Bucket}.s3-website-${AWS::Region}.amazonaws.com"
+                    OriginPath: ""
+                OriginGroups: 
+                    Quantity: 0
+                DefaultCacheBehavior: 
+                    AllowedMethods: 
+                      - "HEAD"
+                      - "DELETE"
+                      - "POST"
+                      - "GET"
+                      - "OPTIONS"
+                      - "PUT"
+                      - "PATCH"
+                    CachedMethods: 
+                      - "HEAD"
+                      - "GET"
+                    Compress: false
+                    CachePolicyId: "4135ea2d-6df8-44a3-9df3-4b5a84be39ad"
+                    SmoothStreaming: false
+                    TargetOriginId: !Sub "S3-Website-${S3Bucket}.s3-website-${AWS::Region}.amazonaws.com"
+                    ViewerProtocolPolicy: "redirect-to-https"
+                Comment: ""
+                PriceClass: "PriceClass_100"
+                Enabled: true
+                ViewerCertificate: 
+                    CloudFrontDefaultCertificate: true
+                    MinimumProtocolVersion: "TLSv1"
+                Restrictions: 
+                    GeoRestriction: 
+                        RestrictionType: "none"
+                HttpVersion: "http2"
+                DefaultRootObject: ""
+                IPV6Enabled: true

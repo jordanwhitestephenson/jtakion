@@ -1,0 +1,41 @@
+version: 0.2
+phases:
+  install: 
+    runtime-versions:
+      nodejs: 12
+    commands:
+      - echo "starting lambda build..."
+      - npm install -g @angular/cli
+      - (cd Threekit-Teknion-UI && npm install)
+      - (cd Threekit-Teknion-UI && ng build --prod)
+      - (cd functions/cancelImport && npm install)
+      - (cd functions/createAndId_material && npm install)
+      - (cd functions/importJobStatus && npm install)
+      - (cd functions/orderExport && npm install)
+      - (cd functions/parseXMLFromS3 && npm install)
+      - (cd functions/process_API_assets && npm install)
+      - (cd functions/process_API_Items && npm install)
+      - (cd functions/process_API_Items_Error && npm install)
+  build:
+    commands:
+      - echo "zipping functions..."
+      - zip -r cancelImport.zip functions/cancelImport/*
+      - zip -r createAndIdMaterial.zip functions/createAndId_material/*
+      - zip -r importJobStatus.zip functions/importJobStatus/*
+      - zip -r orderExport.zip functions/orderExport/*
+      - zip -r parseXMLFromS3.zip functions/parseXMLFromS3/*
+      - zip -r processAPIAssets.zip functions/process_API_assets/*
+      - zip -r processAPIItems.zip functions/process_API_Items/*
+      - zip -r processAPIItemsError.zip functions/process_API_Items_Error/*
+      - echo "done zipping functions, sending to aws..."
+      - aws lambda update-function-code --function-name parseXMLFromS3-$environment --zip-file fileb://parseXMLFromS3.zip
+      - aws lambda update-function-code --function-name cancelImport-$environment --zip-file fileb://cancelImport.zip
+      - aws lambda update-function-code --function-name createAndId_material-$environment --zip-file fileb://createAndIdMaterial.zip
+      - aws lambda update-function-code --function-name importJobStatus-$environment --zip-file fileb://importJobStatus.zip
+      - aws lambda update-function-code --function-name orderExport-$environment --zip-file fileb://orderExport.zip
+      - aws lambda update-function-code --function-name process_API_assets-$environment --zip-file fileb://processAPIAssets.zip
+      - aws lambda update-function-code --function-name process_API_Items-$environment --zip-file fileb://processAPIItems.zip
+      - aws lambda update-function-code --function-name process_API_Items_Error-$environment --zip-file fileb://processAPIItemsError.zip
+      - aws s3 cp Threekit-Teknion-UI/dist/Threekit-Teknion-UI s3://$S3_BUCKET_UI --recursive
+      - echo "done sending to aws."
+    
