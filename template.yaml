@@ -6,10 +6,10 @@ Parameters:
     environment:
         Type: "String"
         Default: "test"
-    S3_INPUT_BUCKET_NAME:
+    S3INPUTBUCKETNAME:
         Type: "String"
         Default: "teknioninput-test"
-    S3_UI_BUCKET_NAME:
+    S3UIBUCKETNAME:
         Type: "String"
         Default: "teknionui-test"
 
