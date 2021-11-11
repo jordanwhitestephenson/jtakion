@@ -72,7 +72,7 @@ Resources:
             MaxSessionDuration: 3600
             ManagedPolicyArns: 
               - !Ref readParamsIAMManagedPolicy
-              - !Sub "arn:aws:iam::${AWS::AccountId}:policy/service-role/AWSLambdaBasicExecutionRole-1677c18f-6e6d-4e7e-bc21-3c7865b390fd"
+              - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
               - !Ref logStreamIAMManagedPolicy
 
     parseXMLFromS3IAMRole:
