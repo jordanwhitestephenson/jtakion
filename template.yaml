@@ -181,7 +181,7 @@ Resources:
     inputS3Bucket:
         Type: "AWS::S3::Bucket"
         Properties:
-            BucketName: !Sub "teknioninput-${environment}"
+            BucketName: !Sub "${S3_INPUT_BUCKET_NAME}"
             CorsConfiguration: 
                 CorsRules: 
                   - 
@@ -213,7 +213,7 @@ Resources:
     S3Bucket:
         Type: "AWS::S3::Bucket"
         Properties:
-            BucketName: !Sub "teknion-ui-${environment}"
+            BucketName: !Sub "${S3_UI_BUCKET_NAME}"
             WebsiteConfiguration: 
                 IndexDocument: "index.html"
                 ErrorDocument: "index.html"
