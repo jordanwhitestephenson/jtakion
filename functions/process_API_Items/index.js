@@ -618,7 +618,7 @@ exports.handler = async (event) => {
 				//poll for job completion
 				return pollJob(jobId, apiUrl, apiToken, {
 					timeout: 1000 * 60 * 10,
-					frequency: 200,
+					frequency: 2000,
 				}).then(pollResult => {
 					let status = pollResult.status;
 					let success = pollResult.success;

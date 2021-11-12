@@ -198,8 +198,17 @@ exports.handler = async (event) => {
 			console.log(option, option.subGroupOptions);
 			console.log('subgroupoptions: '+option.id+' products'+data.length+' '+option.subGroupOptions.length+' '+option.subGroupOptions+' '+!option.subGroupOptions.some(sgo => data.map(p => !p['option_id']).includes(sgo)));
 			if(data && !option.subGroupOptions.some(sgo => data.map(p => !p['option_id']).includes(sgo))) {
+				let optionIds = [];
 				let productsFound = data.filter(p => {
-                    return option.subGroupOptions.includes(p['option_id']);
+					let included = option.subGroupOptions.includes(p['option_id']);
+					if(included === true) {
+						if(optionIds.includes(p['option_id'])) {
+							included = false;
+						} else {
+							optionIds.push(p['option_id']);
+						}
+					}
+                    return included;
                 });
 				if(productsFound.length === option.subGroupOptions.length) {
                     option.subGroupOptionIds = productsFound.map(p => p['asset_id']);
@@ -444,8 +453,8 @@ exports.handler = async (event) => {
 				const jobId = r.data.jobId;
 				//poll for job completion
 				return pollJob(jobId, apiUrl, apiToken, {
-					timeout: 1000 * 60 * 5,
-					frequency: 200,
+					timeout: 1000 * 60 * 10,
+					frequency: 2000,
 				}).then(pollResult => {
 					let status = pollResult.status;
 					let success = pollResult.success;
