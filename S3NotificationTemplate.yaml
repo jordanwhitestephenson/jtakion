@@ -970,5 +970,5 @@ Resources:
                     Destination: !Ref processItemFailureSQSQueue
             FunctionName: !Ref processAPIItemsLambdaFunction
             MaximumEventAgeInSeconds: 21600
-            MaximumRetryAttempts: 10
+            MaximumRetryAttempts: 2
             Qualifier: "$LATEST"
