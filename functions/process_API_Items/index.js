@@ -892,7 +892,7 @@ exports.handler = async (event) => {
 					sendItemToQueue(body);
 				} else {
 					//itemsToUpload[body.destEnv].push(option);
-					let exists = await checkAssetExists(body.groupId, body.catalog.code, body.id, sourceKey);
+					let exists = await checkAssetExists(body.groupId, body.catalog.code, body.id, body.sourceKey);
 					if(!exists) {
 						itemsToUpload[body.orgId].push(option);
 					}
