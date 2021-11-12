@@ -207,10 +207,10 @@ exports.handler = async (event) => {
 			return obj;
 		});
 		if(data.length > 0) {
-			console.log('already created');
+			console.log('already created', groupId, catalogCode, optionId, sourceKey);
 			return true;
 		} else {
-			console.log('not already created');
+			console.log('not already created', groupId, catalogCode, optionId, sourceKey);
 			return false;
 		}
 	}

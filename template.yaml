@@ -315,7 +315,7 @@ Resources:
                 - processAPIItemsErrorIAMRole
                 - "Arn"
             Runtime: "nodejs14.x"
-            Timeout: 3
+            Timeout: 30
             TracingConfig: 
                 Mode: "PassThrough"
 
@@ -369,7 +369,8 @@ Resources:
                 - createAndIdMaterialIAMRole
                 - "Arn"
             Runtime: "nodejs12.x"
-            Timeout: 30
+            Timeout: 300
+            ReservedConcurrentExecutions: 10
             TracingConfig: 
                 Mode: "PassThrough"
 
@@ -397,6 +398,7 @@ Resources:
                 - "Arn"
             Runtime: "nodejs12.x"
             Timeout: 720
+            ReservedConcurrentExecutions: 50
             TracingConfig: 
                 Mode: "PassThrough"
 
@@ -451,6 +453,7 @@ Resources:
                 - "Arn"
             Runtime: "nodejs12.x"
             Timeout: 720
+            ReservedConcurrentExecutions: 50
             TracingConfig: 
                 Mode: "PassThrough"
 
