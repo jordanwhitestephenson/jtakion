@@ -576,6 +576,7 @@ exports.handler = async (event) => {
 				itemsData,
 				config
 			).catch(error => {
+				console.log('erorr uploading ids '+itemsToUploadEnv.map(i => i.m), error);
 				itemsToUploadEnv.forEach(itm => {
 					let keyArray;
 					if(itm.m.itemId) {
@@ -616,7 +617,7 @@ exports.handler = async (event) => {
 				const jobId = res.data.jobId;
 				//poll for job completion
 				return pollJob(jobId, apiUrl, apiToken, {
-					timeout: 1000 * 60 * 5,
+					timeout: 1000 * 60 * 10,
 					frequency: 200,
 				}).then(pollResult => {
 					let status = pollResult.status;
@@ -768,11 +769,12 @@ exports.handler = async (event) => {
 							});
 					} else if (status === 'pending') {
 						// reached specified timeout to check for completion but job still not done
-						console.log('item import job polling timed for items '+itemsToUploadEnv.map(i => i.query));
+						console.log('item import job polling timed out for items '+itemsToUploadEnv.map(i => i.m));
+						throw new Error('item import job polling timed out for items '+itemsToUploadEnv.map(i => i.m));
 						//return item;
 					} else {
 						// error - job failed
-						console.log('item import job failed for items '+itemsToUploadEnv.map(i => i.query));
+						console.log('item import job failed for items '+itemsToUploadEnv.map(i => i.m));
 						//logApiCallError({'message':'job failed'}, apiUrl+'/products/import?orgId='+orgId, JSON.stringify(itemsToUploadEnv), sourceKey);					
 						itemsToUploadEnv.forEach(itm => {
 							let keyArray;
@@ -785,6 +787,7 @@ exports.handler = async (event) => {
 								logItemEvent( events.unknownErrorApiCall(apiUrl+'/products/import?orgId='+orgId, JSON.stringify(itemsToUploadEnv), 'job failed'), k);			
 							});						
 						});
+						throw new Error('item import job failed for items '+itemsToUploadEnv.map(i => i.m));
 						//return item;
 					}
 				}).catch(error => {

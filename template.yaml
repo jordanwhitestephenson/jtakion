@@ -396,7 +396,7 @@ Resources:
                 - processAPIItemsIAMRole
                 - "Arn"
             Runtime: "nodejs12.x"
-            Timeout: 360
+            Timeout: 720
             TracingConfig: 
                 Mode: "PassThrough"
 
