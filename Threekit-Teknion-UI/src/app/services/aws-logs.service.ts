@@ -21,8 +21,13 @@ export class AwsLogsService {
 		secretAccessKey: this.paramsService.awsSecretToken
       });
 
+	  let prefix = '';
+	  if(this.paramsService.logPrefix && this.paramsService.logPrefix !== "") {
+		  prefix = '/' + this.paramsService.logPrefix;
+	  }
+
       const params: any = {
-        logGroupName: `${this.logGroupPrefix}${logGroupName}`, /* required */
+        logGroupName: `${prefix}${this.logGroupPrefix}${logGroupName}`, /* required */
         interleaved: true,
         limit: 250
       };
@@ -45,8 +50,13 @@ export class AwsLogsService {
 		secretAccessKey: this.paramsService.awsSecretToken
       });
 
+	  let prefix = '';
+	  if(this.paramsService.logPrefix && this.paramsService.logPrefix !== "") {
+		  prefix = '/' + this.paramsService.logPrefix;
+	  }
+
       const params: any = {
-        logGroupNamePrefix: `${this.logGroupPrefix}${searchParam ? searchParam : ''}`
+        logGroupNamePrefix: `${prefix}${this.logGroupPrefix}${searchParam ? searchParam : ''}`
      };
 
       if (nextToken) {
@@ -62,27 +72,37 @@ export class AwsLogsService {
 		  accessKeyId: this.paramsService.awsAccessToken,
 		  secretAccessKey: this.paramsService.awsSecretToken
         });
+
+		let prefix = '';
+		if(this.paramsService.logPrefix && this.paramsService.logPrefix !== "") {
+			prefix = '/' + this.paramsService.logPrefix;
+		}
   
         const params: any = {
-          logGroupName: `${this.logGroupPrefix}${logGroupName}`
+          logGroupName: `${prefix}${this.logGroupPrefix}${logGroupName}`
         };
         
         return cloudWatchLogs.deleteLogGroup(params).promise();
     }
   }
 
-  startProgressQuery(logGroupName:string) {
+  /*startProgressQuery(logGroupName:string) {
 		const cloudWatchLogs = new AWS.CloudWatchLogs({
 		  region: this.paramsService.region,
 		  accessKeyId: this.paramsService.awsAccessToken,
 		  secretAccessKey: this.paramsService.awsSecretToken
 		});
 
+		let prefix = '';
+		if(this.paramsService.logPrefix && this.paramsService.logPrefix !== "") {
+			prefix = '/' + this.paramsService.logPrefix;
+		}
+
 		var params: any = {
-			endTime: Date.now(), /* required */
-			queryString: this.progressQuery, /* required */
-			startTime: Date.now()-315569520000, /* required = 10 years */
-			logGroupName: `${this.logGroupPrefix}${logGroupName}`
+			endTime: Date.now(), 
+			queryString: this.progressQuery, 
+			startTime: Date.now()-315569520000,
+			logGroupName: `${prefix}${this.logGroupPrefix}${logGroupName}`
 		};
 		
 		return cloudWatchLogs.startQuery(params).promise();
@@ -96,9 +116,9 @@ export class AwsLogsService {
 		});
 
 		var params = {
-			queryId: queryId /* required */
+			queryId: queryId 
 		};
 		
 		return cloudWatchLogs.getQueryResults(params).promise();
-  }
+  }*/
 }

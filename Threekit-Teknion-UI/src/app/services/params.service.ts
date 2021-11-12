@@ -18,6 +18,7 @@ export class ParamsService {
 	private _region;
 	private _jobEndpoint;
 	private _cancelEndpoint;
+	private _logPrefix;
 
 	constructor(private http: HttpClient) { 
 	}
@@ -70,6 +71,10 @@ export class ParamsService {
 		return this._cancelEndpoint;
 	}
 
+	public get logPrefix() {
+		return this._logPrefix;
+	}
+
 	public async setOrigParams(oid:string, aid:string, tk:string, bu:string) {
 		this._apiBasePath = bu;
 		this._orgId = oid;
@@ -85,6 +90,7 @@ export class ParamsService {
 		this._region = data.configuration.region;
 		this._jobEndpoint = data.configuration.jobEndpoint;
 		this._cancelEndpoint = data.configuration.cancelEndpoint;
+		this._logPrefix = data.configuration.logPrefix;
 		return Promise.resolve();
 	}
 }

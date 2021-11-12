@@ -275,6 +275,7 @@ Resources:
                     foundItemsQueue: !Sub "https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${foundItemsSQSQueue.QueueName}"
                     dbArn: !Sub "arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:cluster:${RDSDBCluster}"
                     secretArn: !Ref SecretsManagerSecret
+                    logPrefix: !Sub "${environment}"
             FunctionName: !Sub "parseXMLFromS3-${environment}"
             Handler: "index.handler"
             Architectures: 
@@ -296,6 +297,11 @@ Resources:
         Type: "AWS::Lambda::Function"
         Properties:
             Description: ""
+            Environment: 
+                Variables:   
+                    dbArn: !Sub "arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:cluster:${RDSDBCluster}"
+                    secretArn: !Ref SecretsManagerSecret
+                    logPrefix: !Sub "${environment}"
             FunctionName: !Sub "process_API_Items_Error-${environment}"
             Handler: "index.handler"
             Architectures: 
@@ -349,6 +355,7 @@ Resources:
                     MaterialRetryQueue: !Sub "https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${optionsNeedingMaterialRetrySQSQueue.QueueName}"
                     dbArn: !Sub "arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:cluster:${RDSDBCluster}"
                     secretArn: !Ref SecretsManagerSecret
+                    logPrefix: !Sub "${environment}"
             FunctionName: !Sub "createAndId_material-${environment}"
             Handler: "index.handler"
             Architectures: 
@@ -375,6 +382,7 @@ Resources:
                     itemsNeedingAssetsQueue: !Sub "https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${itemsNeedingAssetsSQSQueue.QueueName}"
                     dbArn: !Sub "arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:cluster:${RDSDBCluster}"
                     secretArn: !Ref SecretsManagerSecret
+                    logPrefix: !Sub "${environment}"
             FunctionName: !Sub "process_API_Items-${environment}"
             Handler: "index.handler"
             Architectures: 
@@ -428,6 +436,7 @@ Resources:
                     optionsNeedingMaterialQueue: !Sub "https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${optionsNeedingMaterialSQSQueue.QueueName}"
                     dbArn: !Sub "arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:cluster:${RDSDBCluster}"
                     secretArn: !Ref SecretsManagerSecret
+                    logPrefix: !Sub "${environment}"
             FunctionName: !Sub "process_API_assets-${environment}"
             Handler: "index.handler"
             Architectures: 

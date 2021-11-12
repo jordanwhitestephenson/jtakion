@@ -50,8 +50,8 @@ function finishFlushingLogEvents(){
 
 function stepLogStreamPromise(sourceKey){
     if(!logPromises[sourceKey]) {
-        
-        const logGroupName = cloudWatchLogGroupName + "/" + sourceKey;
+        let logPrefix = process.env.logPrefix;
+        const logGroupName = (logPrefix===undefined?"":("/" + logPrefix)) +cloudWatchLogGroupName + "/" + sourceKey;
         const logStreamName = logProcessName + "_" + guid;
         
         //try to create log group
