@@ -633,27 +633,33 @@ exports.handler = async (event) => {
 								return axios.get(`${apiUrl}/files/${fileId}/content`, { 'headers': { 'Authorization': 'Bearer '+apiToken } })
 									.then(fileContent => {
 										console.log('item import job run results: ', fileContent);
-										if(fileContent && fileContent.data) {
+										let promises = [];	
+										if(fileContent && fileContent.data) {											
 											const productsCreated = fileContent.data.map(p => {
 												if(p.metadata.itemId){
 													let sourceKeyArray = bodySourceKeys[p.metadata.itemId];	
+													
 													sourceKeyArray.forEach(sourceKey => {
 														logItemEvent( events.createdItem(p.metadata.itemId, p.id, Date.now() - t),  sourceKey);	
-														writeCompletedItemToDatabase(p.metadata.itemId, 'item', sourceKey).then(res => {
-															console.log('wrote completed item to db', res);
-														});				
-													});						
+														let completedItemPromise = writeCompletedItemToDatabase(p.metadata.itemId, 'item', sourceKey);//.then(res => {
+															//console.log('wrote completed item to db', res);
+														//});	
+														promises.push(completedItemPromise);			
+													});																	
 													return p.metadata.itemId;
 												} else {
-													let sourceKeyArray = bodySourceKeys[p.metadata.optionId];	
+													let sourceKeyArray = bodySourceKeys[p.metadata.optionId];
+													let promises = [];	
 													sourceKeyArray.forEach(sourceKey => {					
 														logItemEvent( events.createdOption(p.metadata.optionId, p.id, Date.now() - t), sourceKey );
-														writeCompletedItemToDatabase(p.metadata.optionId, 'option', sourceKey).then(res => {
-															console.log('wrote completed item to db', res);
-														});
-														writeAssetLookup(sourceKey, p.id, p.metadata.groupId, p.metadata.catalogCode, p.metadata.optionId, p.name).then(res => {
-															console.log('wrote asset lookup to db', res);
-														});
+														let completedItemPromise = writeCompletedItemToDatabase(p.metadata.optionId, 'option', sourceKey);//.then(res => {
+															//	console.log('wrote completed item to db', res);
+														//});
+														let assetPromise = writeAssetLookup(sourceKey, p.id, p.metadata.groupId, p.metadata.catalogCode, p.metadata.optionId, p.name);//.then(res => {
+															//console.log('wrote asset lookup to db', res);
+														//});
+														promises.push(completedItemPromise);
+														promises.push(assetPromise);
 													});
 													return p.metadata.optionId;
 												}					
@@ -683,7 +689,11 @@ exports.handler = async (event) => {
 												console.log('Items failed: ', productsFailed);
 											}
 										}
-										return fileContent.data;
+										return Promise.all(promises).then(r => {
+											console.log('completed all db promises for item ', r);
+											return fileContent.data;
+										});	
+										
 									}).catch(error => {
 										console.log(error);
 										//logApiCallError(error, `${apiUrl}/files/${fileId}/content`, '', sourceKey);

@@ -403,7 +403,7 @@ Resources:
                 - processAPIItemsIAMRole
                 - "Arn"
             Runtime: "nodejs12.x"
-            Timeout: 60
+            Timeout: 360
             TracingConfig: 
                 Mode: "PassThrough"
 
@@ -961,3 +961,15 @@ Resources:
                 HttpVersion: "http2"
                 DefaultRootObject: ""
                 IPV6Enabled: true
+
+    LambdaEventInvokeConfig:
+        Type: "AWS::Lambda::EventInvokeConfig"
+        Properties:
+            DestinationConfig: 
+                OnSuccess: {}
+                OnFailure: 
+                    Destination: !Ref processItemFailureSQSQueue
+            FunctionName: !Ref processAPIItemsLambdaFunction
+            MaximumEventAgeInSeconds: 21600
+            MaximumRetryAttempts: 10
+            Qualifier: "$LATEST"
