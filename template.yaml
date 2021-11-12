@@ -959,7 +959,6 @@ Resources:
         Type: "AWS::Lambda::EventInvokeConfig"
         Properties:
             DestinationConfig: 
-                OnSuccess: {}
                 OnFailure: 
                     Destination: !Ref processItemFailureSQSQueue
             FunctionName: !Ref processAPIItemsLambdaFunction
