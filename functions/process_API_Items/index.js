@@ -162,6 +162,59 @@ exports.handler = async (event) => {
 		return rdsDataService.executeStatement(sqlParams).promise();
 	}
 
+	async function checkAssetExists(groupId, catalogCode, optionId, sourceKey) {
+		let sqlParams = {
+			secretArn: secretArn,
+			resourceArn: dbArn,
+			sql: 'SELECT group_id, option_id FROM asset_lookup JOIN job ON job.jid = asset_lookup.jid WHERE job.nm = :jobname AND group_id = :groupId AND catalog_code = :catalogCode AND option_id = :optionId',
+			database: 'threekit',
+			includeResultMetadata: true,
+			parameters: [
+				{
+					'name': 'jobname',
+					'value': {
+						'stringValue': sourceKey
+					}
+				},
+				{
+					'name': 'groupId',
+					'value': {
+						'stringValue': groupId
+					}
+				},
+				{
+					'name': 'catalogCode',
+					'value': {
+						'stringValue': catalogCode
+					}
+				},
+				{
+					'name': 'optionId',
+					'value': {
+						'stringValue': optionId
+					}
+				}
+			]
+		};
+		let resp = await rdsDataService.executeStatement(sqlParams).promise();
+		console.log('check asset exists resp', resp);
+		let columns = resp.columnMetadata.map(c => c.name);
+		let data = resp.records.map(r => {
+			let obj = {};
+			r.map((v, i) => {
+				obj[columns[i]] = Object.values(v)[0];
+			});
+			return obj;
+		});
+		if(data.length > 0) {
+			console.log('already created');
+			return true;
+		} else {
+			console.log('not already created');
+			return false;
+		}
+	}
+
 	function pollJob(jobId, apiUrl, apiToken, options = {}) {
 		const { timeout = DEFAULT_TIMEOUT, frequency = DEFAULT_FREQUENCY } = options;
 		const startTime = Date.now();
@@ -651,12 +704,8 @@ exports.handler = async (event) => {
 													let sourceKeyArray = bodySourceKeys[p.metadata.optionId];
 													sourceKeyArray.forEach(sourceKey => {					
 														logItemEvent( events.createdOption(p.metadata.optionId, p.id, Date.now() - t), sourceKey );
-														let completedItemPromise = writeCompletedItemToDatabase(p.metadata.optionId, 'option', sourceKey);//.then(res => {
-															//	console.log('wrote completed item to db', res);
-														//});
-														let assetPromise = writeAssetLookup(sourceKey, p.id, p.metadata.groupId, p.metadata.catalogCode, p.metadata.optionId, p.name);//.then(res => {
-															//console.log('wrote asset lookup to db', res);
-														//});
+														let completedItemPromise = writeCompletedItemToDatabase(p.metadata.optionId, 'option', sourceKey);
+														let assetPromise = writeAssetLookup(sourceKey, p.id, p.metadata.groupId, p.metadata.catalogCode, p.metadata.optionId, p.name);
 														promises.push(completedItemPromise);
 														promises.push(assetPromise);
 													});
@@ -843,7 +892,10 @@ exports.handler = async (event) => {
 					sendItemToQueue(body);
 				} else {
 					//itemsToUpload[body.destEnv].push(option);
-					itemsToUpload[body.orgId].push(option);
+					let exists = await checkAssetExists(body.groupId, body.catalog.code, body.id, sourceKey);
+					if(!exists) {
+						itemsToUpload[body.orgId].push(option);
+					}
 				}
 			} else if (body && body.type && body.type === 'item') {
 				logItemEvent( events.dequeueItem(body.id, getQueueTime()), body.sourceKey );
