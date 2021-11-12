@@ -637,8 +637,7 @@ exports.handler = async (event) => {
 										if(fileContent && fileContent.data) {											
 											const productsCreated = fileContent.data.map(p => {
 												if(p.metadata.itemId){
-													let sourceKeyArray = bodySourceKeys[p.metadata.itemId];	
-													
+													let sourceKeyArray = bodySourceKeys[p.metadata.itemId];														
 													sourceKeyArray.forEach(sourceKey => {
 														logItemEvent( events.createdItem(p.metadata.itemId, p.id, Date.now() - t),  sourceKey);	
 														let completedItemPromise = writeCompletedItemToDatabase(p.metadata.itemId, 'item', sourceKey);//.then(res => {
@@ -649,7 +648,6 @@ exports.handler = async (event) => {
 													return p.metadata.itemId;
 												} else {
 													let sourceKeyArray = bodySourceKeys[p.metadata.optionId];
-													let promises = [];	
 													sourceKeyArray.forEach(sourceKey => {					
 														logItemEvent( events.createdOption(p.metadata.optionId, p.id, Date.now() - t), sourceKey );
 														let completedItemPromise = writeCompletedItemToDatabase(p.metadata.optionId, 'option', sourceKey);//.then(res => {
