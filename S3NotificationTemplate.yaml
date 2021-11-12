@@ -967,7 +967,7 @@ Resources:
         Properties:
             DestinationConfig: 
                 OnFailure: 
-                    Destination: !Ref processItemFailureSQSQueue
+                    Destination: !GetAtt processItemFailureSQSQueue.Arn
             FunctionName: !Ref processAPIItemsLambdaFunction
             MaximumEventAgeInSeconds: 21600
             MaximumRetryAttempts: 2
