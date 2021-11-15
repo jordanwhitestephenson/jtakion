@@ -196,21 +196,30 @@ exports.handler = async (event) => {
 				});
 				return obj;
 			});
-			console.log(data);
-			console.log(option, option.subGroupOptions);
-			console.log('subgroupoptions: '+option.id+' products'+data.length+' '+option.subGroupOptions.length+' '+option.subGroupOptions+' '+!option.subGroupOptions.some(sgo => data.map(p => !p['option_id']).includes(sgo)));
+			//console.log(data);
+			//console.log(option, option.subGroupOptions);
+			//console.log('subgroupoptions: '+option.id+' products'+data.length+' '+option.subGroupOptions.length+' '+option.subGroupOptions+' '+!option.subGroupOptions.some(sgo => data.map(p => !p['option_id']).includes(sgo)));
 			if(data && !option.subGroupOptions.some(sgo => data.map(p => !p['option_id']).includes(sgo))) {
+				let optionIds = [];
 				let productsFound = data.filter(p => {
-                    return option.subGroupOptions.includes(p['option_id']);
+					let included = option.subGroupOptions.includes(p['option_id']);
+					if(included === true) {
+						if(optionIds.includes(p['option_id'])) {
+							included = false;
+						} else {
+							optionIds.push(p['option_id']);
+						}
+					}
+                    return included;
                 });
 				if(productsFound.length === option.subGroupOptions.length) {
                     option.subGroupOptionIds = productsFound.map(p => p['asset_id']);
-                    console.log({'event': 'subGroupOptionsAdded', 'optionId': option.id, 'options': data.map(p => p['nm'])});
+                    //console.log({'event': 'subGroupOptionsAdded', 'optionId': option.id, 'options': data.map(p => p['nm'])});
                 }
 			}            
             return option;
         }).catch(error => {
-			console.log(error);
+			//console.log(error);
 			return option;
 		});
     }
@@ -222,7 +231,7 @@ exports.handler = async (event) => {
         }, true);
         if(!item.modelId || !hasGroupOptions){
 			return createOrUpdateModel(item).then( completeItem => {
-				console.log({'event': 'modelIdAdded', 'itemId': completeItem.id, 'modelId': completeItem.modelId});
+				//console.log({'event': 'modelIdAdded', 'itemId': completeItem.id, 'modelId': completeItem.modelId});
 				return completeItem;
 			});
         }else{
@@ -244,8 +253,8 @@ exports.handler = async (event) => {
 			return lookupAsset(sourceKey, itemGroup.id, item.catalog.code);
         });
         return Promise.all(groupOptionsPromises).then(results => {
-			console.log('groupOptionsPromises', item, results);
-			console.log('groupOptionQuery results ',JSON.stringify(results));
+			//console.log('groupOptionsPromises', item, results);
+			//console.log('groupOptionQuery results ',JSON.stringify(results));
 			let data = results.map(r => {
 				let columns = r.columnMetadata.map(c => c.name);
 				let data = r.records.map(r => {
@@ -257,7 +266,7 @@ exports.handler = async (event) => {
 				});
 				return data;
 			});			
-			console.log('groupOptionQueryData', data);
+			//console.log('groupOptionQueryData', data);
 			let itemGroupMap = {};
 			for(let i=0; i<data.length; i++) {
 				let arr = data[i];
@@ -285,11 +294,11 @@ exports.handler = async (event) => {
 				}
 			}
 
-			console.log(itemGroupMap);
-            console.log(JSON.stringify(item.itemGroups));
+			//console.log(itemGroupMap);
+            //console.log(JSON.stringify(item.itemGroups));
             const hasAllGroupOptions = item.itemGroups.reduce((agg, ig) => agg && ig.groupOptionIds.reduce((agg2, optId) => agg2 && itemGroupMap[ig.id] != null && itemGroupMap[ig.id][optId] != null, true), true);
-            console.log(hasAllGroupOptions);
-			console.log('hasAllGroupOptions',hasAllGroupOptions);
+            //console.log(hasAllGroupOptions);
+			//console.log('hasAllGroupOptions',hasAllGroupOptions);
             if (!hasAllGroupOptions) {
 				logItemEvent( events.notAllGroupOptionsComplete(item.id), item.sourceKey);
                 return Promise.resolve(item);
@@ -442,37 +451,37 @@ exports.handler = async (event) => {
                 uploadModelConfig
             ).then( r => {
 				//get jobId based on result
-				console.log('model job results ', r);
+				//console.log('model job results ', r);
 				const jobId = r.data.jobId;
 				//poll for job completion
 				return pollJob(jobId, apiUrl, apiToken, {
-					timeout: 1000 * 60 * 5,
+					timeout: 1000 * 60 * 10,
 					frequency: 2000,
 				}).then(pollResult => {
 					let status = pollResult.status;
 					let success = pollResult.success;
 					if (status === 'stopped' && success) {
-						console.log('model job stopped, calling job runs api');
+						//console.log('model job stopped, calling job runs api');
 						const runsUrl = `${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId}`;
 						return axios.get(runsUrl, { 'headers': { 'Authorization': 'Bearer '+apiToken } })
 							.then(res => {
 								const { runs } = res.data;
 								const { results } = runs[0];
 								const fileId = results.files[0].id;
-								console.log('fileId ', fileId);
+								//console.log('fileId ', fileId);
 								return axios.get(`${apiUrl}/files/${fileId}/content`, { 'headers': { 'Authorization': 'Bearer '+apiToken } })
 									.then(fileContent => {
-										console.log('model job run results: ', fileContent);
+										//console.log('model job run results: ', fileContent);
 										//need to get the model id from the results
 										item.modelId = fileContent.data[0].id;
 										return item;
 									}).catch(error => {
-										console.log(error);
+										console.log('error during files content', error);
 										logApiCallError(error, `${apiUrl}/files/${fileId}/content`, '', sourceKey);
 										throw error;
 									});
 							}).catch(error => {
-								console.log(error);
+								console.log('error during jobs runs', error);
 								logApiCallError(error, `${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId}`, '', sourceKey);
 								throw error;
 							});
@@ -491,18 +500,18 @@ exports.handler = async (event) => {
 					return item;
 				});				
             }).catch(error => {
-				console.log(error);
+				console.log('error during products import', error);
 				logApiCallError(error, apiUrl+'/products/import?orgId='+orgId, JSON.stringify(uploadModelData), sourceKey);
 				return item;
 			});
         }).catch(error => {
-			console.log(error);
+			console.log('error during group option promises', error);
 			return item;
 		});
     }
     
     function flushToItemQueue(items, queue, delay) {
-        console.log("flushing ",items.length, " items to queue");
+        //console.log("flushing ",items.length, " items to queue");
         
         if(items.length <= 0){
             return Promise.resolve("no items to send to queue");
@@ -522,7 +531,7 @@ exports.handler = async (event) => {
             "QueueUrl" : queue.queueUrl
         };
         
-        console.log("sending to queue ", params );
+        //console.log("sending to queue ", params );
         
         const messageSendPromise = sqs.sendMessageBatch(params).promise();
         
@@ -540,7 +549,7 @@ exports.handler = async (event) => {
 	for(let i=0; i<event.Records.length; i++) {
 		let r = event.Records[i];
         const body = JSON.parse(r.body);
-        console.log('Body: ', body);
+        //console.log('Body: ', body);
 		let notCancelled = await checkIfJobCancelled(body.sourceKey);
 		if(notCancelled) {
 			if (body && body.type && body.type === 'option') {
@@ -553,14 +562,14 @@ exports.handler = async (event) => {
 				const option = addMaterialsToOption(body);
 				itemsToUpload.push(option);
 			} else if (body && body.type && body.type === 'item') {
-				console.log('Item: ', body);
+				//console.log('Item: ', body);
 				
 				logItemEvent( events.dequeueItem(body.id, getQueueTime(r)), body.sourceKey);
 				
 				//TODO refactor to seperate getting subGroups from creating/updating model
 				
 				const item = addModelToItem(body);
-				console.log({'event': 'modelIdAdded', 'itemId': item.id, 'modelId': item.modelId});
+				//console.log({'event': 'modelIdAdded', 'itemId': item.id, 'modelId': item.modelId});
 				itemsToUpload.push(item);
 			}
 		} else {
@@ -569,15 +578,15 @@ exports.handler = async (event) => {
     };
     
     function needsMaterial(option){
-        console.log('needsMaterial: '+option.id+' image: '+option.image+' materialId: '+option.materialId+' materialChecked: '+option.materialChecked);
+        //console.log('needsMaterial: '+option.id+' image: '+option.image+' materialId: '+option.materialId+' materialChecked: '+option.materialChecked);
         return option.image && !option.materialId && !option.materialChecked ;
     }
     function needsModel(item){
-        console.log('needsModel: '+item.id+' item.modelid: '+item.modelId);
+        //console.log('needsModel: '+item.id+' item.modelid: '+item.modelId);
         return item.type === 'item' && !item.modelId ;
     }
     function needsSubGroup(option){
-        console.log('needsSubGroup: '+option.id+' subGroupOptions: '+option.subGroupOptions+' subGroupOptionIds: '+option.subGroupOptionIds);
+        //console.log('needsSubGroup: '+option.id+' subGroupOptions: '+option.subGroupOptions+' subGroupOptionIds: '+option.subGroupOptionIds);
         return option.subGroupOptions && (!option.subGroupOptionIds || option.subGroupOptionIds.length !== option.subGroupOptions.length) ;
     }
     function exceedsCheckingAssets(option){
@@ -588,7 +597,7 @@ exports.handler = async (event) => {
     }
     
     return Promise.all(itemsToUpload).then( res => {
-        console.log("response from promise.all", JSON.stringify(res) );
+        //console.log("response from promise.all", JSON.stringify(res) );
         
         const done = res.filter( o => !needsMaterial(o) && !needsRetry(o) );
         const needingMaterial = res.filter( o => needsMaterial(o) );
@@ -597,7 +606,7 @@ exports.handler = async (event) => {
         const itemsFailedGettingAssets = done.filter( exceedsCheckingAssets );
         
         if (itemsFailedGettingAssets.length > 0) {
-            console.log({'event': 'itemsFailedGettingAssets', 'items': JSON.stringify(itemsFailedGettingAssets)});
+            //console.log({'event': 'itemsFailedGettingAssets', 'items': JSON.stringify(itemsFailedGettingAssets)});
 			itemsFailedGettingAssets.forEach(ifga => {
 				logItemEvent( events.itemsFailedGettingAssets(ifga.id, MAX_NUMBER_OF_RETRIES), ifga.sourceKey);
 			});
