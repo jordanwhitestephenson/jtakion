@@ -75,47 +75,12 @@ exports.handler = async (event) => {
 			return true;
 		}
 	}
-    
-    /* helper functions */
 	
-	function writeCompletedItemToDatabase(id, type, sourceKey) {
-		//console.log('writing conpleted item to db ', id, type, sourceKey);
+	async function checkAssetExists(groupId, catalogCode, optionId, sourceKey) {
 		let sqlParams = {
 			secretArn: secretArn,
 			resourceArn: dbArn,
-			sql: 'INSERT INTO job_item (jid, object_id, item_type) values ((SELECT jid FROM job WHERE nm = :jobname), :objectid, :itemtype)',
-			database: 'threekit',
-			includeResultMetadata: true,
-			parameters: [
-				{
-					'name': 'jobname',
-					'value': {
-						'stringValue': sourceKey
-					}
-				},
-				{
-					'name': 'objectid',
-					'value': {
-						'stringValue': id
-					}
-				},
-				{
-					'name': 'itemtype',
-					'value': {
-						'stringValue': type
-					}
-				}
-			]
-		};
-		return rdsDataService.executeStatement(sqlParams).promise();
-	}
-
-	function writeAssetLookup(sourceKey, assetId, groupId, catalogCode, optionId, nm) {
-		//console.log('writing asset lookup to db ', assetId, groupId, catalogCode, sourceKey);
-		let sqlParams = {
-			secretArn: secretArn,
-			resourceArn: dbArn,
-			sql: 'INSERT INTO asset_lookup (jid, group_id, catalog_code, asset_id, option_id, nm) values ((SELECT jid FROM job WHERE nm = :jobname), :groupId, :catalogCode, :assetId, :optionId, :nm)',
+			sql: 'SELECT group_id, option_id FROM asset_lookup JOIN job ON job.jid = asset_lookup.jid WHERE job.nm = :jobname AND group_id = :groupId AND catalog_code = :catalogCode AND option_id = :optionId',
 			database: 'threekit',
 			includeResultMetadata: true,
 			parameters: [
@@ -138,26 +103,159 @@ exports.handler = async (event) => {
 					}
 				},
 				{
-					'name': 'assetId',
-					'value': {
-						'stringValue': assetId
-					}
-				},
-				{
 					'name': 'optionId',
 					'value': {
 						'stringValue': optionId
 					}
-				},
-				{
-					'name': 'nm',
-					'value': {
-						'stringValue': nm
-					}
 				}
 			]
 		};
-		return rdsDataService.executeStatement(sqlParams).promise();
+		let resp = await rdsDataService.executeStatement(sqlParams).promise();
+		console.log('check asset exists resp', resp);
+		let columns = resp.columnMetadata.map(c => c.name);
+		let data = resp.records.map(r => {
+			let obj = {};
+			r.map((v, i) => {
+				obj[columns[i]] = Object.values(v)[0];
+			});
+			return obj;
+		});
+		if(data.length > 0) {
+			console.log('already created', groupId, catalogCode, optionId, sourceKey);
+			return true;
+		} else {
+			console.log('not already created', groupId, catalogCode, optionId, sourceKey);
+			return false;
+		}
+	}
+    
+    /* helper functions */
+	
+	function writeCompletedAndAssetToDatabase(id, type, sourceKey, assetId, groupId, catalogCode, optionId, nm, options = {}) {
+		console.log('writing conpleted item to db ', id, type, sourceKey);
+		const { timeout = DEFAULT_TIMEOUT, frequency = DEFAULT_FREQUENCY } = options;
+		const startTime = Date.now();
+		const prom = new Promise((resolve, reject) => {
+			const check = async () => {
+				console.log('writing completed item and asset to db ', id);
+				try {
+					let sqlParams = {
+						secretArn: secretArn,
+						resourceArn: dbArn,
+						sql: 'INSERT INTO job_item (jid, object_id, item_type) values ((SELECT jid FROM job WHERE nm = :jobname), :objectid, :itemtype);INSERT INTO asset_lookup (jid, group_id, catalog_code, asset_id, option_id, nm) values ((SELECT jid FROM job WHERE nm = :jobname), :groupId, :catalogCode, :assetId, :optionId, :nm);',
+						database: 'threekit',
+						includeResultMetadata: true,
+						parameters: [
+							{
+								'name': 'jobname',
+								'value': {
+									'stringValue': sourceKey
+								}
+							},
+							{
+								'name': 'objectid',
+								'value': {
+									'stringValue': id
+								}
+							},
+							{
+								'name': 'itemtype',
+								'value': {
+									'stringValue': type
+								}
+							},
+							{
+								'name': 'groupId',
+								'value': {
+									'stringValue': groupId
+								}
+							},
+							{
+								'name': 'catalogCode',
+								'value': {
+									'stringValue': catalogCode
+								}
+							},
+							{
+								'name': 'assetId',
+								'value': {
+									'stringValue': assetId
+								}
+							},
+							{
+								'name': 'optionId',
+								'value': {
+									'stringValue': optionId
+								}
+							},
+							{
+								'name': 'nm',
+								'value': {
+									'stringValue': nm
+								}
+							}
+						]
+					};
+					const res = await rdsDataService.executeStatement(sqlParams).promise();
+					return resolve({});
+				} catch (err) {
+					console.log('error writing completed item and asset to db, retry ', id, err);
+				}
+			
+				setTimeout(check, frequency);
+			};
+ 
+   			check();
+ 		});
+ 		return prom;
+	}
+
+	function writeCompletedItemToDatabase(id, type, sourceKey, options = {}) {
+		const { timeout = DEFAULT_TIMEOUT, frequency = DEFAULT_FREQUENCY } = options;
+		const startTime = Date.now();
+		const prom = new Promise((resolve, reject) => {
+			const check = async () => {
+				try {
+					console.log('writing completed item to db ', id);
+					let sqlParams = {
+						secretArn: secretArn,
+						resourceArn: dbArn,
+						sql: 'INSERT INTO job_item (jid, object_id, item_type) values ((SELECT jid FROM job WHERE nm = :jobname), :objectid, :itemtype)',
+						database: 'threekit',
+						includeResultMetadata: true,
+						parameters: [
+							{
+								'name': 'jobname',
+								'value': {
+									'stringValue': sourceKey
+								}
+							},
+							{
+								'name': 'objectid',
+								'value': {
+									'stringValue': id
+								}
+							},
+							{
+								'name': 'itemtype',
+								'value': {
+									'stringValue': type
+								}
+							}
+						]
+					};
+					const res = await rdsDataService.executeStatement(sqlParams).promise();
+					return resolve({});
+				} catch (err) {
+					console.log('error writing to db, retry', id, err);
+				}
+			
+				setTimeout(check, frequency);
+			};
+ 
+   			check();
+ 		});
+ 		return prom;
 	}
 
 	function pollJob(jobId, apiUrl, apiToken, options = {}) {
@@ -168,7 +266,7 @@ exports.handler = async (event) => {
 				const jobUrl = `${apiUrl}/jobs/${jobId}`;
 				try {
 					const res = await axios.get(jobUrl, { 'headers': { 'Authorization': 'Bearer '+apiToken } });
-					console.log('poll job response: ',res);
+					//console.log('poll job response: ',res);
 					if (res.data.status === 'stopped' || Date.now() - startTime > timeout) {
 						return resolve({
 							status: res.data.status,
@@ -178,7 +276,7 @@ exports.handler = async (event) => {
 						});
 					}
 				} catch (err) {
-					console.log('caught error from got job fetch', err);
+					//console.log('caught error from got job fetch', err);
 					reject(err);
 				}
 			
@@ -206,7 +304,7 @@ exports.handler = async (event) => {
 			logItemEvent( events.noResponseApiCall(url, body, error.request), sourceKey);			
 		} else {
 			// Something happened in setting up the request that triggered an Error
-			//console.log('Error', error.message);
+			console.log('Unknown api error:', error);
 			logItemEvent( events.unknownErrorApiCall(url, body, error.message), sourceKey);				
 		}
 	}
@@ -300,7 +398,7 @@ exports.handler = async (event) => {
                 'defaultValue': option.thumbnailUrl
 			});
 		}
-        console.log("Attached groupId: " + option.groupId);
+        //console.log("Attached groupId: " + option.groupId);
         item.product.name = option.description;
 
 		if(option.prices) {
@@ -344,7 +442,7 @@ exports.handler = async (event) => {
     
     // create a item type product with optional id query
     function createItem (item) {
-        console.log({'event': 'createItem', 'itemId': item.id});
+        //console.log({'event': 'createItem', 'itemId': item.id});
         let uploadItem = { 'm':{'itemId':item.id},'query': { 'metadata': {
             'itemId': item.id,
             'catalog_code': item.catalog.code/*,
@@ -638,18 +736,18 @@ exports.handler = async (event) => {
 													let sourceKeyArray = bodySourceKeys[p.metadata.itemId];	
 													sourceKeyArray.forEach(sourceKey => {
 														logItemEvent( events.createdItem(p.metadata.itemId, p.id, Date.now() - t),  sourceKey);	
-														let completedItemPromise = writeCompletedItemToDatabase(p.metadata.itemId, 'item', sourceKey);			
-														promises.push(completedItemPromise);
+														let completedItemPromise = writeCompletedItemToDatabase(p.metadata.itemId, 'item', sourceKey);
+														promises.push(completedItemPromise);	
 													});						
 													return p.metadata.itemId;
 												} else {
 													let sourceKeyArray = bodySourceKeys[p.metadata.optionId];	
 													sourceKeyArray.forEach(sourceKey => {					
 														logItemEvent( events.createdOption(p.metadata.optionId, p.id, Date.now() - t), sourceKey );
-														let completedItemPromise = writeCompletedItemToDatabase(p.metadata.optionId, 'option', sourceKey);
-														let assetPromise = writeAssetLookup(sourceKey, p.id, p.metadata.groupId, p.metadata.catalogCode, p.metadata.optionId, p.name);
+														let completedItemPromise = writeCompletedAndAssetToDatabase(p.metadata.optionId, 'option', sourceKey, p.id, p.metadata.groupId, p.metadata.catalogCode, p.metadata.optionId, p.name);
+														//let assetPromise = writeAssetLookup(sourceKey, p.id, p.metadata.groupId, p.metadata.catalogCode, p.metadata.optionId, p.name);
 														promises.push(completedItemPromise);
-														promises.push(assetPromise);
+														//promises.push(assetPromise);
 													});
 													return p.metadata.optionId;
 												}					
@@ -682,9 +780,9 @@ exports.handler = async (event) => {
 										return Promise.all(promises).then(r => {
 											//console.log('completed all db promises for item ', r);
 											return fileContent.data;
-										});
+										});	
 									}).catch(error => {
-										console.log(error);
+										console.log('error during files content', error);
 										//logApiCallError(error, `${apiUrl}/files/${fileId}/content`, '', sourceKey);
 										itemsToUploadEnv.forEach(itm => {
 											let keyArray;
@@ -712,9 +810,9 @@ exports.handler = async (event) => {
 												});
 											} else {
 												// Something happened in setting up the request that triggered an Error
-												//console.log('Error', error.message);
+												console.log('Unknown api error:', error);
 												keyArray.forEach(k => {
-													logItemEvent( events.unknownErrorApiCall(`${apiUrl}/files/${fileId}/content`, '', error.message), k);			
+													logItemEvent( events.unknownErrorApiCall(`${apiUrl}/files/${fileId}/content`, error, error.message), k);			
 												});
 											}
 										});
@@ -749,7 +847,7 @@ exports.handler = async (event) => {
 										});
 									} else {
 										// Something happened in setting up the request that triggered an Error
-										//console.log('Error', error.message);
+										console.log('Unknown api error:', error);
 										keyArray.forEach(k => {
 											logItemEvent( events.unknownErrorApiCall(`${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId}`, '', error.message), k);			
 										});
@@ -764,7 +862,7 @@ exports.handler = async (event) => {
 						//return item;
 					} else {
 						// error - job failed
-						console.log('item import job failed for items '+itemsToUploadEnv.map(i => i.query));
+						console.log('item import job failed for items '+itemsToUploadEnv.map(i => i.m));
 						//logApiCallError({'message':'job failed'}, apiUrl+'/products/import?orgId='+orgId, JSON.stringify(itemsToUploadEnv), sourceKey);					
 						itemsToUploadEnv.forEach(itm => {
 							let keyArray;
@@ -817,10 +915,10 @@ exports.handler = async (event) => {
 					"orgId": body.orgId
 				};
 			}
-			console.log('orgMap: ',orgMap);
+			//console.log('orgMap: ',orgMap);
 			if (body && body.type && body.type === 'option') {
 				logItemEvent( events.dequeueOption(body.id, getQueueTime()), body.sourceKey );
-				console.log('Option: ', body);
+				//console.log('Option: ', body);
 				const option = createOption(body);
 				logItemEvent( events.creatingOption(body.id), body.sourceKey );
 				if (!itemsToUpload[body.orgId]) {//body.destEnv]) {
@@ -833,11 +931,14 @@ exports.handler = async (event) => {
 					sendItemToQueue(body);
 				} else {
 					//itemsToUpload[body.destEnv].push(option);
-					itemsToUpload[body.orgId].push(option);
+					let exists = await checkAssetExists(body.groupId, body.catalog.code, body.id, body.sourceKey);
+					if(!exists) {
+						itemsToUpload[body.orgId].push(option);
+					}
 				}
 			} else if (body && body.type && body.type === 'item') {
 				logItemEvent( events.dequeueItem(body.id, getQueueTime()), body.sourceKey );
-				console.log('Item: ', body);
+				//console.log('Item: ', body);
 				const item = createItem(body);
 				logItemEvent( events.creatingItem(body.id), body.sourceKey );
 				if (!itemsToUpload[body.orgId]) {//body.destEnv]) {
