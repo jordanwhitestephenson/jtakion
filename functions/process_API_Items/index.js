@@ -40,8 +40,8 @@ exports.handler = async (event) => {
     
     const start = Date.now();
 
-	const dbArn = process.env.dbArn;//await getDbArn('default');
-	const secretArn = process.env.secretArn;//await getSecretArn('default');
+	const dbArn = process.env.dbArn;
+	const secretArn = process.env.secretArn;
 
 	async function checkIfJobCancelled(jobName) {
 		let sqlParams = {
@@ -60,7 +60,6 @@ exports.handler = async (event) => {
 			]
 		};
 		let resp = await rdsDataService.executeStatement(sqlParams).promise();
-		console.log('check cancel resp', resp);
 		let columns = resp.columnMetadata.map(c => c.name);
 		let data = resp.records.map(r => {
 			let obj = {};
@@ -70,10 +69,8 @@ exports.handler = async (event) => {
 			return obj;
 		});
 		if(data[0]['stat'] === 'cancelled') {
-			console.log('job cancelled');
 			return false;
 		} else {
-			console.log('job not cancelled');
 			return true;
 		}
 	}
@@ -81,7 +78,6 @@ exports.handler = async (event) => {
     /* helper functions */
 
 	function writeCompletedAndAssetToDatabase(id, type, sourceKey, assetId, groupId, catalogCode, optionId, nm) {
-		console.log('writing conpleted item to db ', id, type, sourceKey);
 		let sqlParams = {
 			secretArn: secretArn,
 			resourceArn: dbArn,
@@ -177,7 +173,6 @@ exports.handler = async (event) => {
 			]
 		};
 		let resp = await rdsDataService.executeStatement(sqlParams).promise();
-		console.log('check asset exists resp', resp);
 		let columns = resp.columnMetadata.map(c => c.name);
 		let data = resp.records.map(r => {
 			let obj = {};
@@ -196,7 +191,6 @@ exports.handler = async (event) => {
 	}
 
 	function writeCompletedAndAssetToDatabase(id, type, sourceKey, assetId, groupId, catalogCode, optionId, nm, options = {}) {
-		console.log('writing conpleted item to db ', id, type, sourceKey);
 		const { timeout = DEFAULT_TIMEOUT, frequency = DEFAULT_FREQUENCY } = options;
 		const startTime = Date.now();
 		const prom = new Promise((resolve, reject) => {
@@ -376,9 +370,7 @@ exports.handler = async (event) => {
 	}
     
     //create a item and assets for a group
-    function createOption (option) {
-        console.log({'event': 'createGroupOption', 'optionId': option.id});
-            
+    function createOption (option) {         
         const item = {'m':{'optionId':option.id},'product': {}};
         
         if (option.im && option.materialId) {
@@ -464,7 +456,6 @@ exports.handler = async (event) => {
                 'defaultValue': option.thumbnailUrl
 			});
 		}
-        console.log("Attached groupId: " + option.groupId);
         item.product.name = option.description;
 
 		if(option.prices) {
@@ -508,7 +499,6 @@ exports.handler = async (event) => {
     
     // create a item type product with optional id query
     function createItem (item) {
-        console.log({'event': 'createItem', 'itemId': item.id});
         let uploadItem = { 'm':{'itemId':item.id},'query': { 'metadata': {
             'itemId': item.id,
             'catalog_code': item.catalog.code/*,
@@ -710,13 +700,9 @@ exports.handler = async (event) => {
     }
     
     async function pushItemsForEnv(key) {
-		console.log('key: ',key);
 		const orgId = orgMap[key].orgId;
 		const apiUrl = orgMap[key].apiUrl;
         const apiToken = orgMap[key].apiToken;
-        console.log('orgId: ',orgId);
-		console.log('apiUrl: ',apiUrl);
-		console.log('apiToken: ',apiToken);
         const itemsToUploadEnv = itemsToUpload[key];
 		if(itemsToUploadEnv.length > 0) {
 			const itemsData = new FormData();
