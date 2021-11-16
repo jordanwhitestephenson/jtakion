@@ -79,13 +79,13 @@ exports.handler = async (event) => {
 	}
     
     /* helper functions */
-	
-	function writeCompletedItemToDatabase(id, type, sourceKey) {
+
+	function writeCompletedAndAssetToDatabase(id, type, sourceKey, assetId, groupId, catalogCode, optionId, nm) {
 		console.log('writing conpleted item to db ', id, type, sourceKey);
 		let sqlParams = {
 			secretArn: secretArn,
 			resourceArn: dbArn,
-			sql: 'INSERT INTO job_item (jid, object_id, item_type) values ((SELECT jid FROM job WHERE nm = :jobname), :objectid, :itemtype)',
+			sql: 'INSERT INTO job_item (jid, object_id, item_type) values ((SELECT jid FROM job WHERE nm = :jobname), :objectid, :itemtype);INSERT INTO asset_lookup (jid, group_id, catalog_code, asset_id, option_id, nm) values ((SELECT jid FROM job WHERE nm = :jobname), :groupId, :catalogCode, :assetId, :optionId, :nm);',
 			database: 'threekit',
 			includeResultMetadata: true,
 			parameters: [
@@ -105,26 +105,6 @@ exports.handler = async (event) => {
 					'name': 'itemtype',
 					'value': {
 						'stringValue': type
-					}
-				}
-			]
-		};
-		return rdsDataService.executeStatement(sqlParams).promise();
-	}
-
-	function writeAssetLookup(sourceKey, assetId, groupId, catalogCode, optionId, nm) {
-		console.log('writing asset lookup to db ', assetId, groupId, catalogCode, sourceKey);
-		let sqlParams = {
-			secretArn: secretArn,
-			resourceArn: dbArn,
-			sql: 'INSERT INTO asset_lookup (jid, group_id, catalog_code, asset_id, option_id, nm) values ((SELECT jid FROM job WHERE nm = :jobname), :groupId, :catalogCode, :assetId, :optionId, :nm)',
-			database: 'threekit',
-			includeResultMetadata: true,
-			parameters: [
-				{
-					'name': 'jobname',
-					'value': {
-						'stringValue': sourceKey
 					}
 				},
 				{
@@ -213,6 +193,135 @@ exports.handler = async (event) => {
 			console.log('not already created', groupId, catalogCode, optionId, sourceKey);
 			return false;
 		}
+	}
+
+	function writeCompletedAndAssetToDatabase(id, type, sourceKey, assetId, groupId, catalogCode, optionId, nm, options = {}) {
+		console.log('writing conpleted item to db ', id, type, sourceKey);
+		const { timeout = DEFAULT_TIMEOUT, frequency = DEFAULT_FREQUENCY } = options;
+		const startTime = Date.now();
+		const prom = new Promise((resolve, reject) => {
+			const check = async () => {
+				console.log('writing completed item and asset to db ', id);
+				try {
+					let sqlParams = {
+						secretArn: secretArn,
+						resourceArn: dbArn,
+						sql: 'INSERT INTO job_item (jid, object_id, item_type) values ((SELECT jid FROM job WHERE nm = :jobname), :objectid, :itemtype);INSERT INTO asset_lookup (jid, group_id, catalog_code, asset_id, option_id, nm) values ((SELECT jid FROM job WHERE nm = :jobname), :groupId, :catalogCode, :assetId, :optionId, :nm);',
+						database: 'threekit',
+						includeResultMetadata: true,
+						parameters: [
+							{
+								'name': 'jobname',
+								'value': {
+									'stringValue': sourceKey
+								}
+							},
+							{
+								'name': 'objectid',
+								'value': {
+									'stringValue': id
+								}
+							},
+							{
+								'name': 'itemtype',
+								'value': {
+									'stringValue': type
+								}
+							},
+							{
+								'name': 'groupId',
+								'value': {
+									'stringValue': groupId
+								}
+							},
+							{
+								'name': 'catalogCode',
+								'value': {
+									'stringValue': catalogCode
+								}
+							},
+							{
+								'name': 'assetId',
+								'value': {
+									'stringValue': assetId
+								}
+							},
+							{
+								'name': 'optionId',
+								'value': {
+									'stringValue': optionId
+								}
+							},
+							{
+								'name': 'nm',
+								'value': {
+									'stringValue': nm
+								}
+							}
+						]
+					};
+					const res = await rdsDataService.executeStatement(sqlParams).promise();
+					return resolve({});
+				} catch (err) {
+					console.log('error writing completed item and asset to db ', id, err);
+					//reject(err);
+				}
+			
+				setTimeout(check, frequency);
+			};
+ 
+   			check();
+ 		});
+ 		return prom;
+	}
+
+	function writeCompletedItemToDatabase(id, type, sourceKey, options = {}) {
+		const { timeout = DEFAULT_TIMEOUT, frequency = DEFAULT_FREQUENCY } = options;
+		const startTime = Date.now();
+		const prom = new Promise((resolve, reject) => {
+			const check = async () => {
+				try {
+					console.log('writing completed item to db ', id);
+					let sqlParams = {
+						secretArn: secretArn,
+						resourceArn: dbArn,
+						sql: 'INSERT INTO job_item (jid, object_id, item_type) values ((SELECT jid FROM job WHERE nm = :jobname), :objectid, :itemtype)',
+						database: 'threekit',
+						includeResultMetadata: true,
+						parameters: [
+							{
+								'name': 'jobname',
+								'value': {
+									'stringValue': sourceKey
+								}
+							},
+							{
+								'name': 'objectid',
+								'value': {
+									'stringValue': id
+								}
+							},
+							{
+								'name': 'itemtype',
+								'value': {
+									'stringValue': type
+								}
+							}
+						]
+					};
+					const res = await rdsDataService.executeStatement(sqlParams).promise();
+					return resolve({});
+				} catch (err) {
+					console.log('error writing to db, retry', id, err);
+					//reject(err);
+				}
+			
+				setTimeout(check, frequency);
+			};
+ 
+   			check();
+ 		});
+ 		return prom;
 	}
 
 	function pollJob(jobId, apiUrl, apiToken, options = {}) {
@@ -596,15 +705,11 @@ exports.handler = async (event) => {
         itemsToQueueBufferLength = 0;
         
         const messageSendPromise = sqs.sendMessageBatch(params).send();
-        // const messageSendPromise = Promise.resolve("sent to queue");
         
         return messageSendPromise;
     }
     
     async function pushItemsForEnv(key) {
-        /*const orgId =  await getOrgId(key);
-        const apiUrl = await getApiUrl(key);
-        const apiToken = await getApiToken(key);*/
 		console.log('key: ',key);
 		const orgId = orgMap[key].orgId;
 		const apiUrl = orgMap[key].apiUrl;
@@ -694,9 +799,7 @@ exports.handler = async (event) => {
 													let sourceKeyArray = bodySourceKeys[p.metadata.itemId];														
 													sourceKeyArray.forEach(sourceKey => {
 														logItemEvent( events.createdItem(p.metadata.itemId, p.id, Date.now() - t),  sourceKey);	
-														let completedItemPromise = writeCompletedItemToDatabase(p.metadata.itemId, 'item', sourceKey);//.then(res => {
-															//console.log('wrote completed item to db', res);
-														//});	
+														let completedItemPromise = writeCompletedItemToDatabase(p.metadata.itemId, 'item', sourceKey);
 														promises.push(completedItemPromise);			
 													});																	
 													return p.metadata.itemId;
@@ -704,10 +807,8 @@ exports.handler = async (event) => {
 													let sourceKeyArray = bodySourceKeys[p.metadata.optionId];
 													sourceKeyArray.forEach(sourceKey => {					
 														logItemEvent( events.createdOption(p.metadata.optionId, p.id, Date.now() - t), sourceKey );
-														let completedItemPromise = writeCompletedItemToDatabase(p.metadata.optionId, 'option', sourceKey);
-														let assetPromise = writeAssetLookup(sourceKey, p.id, p.metadata.groupId, p.metadata.catalogCode, p.metadata.optionId, p.name);
+														let completedItemPromise = writeCompletedAndAssetToDatabase(p.metadata.optionId, 'option', sourceKey, p.id, p.metadata.groupId, p.metadata.catalogCode, p.metadata.optionId, p.name);
 														promises.push(completedItemPromise);
-														promises.push(assetPromise);
 													});
 													return p.metadata.optionId;
 												}					
@@ -744,7 +845,6 @@ exports.handler = async (event) => {
 										
 									}).catch(error => {
 										console.log(error);
-										//logApiCallError(error, `${apiUrl}/files/${fileId}/content`, '', sourceKey);
 										itemsToUploadEnv.forEach(itm => {
 											let keyArray;
 											if(itm.m.itemId) {
@@ -781,7 +881,6 @@ exports.handler = async (event) => {
 									});
 							}).catch(error => {
 								console.log(error);
-								//logApiCallError(error, `${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId}`, '', sourceKey);
 								itemsToUploadEnv.forEach(itm => {
 									let keyArray;
 									if(itm.m.itemId) {
@@ -820,11 +919,9 @@ exports.handler = async (event) => {
 						// reached specified timeout to check for completion but job still not done
 						console.log('item import job polling timed out for items '+itemsToUploadEnv.map(i => i.m));
 						throw new Error('item import job polling timed out for items '+itemsToUploadEnv.map(i => i.m));
-						//return item;
 					} else {
 						// error - job failed
 						console.log('item import job failed for items '+itemsToUploadEnv.map(i => i.m));
-						//logApiCallError({'message':'job failed'}, apiUrl+'/products/import?orgId='+orgId, JSON.stringify(itemsToUploadEnv), sourceKey);					
 						itemsToUploadEnv.forEach(itm => {
 							let keyArray;
 							if(itm.m.itemId) {
@@ -837,7 +934,6 @@ exports.handler = async (event) => {
 							});						
 						});
 						throw new Error('item import job failed for items '+itemsToUploadEnv.map(i => i.m));
-						//return item;
 					}
 				}).catch(error => {
 					console.log('polling error ',error);
