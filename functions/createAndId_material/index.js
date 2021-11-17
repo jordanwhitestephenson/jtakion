@@ -119,7 +119,9 @@ exports.handler = async (event) => {
 		const orgId =  option.orgId;
         const apiUrl = option.apiUrl;
         const apiToken = option.apiToken;
+        const sourceKey = option.sourceKey;
 		let materialName = option.image.code.replace(/ /g, '-');
+		const thumbStartTime = Date.now();
 		return axios.get(
 			apiUrl+'/assets?orgId='+orgId+'&name='+materialName+'&type=texture' ,
             { 'headers': { 'Authorization': 'Bearer '+apiToken } }
@@ -128,8 +130,14 @@ exports.handler = async (event) => {
 			let asset = res.data.assets[0];
 			return `${apiUrl}/assets/thumbnail/${asset.id}?orgId=${orgId}`;
 		}).catch(error => {
+		    const thumbEndTime = Date.now();
+			var thumbDuration = Math.abs(thumbStartTime - thumbEndTime) / 1000;
+			const startDate = new Date(thumbStartTime);
+			const endDate = new Date(thumbEndTime);
+			let formattedStart = startDate.toISOString();
+			let formattedEnd = endDate.toISOString();
 			console.log(error);
-			logApiCallError(error, apiUrl+'/assets?orgId='+orgId+'&name='+materialName+"&type=texture", null, sourceKey);
+			logApiCallError(error, apiUrl+'/assets?orgId='+orgId+'&name='+materialName+'&type=texture start: '+formattedStart+' end: '+formattedEnd+' duration: '+thumbDuration+' seconds', null, sourceKey);
 			throw error;
 		});
 	}
@@ -144,6 +152,7 @@ exports.handler = async (event) => {
 		const sourceKey = option.sourceKey;
         
         function getMaterials(materialName){
+            const matStartTime = Date.now();
             return axios.get(
                 apiUrl+'/assets?orgId='+orgId+'&name='+materialName+"&type=material" ,
                 { 'headers': { 'Authorization': 'Bearer '+apiToken } }
@@ -153,18 +162,32 @@ exports.handler = async (event) => {
 				console.log('material call results', res.data);
                 return res.data;
             }).catch(error => {
+                const matEndTime = Date.now();
+    			var matDuration = Math.abs(matStartTime - matEndTime) / 1000;
+    			const startDate = new Date(matStartTime);
+    			const endDate = new Date(matEndTime);
+    			let formattedStart = startDate.toISOString();
+    			let formattedEnd = endDate.toISOString();
 				console.log(error);
-				logApiCallError(error, apiUrl+'/assets?orgId='+orgId+'&name='+materialName+"&type=material", null, sourceKey);
+				logApiCallError(error, apiUrl+'/assets?orgId='+orgId+'&name='+materialName+'&type=material start: '+formattedStart+' end: '+formattedEnd+' duration: '+matDuration+' seconds', null, sourceKey);
 				throw error;
 			});
         }
         
         async function importMaterial( image, optionId ){
             const damUrl = await getDamUrl();
+
+			const cachedFile = damImageMap[image.file] || {};
+			const fileId = cachedFile.id;
+            if (!fileId) {
+                console.log('Image not found in cache ', image.file);
+				logApiCallError({message:'Option Id:'+optionId+' - Image not found in DAM: '+image.file}, damUrl, '', sourceKey);
+            }
             
             var zip = new JSZip();
             
-            const imageFileName = image.code.replace(/ /g, '-')+".jpg";
+            //const imageFileName = image.code.replace(/ /g, '-')+".jpg";
+			const imageFileName = cachedFile.fileName.replace(/ /g, '-');
             
             const textureDefinition = { "image": imageFileName };
             const textureFileName = image.code.replace(/ /g, '-')+".pbrtex";
@@ -181,11 +204,8 @@ exports.handler = async (event) => {
             //         console.log("Image not found ", image.file+".jpg", err);
             //         return axios.get( "https://teknion-assets.s3.amazonaws.com/52_Ebony.jpg", { responseType: 'arraybuffer' } ).then( r => r.data);
             //     });
-            const cachedFile = damImageMap[image.file] || {};
-            const fileId = cachedFile.id;
-            if (!fileId) {
-                console.log('Image not found in cache ', image.file);
-            }
+            
+            
             const requestUrl = damUrl+"/"+fileId+"/download/";
             const authHeader = await getAuthHeaderForRequest({url: requestUrl, method: 'GET'});
             const getImagePromise = axios.get( requestUrl, { headers: authHeader } )
@@ -236,13 +256,20 @@ exports.handler = async (event) => {
                     });
                 }
                 
+                const filesStartTime = Date.now();
                 return axios.post(
                     apiUrl+'/files?orgId='+orgId,
                     fileUploadData,
                     fileUploadConfig
                 ).catch(error => {
+                    const filesEndTime = Date.now();										
+					let filesDuration = Math.abs(filesStartTime - filesEndTime) / 1000;
+					const startDate = new Date(filesStartTime);
+					const endDate = new Date(filesEndTime);
+					let formattedStart = startDate.toISOString();
+					let formattedEnd = endDate.toISOString();
 					console.log(error);
-					logApiCallError(error, apiUrl+'/files?orgId='+orgId, 'failed calling files API with pbrzip for option Id: '+optionId, sourceKey);
+					logApiCallError(error, apiUrl+'/files?orgId='+orgId+' start: '+formattedStart+' end: '+formattedEnd+' duration: '+filesDuration+' seconds', 'failed calling files API with pbrzip for option Id: '+optionId, sourceKey);
 					throw error;
 				}).then( r => {
                     console.log({'event': 'fileUpload', 'fileName': filename, 'result': JSON.stringify(r.data)});
@@ -258,13 +285,20 @@ exports.handler = async (event) => {
                       "title": "Import "+filename
                     };
                     
+                    const assetStartTime = Date.now();
                     return axios.post(
                         apiUrl+'/asset-jobs/import?orgId='+orgId,
                         importJobData, 
                         { 'headers': { 'Authorization': 'Bearer '+apiToken } }
                     ).catch(error => {
+                        const assetEndTime = Date.now();										
+    					let assetDuration = Math.abs(assetStartTime - assetEndTime) / 1000;
+    					const startDate = new Date(assetStartTime);
+    					const endDate = new Date(assetEndTime);
+    					let formattedStart = startDate.toISOString();
+    					let formattedEnd = endDate.toISOString();
 						console.log(error);
-						logApiCallError(error, apiUrl+'/asset-jobs/import?orgId='+orgId, JSON.stringify(importJobData), sourceKey);
+						logApiCallError(error, apiUrl+'/asset-jobs/import?orgId='+orgId+' start: '+formattedStart+' end: '+formattedEnd+' duration: '+assetDuration+' seconds', JSON.stringify(importJobData), sourceKey);
 					}).then( r => {
                         console.log({'event': 'assetsImportJobStarted', 'fileId': fileUpload.files[0].id, 'jobId': r.data.jobId });
 						console.log('asset-jobs/import results',r.data);
@@ -295,14 +329,20 @@ exports.handler = async (event) => {
                         });
                         
                     } else {
-                        
+                        const matJobStartTime = Date.now();
                         //get job 
                         materialJob = axios.get(
                             apiUrl+'/jobs/'+option.materialJobId,
                             { 'headers': { 'Authorization': 'Bearer '+apiToken } }
                         ).catch(error => {
+                            const matJobEndTime = Date.now();										
+        					let matJobDuration = Math.abs(matJobStartTime - matJobEndTime) / 1000;
+        					const startDate = new Date(matJobStartTime);
+        					const endDate = new Date(matJobEndTime);
+        					let formattedStart = startDate.toISOString();
+        					let formattedEnd = endDate.toISOString();
 							console.log(error);
-							logApiCallError(error, apiUrl+'/jobs/'+option.materialJobId, null, sourceKey);
+							logApiCallError(error, apiUrl+'/jobs/'+option.materialJobId+' start: '+formattedStart+' end: '+formattedEnd+' duration: '+matJobDuration+' seconds', null, sourceKey);
 							throw error;
 						}).then( r => {
                             console.log({'event': 'jobRetrieved', 'jobId': option.materialJobId, 'status': r.data.status});
@@ -315,34 +355,47 @@ exports.handler = async (event) => {
                     
                     return materialJob.then( job => {
                         
-                        if( job.status == 'stopped'){
-                            //if status is complete get 
-                            
-                            return getMaterials(option.image.code.replace(/ /, '-'))
-                            .then( data2 => {
-                                if(data2 && data2.count >= 1 ){
-                                    return data2.assets[0];
-                                }
-                                else{
-                                    console.error("material not found after creation", option.image.code.replace(/ /, '-'));
-                                    // throw {"message":"material not found after creation"};
-                                    return {jobId:job.id};
-                                }
-                            });
-                            
-                        }
-                        else{
+                        if( job.status == 'stopped') {
+							//get status of runs
+							const runsUrl = `${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${option.materialJobId}`;
+							const runsStartTime = Date.now();
+							return axios.get(runsUrl, { 'headers': { 'Authorization': 'Bearer '+apiToken } })
+								.then(res => {
+									const { runs } = res.data;
+									if(runs[0].resultCode === 'Failed') {
+										logApiCallError({message:'Job Failed'}, apiUrl+'/jobs/'+option.materialJobId+' result: Failed resultMessage: '+runs[0].resultMessage, null, sourceKey);
+										return Promise.resolve({jobId:job.id});
+									} else {
+										//if status is complete get
+										return getMaterials(option.image.code.replace(/ /, '-'))
+												.then( data2 => {
+													if(data2 && data2.count >= 1 ){
+														return data2.assets[0];
+													}
+													else{
+														console.error("material not found after creation", option.image.code.replace(/ /, '-'));
+														// throw {"message":"material not found after creation"};
+														return {jobId:job.id};
+													}
+												});
+									}
+								}).catch(error => {
+									const runsEndTime = Date.now();
+									let runsDuration = Math.abs(runsStartTime - runsEndTime) / 1000;
+									const startDate = new Date(runsStartTime);
+									const endDate = new Date(runsEndTime);
+									let formattedStart = startDate.toISOString();
+									let formattedEnd = endDate.toISOString();
+									logApiCallError(error, runsUrl+' start: '+formattedStart+' end: '+formattedEnd+' duration: '+runsDuration+' seconds', null, sourceKey);
+									return Promise.resolve({jobId:job.id});
+								});                             
+                        } else {
                             // otherwise return material with no materialId, but materialJobId
                             return Promise.resolve({jobId:job.id});
                         }
                     });
-                    
-                    
-    
                 }
-            })
-            ;
-        
+            }) ;
     }
     
     function flushToItemQueue(items, queue, delay) {
