@@ -56,7 +56,6 @@ exports.handler = async (event) => {
 			]
 		};
 		let resp = await rdsDataService.executeStatement(sqlParams).promise();
-		console.log('check cancel resp', resp);
 		let columns = resp.columnMetadata.map(c => c.name);
 		let data = resp.records.map(r => {
 			let obj = {};
@@ -66,10 +65,8 @@ exports.handler = async (event) => {
 			return obj;
 		});
 		if(data[0]['stat'] === 'cancelled') {
-			console.log('job cancelled');
 			return false;
 		} else {
-			console.log('job not cancelled');
 			return true;
 		}
 	}
