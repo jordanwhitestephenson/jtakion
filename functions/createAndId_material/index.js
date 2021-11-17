@@ -176,10 +176,18 @@ exports.handler = async (event) => {
         
         async function importMaterial( image, optionId ){
             const damUrl = await getDamUrl();
+
+			const cachedFile = damImageMap[image.file] || {};
+			const fileId = cachedFile.id;
+            if (!fileId) {
+                console.log('Image not found in cache ', image.file);
+				logApiCallError({message:'Option Id:'+optionId+' - Image not found in DAM: '+image.file}, damUrl, '', sourceKey);
+            }
             
             var zip = new JSZip();
             
-            const imageFileName = image.code.replace(/ /g, '-')+".jpg";
+            //const imageFileName = image.code.replace(/ /g, '-')+".jpg";
+			const imageFileName = cachedFile.fileName.replace(/ /g, '-');
             
             const textureDefinition = { "image": imageFileName };
             const textureFileName = image.code.replace(/ /g, '-')+".pbrtex";
@@ -196,11 +204,8 @@ exports.handler = async (event) => {
             //         console.log("Image not found ", image.file+".jpg", err);
             //         return axios.get( "https://teknion-assets.s3.amazonaws.com/52_Ebony.jpg", { responseType: 'arraybuffer' } ).then( r => r.data);
             //     });
-            const cachedFile = damImageMap[image.file] || {};
-            const fileId = cachedFile.id;
-            if (!fileId) {
-                console.log('Image not found in cache ', image.file);
-            }
+            
+            
             const requestUrl = damUrl+"/"+fileId+"/download/";
             const authHeader = await getAuthHeaderForRequest({url: requestUrl, method: 'GET'});
             const getImagePromise = axios.get( requestUrl, { headers: authHeader } )
