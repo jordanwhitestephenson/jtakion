@@ -667,11 +667,18 @@ exports.handler = async (event) => {
 			}};
 			//console.log({'event': 'startApiCall'}, JSON.stringify(itemsToUploadEnv));
 			const t = Date.now();
+			const importStartTime = Date.now();
 			return axios.post(
 				apiUrl+'/products/import?orgId='+orgId,
 				itemsData,
 				config
 			).catch(error => {
+				const importEndTime = Date.now();
+				var importDuration = Math.abs(importStartTime - importEndTime) / 1000;
+				const startDate = new Date(importStartTime);
+				const endDate = new Date(importEndTime);
+				let formattedStart = startDate.toISOString();
+				let formattedEnd = endDate.toISOString();
 				itemsToUploadEnv.forEach(itm => {
 					let keyArray;
 					if(itm.m.itemId) {
@@ -683,7 +690,7 @@ exports.handler = async (event) => {
 						// The request was made and the server responded with a status code
 						// that falls out of the range of 2xx
 						keyArray.forEach(k => {
-							logItemEvent( events.failedApiCall(apiUrl+'/products/import?orgId='+orgId, JSON.stringify(itemsToUploadEnv), error.response.data, error.response.status, error.response.headers), k);			
+							logItemEvent( events.failedApiCall(apiUrl+'/products/import?orgId='+orgId+' start: '+formattedStart+' end: '+formattedEnd+' duration: '+importDuration+' seconds', JSON.stringify(itemsToUploadEnv), error.response.data, error.response.status, error.response.headers), k);			
 						});					
 						//console.log(error.response.data);
 						//console.log(error.response.status);
@@ -694,13 +701,13 @@ exports.handler = async (event) => {
 						// http.ClientRequest in node.js
 						//console.log(error.request);
 						keyArray.forEach(k => {
-							logItemEvent( events.noResponseApiCall(apiUrl+'/products/import?orgId='+orgId, JSON.stringify(itemsToUploadEnv), ''), k);				
+							logItemEvent( events.noResponseApiCall(apiUrl+'/products/import?orgId='+orgId+' start: '+formattedStart+' end: '+formattedEnd+' duration: '+importDuration+' seconds', JSON.stringify(itemsToUploadEnv), ''), k);				
 						});
 					} else {
 						// Something happened in setting up the request that triggered an Error
 						//console.log('Error', error.message);
 						keyArray.forEach(k => {
-							logItemEvent( events.unknownErrorApiCall(apiUrl+'/products/import?orgId='+orgId, JSON.stringify(itemsToUploadEnv), error.message), k);			
+							logItemEvent( events.unknownErrorApiCall(apiUrl+'/products/import?orgId='+orgId+' start: '+formattedStart+' end: '+formattedEnd+' duration: '+importDuration+' seconds', JSON.stringify(itemsToUploadEnv), error.message), k);			
 						});
 					}
 				});
@@ -720,12 +727,14 @@ exports.handler = async (event) => {
 					if (status === 'stopped' && success) {
 						//console.log('items import job stopped, calling job runs api');
 						const runsUrl = `${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId}`;
+						const runsStartTime = Date.now();
 						return axios.get(runsUrl, { 'headers': { 'Authorization': 'Bearer '+apiToken } })
 							.then(res => {
 								const { runs } = res.data;
 								const { results } = runs[0];
 								const fileId = results.files[0].id;
-								//console.log('fileId ', fileId);
+								console.log('fileId ', fileId);
+								const filesStartTime = Date.now();
 								return axios.get(`${apiUrl}/files/${fileId}/content`, { 'headers': { 'Authorization': 'Bearer '+apiToken } })
 									.then(fileContent => {
 										//console.log('item import job run results: ', fileContent);
@@ -783,7 +792,12 @@ exports.handler = async (event) => {
 										});	
 									}).catch(error => {
 										console.log('error during files content', error);
-										//logApiCallError(error, `${apiUrl}/files/${fileId}/content`, '', sourceKey);
+										const filesEndTime = Date.now();										
+										let filesDuration = Math.abs(filesStartTime - filesEndTime) / 1000;
+										const startDate = new Date(filesStartTime);
+										const endDate = new Date(filesEndTime);
+										let formattedStart = startDate.toISOString();
+										let formattedEnd = endDate.toISOString();
 										itemsToUploadEnv.forEach(itm => {
 											let keyArray;
 											if(itm.m.itemId) {
@@ -795,7 +809,7 @@ exports.handler = async (event) => {
 												// The request was made and the server responded with a status code
 												// that falls out of the range of 2xx
 												keyArray.forEach(k => {
-													logItemEvent( events.failedApiCall(`${apiUrl}/files/${fileId}/content`, '', error.response.data, error.response.status, error.response.headers), k);			
+													logItemEvent( events.failedApiCall(`${apiUrl}/files/${fileId}/content start: ${formattedStart} end: ${formattedEnd} duration: ${filesDuration} seconds`, '', error.response.data, error.response.status, error.response.headers), k);			
 												});					
 												//console.log(error.response.data);
 												//console.log(error.response.status);
@@ -806,13 +820,13 @@ exports.handler = async (event) => {
 												// http.ClientRequest in node.js
 												//console.log(error.request);
 												keyArray.forEach(k => {
-													logItemEvent( events.noResponseApiCall(`${apiUrl}/files/${fileId}/content`, '', ''), k);				
+													logItemEvent( events.noResponseApiCall(`${apiUrl}/files/${fileId}/content start: ${formattedStart} end: ${formattedEnd} duration: ${filesDuration} seconds`, '', ''), k);				
 												});
 											} else {
 												// Something happened in setting up the request that triggered an Error
 												console.log('Unknown api error:', error);
 												keyArray.forEach(k => {
-													logItemEvent( events.unknownErrorApiCall(`${apiUrl}/files/${fileId}/content`, error, error.message), k);			
+													logItemEvent( events.unknownErrorApiCall(`${apiUrl}/files/${fileId}/content start: ${formattedStart} end: ${formattedEnd} duration: ${filesDuration} seconds`, error, error.message), k);			
 												});
 											}
 										});
@@ -820,7 +834,12 @@ exports.handler = async (event) => {
 									});
 							}).catch(error => {
 								console.log('error during jobs runs', error);
-								//logApiCallError(error, `${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId}`, '', sourceKey);
+								const runsEndTime = Date.now();
+								let runsDuration = Math.abs(runsStartTime - runsEndTime) / 1000;
+								const startDate = new Date(runsStartTime);
+								const endDate = new Date(runsEndTime);
+								let formattedStart = startDate.toISOString();
+								let formattedEnd = endDate.toISOString();
 								itemsToUploadEnv.forEach(itm => {
 									let keyArray;
 									if(itm.m.itemId) {
@@ -832,7 +851,7 @@ exports.handler = async (event) => {
 										// The request was made and the server responded with a status code
 										// that falls out of the range of 2xx
 										keyArray.forEach(k => {
-											logItemEvent( events.failedApiCall(`${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId}`, '', error.response.data, error.response.status, error.response.headers), k);			
+											logItemEvent( events.failedApiCall(`${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId} start: ${formattedStart} end: ${formattedEnd} duration: ${runsDuration} seconds`, '', error.response.data, error.response.status, error.response.headers), k);			
 										});					
 										//console.log(error.response.data);
 										//console.log(error.response.status);
@@ -843,13 +862,13 @@ exports.handler = async (event) => {
 										// http.ClientRequest in node.js
 										//console.log(error.request);
 										keyArray.forEach(k => {
-											logItemEvent( events.noResponseApiCall(`${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId}`, '', ''), k);				
+											logItemEvent( events.noResponseApiCall(`${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId} start: ${formattedStart} end: ${formattedEnd} duration: ${runsDuration} seconds`, '', ''), k);				
 										});
 									} else {
 										// Something happened in setting up the request that triggered an Error
 										console.log('Unknown api error:', error);
 										keyArray.forEach(k => {
-											logItemEvent( events.unknownErrorApiCall(`${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId}`, '', error.message), k);			
+											logItemEvent( events.unknownErrorApiCall(`${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId} start: ${formattedStart} end: ${formattedEnd} duration: ${runsDuration} seconds`, '', error.message), k);			
 										});
 									}
 								});
