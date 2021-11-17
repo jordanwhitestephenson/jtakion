@@ -355,34 +355,47 @@ exports.handler = async (event) => {
                     
                     return materialJob.then( job => {
                         
-                        if( job.status == 'stopped'){
-                            //if status is complete get 
-                            
-                            return getMaterials(option.image.code.replace(/ /, '-'))
-                            .then( data2 => {
-                                if(data2 && data2.count >= 1 ){
-                                    return data2.assets[0];
-                                }
-                                else{
-                                    console.error("material not found after creation", option.image.code.replace(/ /, '-'));
-                                    // throw {"message":"material not found after creation"};
-                                    return {jobId:job.id};
-                                }
-                            });
-                            
-                        }
-                        else{
+                        if( job.status == 'stopped') {
+							//get status of runs
+							const runsUrl = `${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${option.materialJobId}`;
+							const runsStartTime = Date.now();
+							return axios.get(runsUrl, { 'headers': { 'Authorization': 'Bearer '+apiToken } })
+								.then(res => {
+									const { runs } = res.data;
+									if(runs[0].resultCode === 'Failed') {
+										logApiCallError({message:'Job Failed'}, apiUrl+'/jobs/'+option.materialJobId+' result: Failed resultMessage: '+runs[0].resultMessage, null, sourceKey);
+										return Promise.resolve({jobId:job.id});
+									} else {
+										//if status is complete get
+										return getMaterials(option.image.code.replace(/ /, '-'))
+												.then( data2 => {
+													if(data2 && data2.count >= 1 ){
+														return data2.assets[0];
+													}
+													else{
+														console.error("material not found after creation", option.image.code.replace(/ /, '-'));
+														// throw {"message":"material not found after creation"};
+														return {jobId:job.id};
+													}
+												});
+									}
+								}).catch(error => {
+									const runsEndTime = Date.now();
+									let runsDuration = Math.abs(runsStartTime - runsEndTime) / 1000;
+									const startDate = new Date(runsStartTime);
+									const endDate = new Date(runsEndTime);
+									let formattedStart = startDate.toISOString();
+									let formattedEnd = endDate.toISOString();
+									logApiCallError(error, runsUrl+' start: '+formattedStart+' end: '+formattedEnd+' duration: '+runsDuration+' seconds', null, sourceKey);
+									return Promise.resolve({jobId:job.id});
+								});                             
+                        } else {
                             // otherwise return material with no materialId, but materialJobId
                             return Promise.resolve({jobId:job.id});
                         }
                     });
-                    
-                    
-    
                 }
-            })
-            ;
-        
+            }) ;
     }
     
     function flushToItemQueue(items, queue, delay) {
