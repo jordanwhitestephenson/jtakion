@@ -22,7 +22,7 @@ const getApiUrl = (environmentName) => getParameter("api-url")(environmentName);
 const getApiToken = (environmentName) => getParameter("api-token")(environmentName);*/
 
 const RETRY_DELAY = 60; // in seconds
-const MAX_NUMBER_OF_RETRIES = 10080; // 1 week at 60-sec delay
+const MAX_NUMBER_OF_RETRIES = 10080;
 
 const getDbArn = (environmentName) => getParameter("db-arn")(environmentName);
 const getSecretArn = (environmentName) => getParameter("secret-arn")(environmentName);
@@ -58,7 +58,7 @@ exports.handler = async (event) => {
 			]
 		};
 		let resp = await rdsDataService.executeStatement(sqlParams).promise();
-		console.log('check cancel resp', resp);
+		//console.log('check cancel resp', resp);
 		let columns = resp.columnMetadata.map(c => c.name);
 		let data = resp.records.map(r => {
 			let obj = {};
@@ -68,10 +68,10 @@ exports.handler = async (event) => {
 			return obj;
 		});
 		if(data[0]['stat'] === 'cancelled') {
-			console.log('job cancelled');
+			//console.log('job cancelled');
 			return false;
 		} else {
-			console.log('job not cancelled');
+			//console.log('job not cancelled');
 			return true;
 		}
 	}
@@ -84,7 +84,7 @@ exports.handler = async (event) => {
 				const jobUrl = `${apiUrl}/jobs/${jobId}`;
 				try {
 					const res = await axios.get(jobUrl, { 'headers': { 'Authorization': 'Bearer '+apiToken } });
-					console.log('poll job response: ',res);
+					//console.log('poll job response: ',res);
 					if (res.data.status === 'stopped' || Date.now() - startTime > timeout) {
 						return resolve({
 							status: res.data.status,
@@ -94,7 +94,7 @@ exports.handler = async (event) => {
 						});
 					}
 				} catch (err) {
-					console.log('caught error from got job fetch', err);
+					//console.log('caught error from got job fetch', err);
 					reject(err);
 				}
 			
@@ -144,16 +144,16 @@ exports.handler = async (event) => {
 			
 			//if it needs material, it will be handled by the 
 			if(option.materialChecked){
-			    console.log('option material checked before: '+option.assetChecked+' '+option.id);
+			    //console.log('option material checked before: '+option.assetChecked+' '+option.id);
 				option.assetChecked = (option.assetChecked || 0) +1;
-				console.log('option material checked after: '+option.assetChecked+' '+option.id);
+				//console.log('option material checked after: '+option.assetChecked+' '+option.id);
 			}
 			return option;
 		} else if(option.subGroupOptions && option.subGroupOptions.length > 0 && (!option.subGroupOptionIds || option.subGroupOptionIds.length !== option.subGroupOptions.length)) {
 			return getSubgroupOptions(option).then(opt => {
-			    console.log('suboption material checked before: '+option.assetChecked+' '+option.id);
+			    //console.log('suboption material checked before: '+option.assetChecked+' '+option.id);
 				opt.assetChecked = (opt.assetChecked || 0) +1;
-				console.log('suboption material checked after: '+option.assetChecked+' '+option.id);
+				//console.log('suboption material checked after: '+option.assetChecked+' '+option.id);
 				return opt;
 			});
 		} else {
@@ -166,28 +166,28 @@ exports.handler = async (event) => {
 			// The request was made and the server responded with a status code
 			// that falls out of the range of 2xx
 			logItemEvent( events.failedApiCall(url, body, error.response.data, error.response.status, error.response.headers), sourceKey);
-			console.log(error.response.data);
-			console.log(error.response.status);
-			console.log(error.response.headers);
+			//console.log(error.response.data);
+			//console.log(error.response.status);
+			//console.log(error.response.headers);
 		} else if (error.request) {
 			// The request was made but no response was received
 			// `error.request` is an instance of XMLHttpRequest in the browser and an instance of
 			// http.ClientRequest in node.js
-			console.log(error.request);
+			//console.log(error.request);
 			logItemEvent( events.noResponseApiCall(url, body, error.request), sourceKey);			
 		} else {
 			// Something happened in setting up the request that triggered an Error
-			console.log('Error', error.message);
+			console.log('Unkown api call Error:', error);
 			logItemEvent( events.unknownErrorApiCall(url, body, error.message), sourceKey);				
 		}
 	}
     
     function getSubgroupOptions(option) {        
         const metadata = JSON.stringify({'groupId': option.subgroupId, 'catalogCode': option.catalog.code});
-        console.log('metadata: '+metadata);		
+        //console.log('metadata: '+metadata);		
 		return lookupAsset(option.sourceKey, option.subgroupId, option.catalog.code)
         .then( (res) => {
-			console.log('query results', res);
+			//console.log('query results', res);
 			let columns = res.columnMetadata.map(c => c.name);
 			let data = res.records.map(r => {
 				let obj = {};
@@ -445,6 +445,7 @@ exports.handler = async (event) => {
                 ...uploadModelData.getHeaders()
             }};
             
+            const importStartTime = Date.now();
             return axios.post(
                 apiUrl+'/products/import?orgId='+orgId,
                 uploadModelData, 
@@ -463,12 +464,14 @@ exports.handler = async (event) => {
 					if (status === 'stopped' && success) {
 						//console.log('model job stopped, calling job runs api');
 						const runsUrl = `${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId}`;
+						const runsStartTime = Date.now();
 						return axios.get(runsUrl, { 'headers': { 'Authorization': 'Bearer '+apiToken } })
 							.then(res => {
 								const { runs } = res.data;
 								const { results } = runs[0];
 								const fileId = results.files[0].id;
 								//console.log('fileId ', fileId);
+								const filesStartTime = Date.now();
 								return axios.get(`${apiUrl}/files/${fileId}/content`, { 'headers': { 'Authorization': 'Bearer '+apiToken } })
 									.then(fileContent => {
 										//console.log('model job run results: ', fileContent);
@@ -476,13 +479,25 @@ exports.handler = async (event) => {
 										item.modelId = fileContent.data[0].id;
 										return item;
 									}).catch(error => {
+										const filesEndTime = Date.now();										
+										let filesDuration = Math.abs(filesStartTime - filesEndTime) / 1000;
+										const startDate = new Date(filesStartTime);
+										const endDate = new Date(filesEndTime);
+										let formattedStart = startDate.toISOString();
+										let formattedEnd = endDate.toISOString();
 										console.log('error during files content', error);
-										logApiCallError(error, `${apiUrl}/files/${fileId}/content`, '', sourceKey);
+										logApiCallError(error, `${apiUrl}/files/${fileId}/content start: ${formattedStart} end: ${formattedEnd} duration: ${filesDuration} seconds`, '', sourceKey);
 										throw error;
 									});
 							}).catch(error => {
+								const runsEndTime = Date.now();
+								let runsDuration = Math.abs(runsStartTime - runsEndTime) / 1000;
+								const startDate = new Date(runsStartTime);
+								const endDate = new Date(runsEndTime);
+								let formattedStart = startDate.toISOString();
+								let formattedEnd = endDate.toISOString();
 								console.log('error during jobs runs', error);
-								logApiCallError(error, `${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId}`, '', sourceKey);
+								logApiCallError(error, `${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId} start: ${formattedStart} end: ${formattedEnd} duration: ${runsDuration} seconds`, '', sourceKey);
 								throw error;
 							});
 					} else if (status === 'pending') {
@@ -500,8 +515,14 @@ exports.handler = async (event) => {
 					return item;
 				});				
             }).catch(error => {
+            	const importEndTime = Date.now();
+				var importDuration = Math.abs(importStartTime - importEndTime) / 1000;
+				const startDate = new Date(importStartTime);
+				const endDate = new Date(importEndTime);
+				let formattedStart = startDate.toISOString();
+				let formattedEnd = endDate.toISOString();
 				console.log('error during products import', error);
-				logApiCallError(error, apiUrl+'/products/import?orgId='+orgId, JSON.stringify(uploadModelData), sourceKey);
+				logApiCallError(error, apiUrl+'/products/import?orgId='+orgId+' start: '+formattedStart+' end: '+formattedEnd+' duration: '+importDuration+' seconds', JSON.stringify(uploadModelData), sourceKey);
 				return item;
 			});
         }).catch(error => {
@@ -578,7 +599,7 @@ exports.handler = async (event) => {
     };
     
     function needsMaterial(option){
-        //console.log('needsMaterial: '+option.id+' image: '+option.image+' materialId: '+option.materialId+' materialChecked: '+option.materialChecked);
+       // console.log('needsMaterial: '+option.id+' image: '+option.image+' materialId: '+option.materialId+' materialChecked: '+option.materialChecked);
         return option.image && !option.materialId && !option.materialChecked ;
     }
     function needsModel(item){
