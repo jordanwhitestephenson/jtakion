@@ -74,69 +74,6 @@ exports.handler = async (event) => {
 			return true;
 		}
 	}
-    
-    /* helper functions */
-
-	function writeCompletedAndAssetToDatabase(id, type, sourceKey, assetId, groupId, catalogCode, optionId, nm) {
-		let sqlParams = {
-			secretArn: secretArn,
-			resourceArn: dbArn,
-			sql: 'INSERT INTO job_item (jid, object_id, item_type) values ((SELECT jid FROM job WHERE nm = :jobname), :objectid, :itemtype);INSERT INTO asset_lookup (jid, group_id, catalog_code, asset_id, option_id, nm) values ((SELECT jid FROM job WHERE nm = :jobname), :groupId, :catalogCode, :assetId, :optionId, :nm);',
-			database: 'threekit',
-			includeResultMetadata: true,
-			parameters: [
-				{
-					'name': 'jobname',
-					'value': {
-						'stringValue': sourceKey
-					}
-				},
-				{
-					'name': 'objectid',
-					'value': {
-						'stringValue': id
-					}
-				},
-				{
-					'name': 'itemtype',
-					'value': {
-						'stringValue': type
-					}
-				},
-				{
-					'name': 'groupId',
-					'value': {
-						'stringValue': groupId
-					}
-				},
-				{
-					'name': 'catalogCode',
-					'value': {
-						'stringValue': catalogCode
-					}
-				},
-				{
-					'name': 'assetId',
-					'value': {
-						'stringValue': assetId
-					}
-				},
-				{
-					'name': 'optionId',
-					'value': {
-						'stringValue': optionId
-					}
-				},
-				{
-					'name': 'nm',
-					'value': {
-						'stringValue': nm
-					}
-				}
-			]
-		};
-		return rdsDataService.executeStatement(sqlParams).promise();
-	}
 
 	async function checkAssetExists(groupId, catalogCode, optionId, sourceKey) {
 		let sqlParams = {
@@ -173,6 +110,7 @@ exports.handler = async (event) => {
 			]
 		};
 		let resp = await rdsDataService.executeStatement(sqlParams).promise();
+		console.log('check asset exists resp', resp);
 		let columns = resp.columnMetadata.map(c => c.name);
 		let data = resp.records.map(r => {
 			let obj = {};
@@ -189,8 +127,11 @@ exports.handler = async (event) => {
 			return false;
 		}
 	}
+    
+    /* helper functions */
 
 	function writeCompletedAndAssetToDatabase(id, type, sourceKey, assetId, groupId, catalogCode, optionId, nm, options = {}) {
+		console.log('writing conpleted item to db ', id, type, sourceKey);
 		const { timeout = DEFAULT_TIMEOUT, frequency = DEFAULT_FREQUENCY } = options;
 		const startTime = Date.now();
 		const prom = new Promise((resolve, reject) => {
@@ -257,8 +198,7 @@ exports.handler = async (event) => {
 					const res = await rdsDataService.executeStatement(sqlParams).promise();
 					return resolve({});
 				} catch (err) {
-					console.log('error writing completed item and asset to db ', id, err);
-					//reject(err);
+					console.log('error writing completed item and asset to db, retry ', id, err);
 				}
 			
 				setTimeout(check, frequency);
@@ -307,7 +247,6 @@ exports.handler = async (event) => {
 					return resolve({});
 				} catch (err) {
 					console.log('error writing to db, retry', id, err);
-					//reject(err);
 				}
 			
 				setTimeout(check, frequency);
