@@ -881,7 +881,7 @@ exports.handler = async (event) => {
 										throw error;
 									});
 							}).catch(error => {
-								console.log(error);
+								console.log('error during jobs runs', error);
 								const runsEndTime = Date.now();
 								let runsDuration = Math.abs(runsStartTime - runsEndTime) / 1000;
 								const startDate = new Date(runsStartTime);
