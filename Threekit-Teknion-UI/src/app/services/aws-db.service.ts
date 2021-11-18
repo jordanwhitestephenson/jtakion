@@ -16,10 +16,14 @@ export class AwsDbService {
 	}
 
 	getProgressForJob(logGroupName:string) {
-		return this.http.get<any>(this.jobEndpoint+`/import/job/${logGroupName}`).toPromise();
+		//replace non-valid characters from logGroupName with -
+		const cleanedLogGroupName = logGroupName.replace(/[^\\.\\-_/#A-Za-z0-9]+/g,'-');
+		return this.http.get<any>(this.jobEndpoint+`/import/job/${cleanedLogGroupName}`).toPromise();
 	}
 
 	cancelJob(logGroupName:string) {
-		return this.http.get<any>(this.cancelEndpoint+`/cancel/import/${logGroupName}`).toPromise();
+		//replace non-valid characters from logGroupName with -
+		const cleanedLogGroupName = logGroupName.replace(/[^\\.\\-_/#A-Za-z0-9]+/g,'-');
+		return this.http.get<any>(this.cancelEndpoint+`/cancel/import/${cleanedLogGroupName}`).toPromise();
 	}
 }

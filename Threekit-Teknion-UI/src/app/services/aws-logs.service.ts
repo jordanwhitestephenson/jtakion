@@ -19,20 +19,19 @@ export class AwsLogsService {
   }
 
   getLogEvents(logGroupName, filterPattern, nextToken) {
-    //return Auth.currentCredentials().then(cred => {
+	//replace non-valid characters from logGroupName with -
+	const cleanedLogGroupName = logGroupName.replace(/[^\\.\\-_/#A-Za-z0-9]+/g,'-');
+
       const cloudWatchLogs = new AWS.CloudWatchLogs({
         region: this.region,
-        //credentials: cred
 		accessKeyId: this.paramsService.awsAccessToken,
 		secretAccessKey: this.paramsService.awsSecretToken
       });
 
       const params: any = {
-        logGroupName: `${this.logGroupPrefix}${logGroupName}`, /* required */
-        // endTime: 'NUMBER_VALUE',
+        logGroupName: `${this.logGroupPrefix}${cleanedLogGroupName}`, 
         interleaved: true,
-        limit: 250,
-        // startTime: 'NUMBER_VALUE',
+        limit: 250
       };
 
       if (filterPattern) {
@@ -44,14 +43,11 @@ export class AwsLogsService {
       }
 
       return cloudWatchLogs.filterLogEvents(params).promise();
-    //});
   }
 
   getLogGroupsList(nextToken, searchParam) {
-    //return Auth.currentCredentials().then(cred => {
       const cloudWatchLogs = new AWS.CloudWatchLogs({
         region: this.region,
-        //credentials: cred,
 		accessKeyId: this.paramsService.awsAccessToken,
 		secretAccessKey: this.paramsService.awsSecretToken
       });
@@ -64,25 +60,24 @@ export class AwsLogsService {
         params.nextToken = nextToken;
       }
       return cloudWatchLogs.describeLogGroups(params).promise();
-    //});
   }
 
   deleteLogGroup(logGroupName: string) {
     if (logGroupName && logGroupName.length > 0) {
-      //return Auth.currentCredentials().then(cred => {
+		//replace non-valid characters from logGroupName with -
+		const cleanedLogGroupName = logGroupName.replace(/[^\\.\\-_/#A-Za-z0-9]+/g,'-');
+
         const cloudWatchLogs = new AWS.CloudWatchLogs({
           region: this.region,
-          //credentials: cred
 		  accessKeyId: this.paramsService.awsAccessToken,
 		  secretAccessKey: this.paramsService.awsSecretToken
         });
   
         const params: any = {
-          logGroupName: `${this.logGroupPrefix}${logGroupName}`
+          logGroupName: `${this.logGroupPrefix}${cleanedLogGroupName}`
         };
         
         return cloudWatchLogs.deleteLogGroup(params).promise();
-      //});
     }
   }
 
