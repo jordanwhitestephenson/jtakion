@@ -44,14 +44,17 @@ function stepLogStreamPromise(sourceKey){
         
         const logGroupName = cloudWatchLogGroupName + "/" + sourceKey;
         const logStreamName = 'progress_'+ guid;
+
+		//replace non-valid characters from logGroupName with -
+		const cleanedLogGroupName = logGroupName.replaceAll(/[^\\.\\-_/#A-Za-z0-9]+/g,'-');
         
         var params = {
-          logGroupName: logGroupName,
+          logGroupName: cleanedLogGroupName,
           logStreamName: logStreamName
         };
         console.log("creating log stream ",params);
         logPromises[sourceKey] = cloudwatchlogs.createLogStream(params).promise().then( data => {
-            return { events:[], prevLogAction:{"nextSequenceToken":undefined}, cwLogInfo:{groupName:logGroupName, streamName:logStreamName} };
+            return { events:[], prevLogAction:{"nextSequenceToken":undefined}, cwLogInfo:{groupName:cleanedLogGroupName, streamName:logStreamName} };
         });
     }
     return ( stepPromise ) => { 

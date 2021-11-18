@@ -53,14 +53,17 @@ function stepLogStreamPromise(sourceKey){
         
         const logGroupName = cloudWatchLogGroupName + "/" + sourceKey;
         const logStreamName = logProcessName + "_" + guid;
+
+		//replace non-valid characters from logGroupName with -
+		const cleanedLogGroupName = logGroupName.replaceAll(/[^\\.\\-_/#A-Za-z0-9]+/g,'-');
         
         //try to create log group
         const logGroupParams = {
-            logGroupName: logGroupName
+            logGroupName: cleanedLogGroupName
         };
         
         var logStreamParams = {
-          logGroupName: logGroupName,
+          logGroupName: cleanedLogGroupName,
           logStreamName: logStreamName
         };
         
@@ -68,13 +71,13 @@ function stepLogStreamPromise(sourceKey){
         .catch( err => {
             //ignore ResourceAlreadyExistsException and OperationAbortedException
             if(err.code === 'ResourceAlreadyExistsException' || err.code === 'OperationAbortedException' ){
-                return Promise.resolve("ignoring error creating log group "+logGroupName);
+                return Promise.resolve("ignoring error creating log group "+cleanedLogGroupName);
             } else {
                 throw err;
             }
         }).then( _ => {
             return cloudwatchlogs.createLogStream(logStreamParams).promise()
-            .then( data => ( { events:[], prevLogAction:{"nextSequenceToken":undefined}, cwLogInfo:{groupName:logGroupName, streamName:logStreamName} } ) );
+            .then( data => ( { events:[], prevLogAction:{"nextSequenceToken":undefined}, cwLogInfo:{groupName:cleanedLogGroupName, streamName:logStreamName} } ) );
         });
     }
     return ( stepPromise ) => { 
