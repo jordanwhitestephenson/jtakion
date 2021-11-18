@@ -93,7 +93,7 @@ exports.handler = async (event) => {
 	console.log('apiToken', apiToken);
 	console.log('orgName', orgName);
     
-    const sourceKey = srcKey.split('.').slice(0,-1).join('.').replace(':nm',':total');
+    const sourceKey = srcKey.split('.').slice(0,-1).join('.').replace(':nm',':total').replace(/[^\\.\\-_/#A-Za-z0-9]+/g,'-');
     
     //logItemEvent({"objectType":"environment", "IMPORT_ENVIRONMENT": destEnv}, sourceKey );
 	logItemEvent({"objectType":"environment", "IMPORT_ENVIRONMENT": orgName}, sourceKey );
