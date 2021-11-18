@@ -55,7 +55,7 @@ function stepLogStreamPromise(sourceKey){
         const logStreamName = logProcessName + "_" + guid;
 
 		//replace non-valid characters from logGroupName with -
-		const cleanedLogGroupName = logGroupName.replaceAll(/[^\\.\\-_/#A-Za-z0-9]+/g,'-');
+		const cleanedLogGroupName = logGroupName.replace(/[^\\.\\-_/#A-Za-z0-9]+/g,'-');
         
         //try to create log group
         const logGroupParams = {

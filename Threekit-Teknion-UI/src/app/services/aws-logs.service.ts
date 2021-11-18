@@ -15,6 +15,8 @@ export class AwsLogsService {
   }
 
   getLogEvents(logGroupName, filterPattern, nextToken) {
+	  //replace non-valid characters from logGroupName with -
+	  const cleanedLogGroupName = logGroupName.replace(/[^\\.\\-_/#A-Za-z0-9]+/g,'-');
       const cloudWatchLogs = new AWS.CloudWatchLogs({
         region: this.paramsService.region,
 		accessKeyId: this.paramsService.awsAccessToken,
@@ -27,7 +29,7 @@ export class AwsLogsService {
 	  }
 
       const params: any = {
-        logGroupName: `${prefix}${this.logGroupPrefix}${logGroupName}`, /* required */
+        logGroupName: `${prefix}${this.logGroupPrefix}${cleanedLogGroupName}`, /* required */
         interleaved: true,
         limit: 250
       };
@@ -67,6 +69,8 @@ export class AwsLogsService {
 
   deleteLogGroup(logGroupName: string) {
     if (logGroupName && logGroupName.length > 0) {
+		//replace non-valid characters from logGroupName with -
+		const cleanedLogGroupName = logGroupName.replace(/[^\\.\\-_/#A-Za-z0-9]+/g,'-');
         const cloudWatchLogs = new AWS.CloudWatchLogs({
           region: this.paramsService.region,
 		  accessKeyId: this.paramsService.awsAccessToken,
@@ -79,46 +83,10 @@ export class AwsLogsService {
 		}
   
         const params: any = {
-          logGroupName: `${prefix}${this.logGroupPrefix}${logGroupName}`
+          logGroupName: `${prefix}${this.logGroupPrefix}${cleanedLogGroupName}`
         };
         
         return cloudWatchLogs.deleteLogGroup(params).promise();
     }
   }
-
-  /*startProgressQuery(logGroupName:string) {
-		const cloudWatchLogs = new AWS.CloudWatchLogs({
-		  region: this.paramsService.region,
-		  accessKeyId: this.paramsService.awsAccessToken,
-		  secretAccessKey: this.paramsService.awsSecretToken
-		});
-
-		let prefix = '';
-		if(this.paramsService.logPrefix && this.paramsService.logPrefix !== "") {
-			prefix = '/' + this.paramsService.logPrefix;
-		}
-
-		var params: any = {
-			endTime: Date.now(), 
-			queryString: this.progressQuery, 
-			startTime: Date.now()-315569520000,
-			logGroupName: `${prefix}${this.logGroupPrefix}${logGroupName}`
-		};
-		
-		return cloudWatchLogs.startQuery(params).promise();
-  }
-
-  getQueryResults(queryId:string) {
-		const cloudWatchLogs = new AWS.CloudWatchLogs({
-		  region: this.paramsService.region,
-		  accessKeyId: this.paramsService.awsAccessToken,
-		  secretAccessKey: this.paramsService.awsSecretToken
-		});
-
-		var params = {
-			queryId: queryId 
-		};
-		
-		return cloudWatchLogs.getQueryResults(params).promise();
-  }*/
 }
