@@ -1018,12 +1018,11 @@ exports.handler = async (event) => {
     
     // call product import API with complete items
     return Promise.all(Object.keys(itemsToUpload).map(key => pushItemsForEnv(key)))
-    .then( a => {		
-        return finishLogEvents().then( _ => a );
-    }).then(a => {
-		if (itemsToQueueBuffer.length > 0) {
-			flushItemsToQueue();
-		}
-	});
+    .then( a => {	
+		return Promise.all([
+			flushItemsToQueue(), 
+			finishLogEvents()
+		]);	
+    });
         
 };
