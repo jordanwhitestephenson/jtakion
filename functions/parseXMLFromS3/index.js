@@ -268,7 +268,7 @@ exports.handler = async (event) => {
             var params = {
                 "Entries": itemsToQueueBuffer.map( (it, i) => {
                     // console.log( {"event": "enqueue", "queueType":"parsed", "objectType":it.type, "id":it.id} );
-                    logItemEvent(  {"event": "enqueue-processItem", "objectType":it.type, "objectId":it.id, "duration":Date.now() - start, "process":"parse"}, sourceKey ); 
+                    //logItemEvent(  {"event": "enqueue-processItem", "objectType":it.type, "objectId":it.id, "duration":Date.now() - start, "process":"parse"}, sourceKey ); 
                     return {
                         "Id":it.id,
                         "MessageBody": JSON.stringify(it),
