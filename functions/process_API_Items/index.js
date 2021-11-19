@@ -110,7 +110,6 @@ exports.handler = async (event) => {
 			]
 		};
 		let resp = await rdsDataService.executeStatement(sqlParams).promise();
-		console.log('check asset exists resp', resp);
 		let columns = resp.columnMetadata.map(c => c.name);
 		let data = resp.records.map(r => {
 			let obj = {};
@@ -120,10 +119,8 @@ exports.handler = async (event) => {
 			return obj;
 		});
 		if(data.length > 0) {
-			console.log('already created', groupId, catalogCode, optionId, sourceKey);
 			return true;
 		} else {
-			console.log('not already created', groupId, catalogCode, optionId, sourceKey);
 			return false;
 		}
 	}
@@ -131,12 +128,10 @@ exports.handler = async (event) => {
     /* helper functions */
 
 	function writeCompletedAndAssetToDatabase(id, type, sourceKey, assetId, groupId, catalogCode, optionId, nm, options = {}) {
-		console.log('writing conpleted item to db ', id, type, sourceKey);
 		const { timeout = DEFAULT_TIMEOUT, frequency = DEFAULT_FREQUENCY } = options;
 		const startTime = Date.now();
 		const prom = new Promise((resolve, reject) => {
 			const check = async () => {
-				console.log('writing completed item and asset to db ', id);
 				try {
 					let sqlParams = {
 						secretArn: secretArn,
@@ -215,7 +210,6 @@ exports.handler = async (event) => {
 		const prom = new Promise((resolve, reject) => {
 			const check = async () => {
 				try {
-					console.log('writing completed item to db ', id);
 					let sqlParams = {
 						secretArn: secretArn,
 						resourceArn: dbArn,
@@ -265,7 +259,6 @@ exports.handler = async (event) => {
 				const jobUrl = `${apiUrl}/jobs/${jobId}`;
 				try {
 					const res = await axios.get(jobUrl, { 'headers': { 'Authorization': 'Bearer '+apiToken } });
-					console.log('poll job response: ',res);
 					if (res.data.status === 'stopped' || Date.now() - startTime > timeout) {
 						return resolve({
 							status: res.data.status,
@@ -615,27 +608,50 @@ exports.handler = async (event) => {
     // send array of items that need assets created or updated to asset queue
     function flushItemsToQueue() {
         console.log("flushing ",itemsToQueueBuffer.length, " items to queue");
-        var params = {
-            "Entries": itemsToQueueBuffer.map( (it, i) => {
-                console.log( {"event": "enqueue", "queueType":"needAsset", "objectType":it.type, "id":it.id} );
-                logItemEvent( it.type == 'item' ? events.enqueueItem(it.id, Date.now() - start) : events.enqueueOption(it.id, Date.now() - start), it.sourceKey );
-                return {
-                    "Id":it.id,
-                    "MessageBody": JSON.stringify(it),
-                    "MessageAttributes":{"enqueueTime":{'DataType':'Number','StringValue':Date.now().toString()} }
-                };
-            }),
-            "QueueUrl" : process.env.itemsNeedingAssetsQueue//'https://sqs.us-east-1.amazonaws.com/890084055036/itemsNeedingAssets'
-        };
-        
-        console.log("sending to queue ", util.inspect(params, {depth: 5}) );
-        
-        itemsToQueueBuffer = [];
-        itemsToQueueBufferLength = 0;
-        
-        const messageSendPromise = sqs.sendMessageBatch(params).send();
-        
-        return messageSendPromise;
+        if(itemsToQueueBuffer.length > 0){
+			var params = {
+				"Entries": itemsToQueueBuffer.map( (it, i) => {
+					console.log( {"event": "enqueue", "queueType":"needAsset", "objectType":it.type, "id":it.id} );
+					//logItemEvent( it.type == 'item' ? events.enqueueItem(it.id, Date.now() - start) : events.enqueueOption(it.id, Date.now() - start), it.sourceKey );
+					return {
+						"Id":it.id,
+						"MessageBody": JSON.stringify(it),
+						"MessageAttributes":{"enqueueTime":{'DataType':'Number','StringValue':Date.now().toString()} }
+					};
+				}),
+				"QueueUrl" : process.env.itemsNeedingAssetsQueue//'https://sqs.us-east-1.amazonaws.com/890084055036/itemsNeedingAssets'
+			};
+			
+			console.log("sending to queue ", util.inspect(params, {depth: 5}) );
+			
+			itemsToQueueBuffer = [];
+			itemsToQueueBufferLength = 0;
+			
+			const messageSendPromise = sqs.sendMessageBatch(params).send();
+			
+			return messageSendPromise;
+		} else {
+            return Promise.resolve("flushed no items to queue");
+        }
+    }
+    
+    function requeueFailedJobItem(item) {
+    	var params = {
+			"Entries": [
+				{
+					"Id":item.id,
+					"MessageBody": JSON.stringify(item),
+					"MessageAttributes":{"enqueueTime":{'DataType':'Number','StringValue':Date.now().toString()} }	
+				}
+			],
+			"QueueUrl" : process.env.parsedApiItemsQueue
+		};
+		
+		console.log("sending failed job item to queue ", util.inspect(params, {depth: 5}) );
+		
+		const messageSendPromise = sqs.sendMessageBatch(params).send();
+		
+		return messageSendPromise;
     }
     
     async function pushItemsForEnv(key) {
@@ -889,7 +905,7 @@ exports.handler = async (event) => {
 									bodyToRetry.jobTries = (bodyToRetry.jobTries || 0) +1;
 									if(bodyToRetry.jobTries < process.env.jobRetryLimit) {
 										//requeue item/option
-										return sendItemToQueue(bodyToRetry);
+										return requeueFailedJobItem(bodyToRetry);
 									} else {
 										//tried max number of times
 										//write to logs
@@ -967,16 +983,16 @@ exports.handler = async (event) => {
 			}
 			console.log('orgMap: ',orgMap);
 			if (body && body.type && body.type === 'option') {
-				logItemEvent( events.dequeueOption(body.id, getQueueTime()), body.sourceKey );
+				//logItemEvent( events.dequeueOption(body.id, getQueueTime()), body.sourceKey );
 				console.log('Option: ', body);
 				const option = createOption(body);
-				logItemEvent( events.creatingOption(body.id), body.sourceKey );
+				//logItemEvent( events.creatingOption(body.id), body.sourceKey );
 				if (!itemsToUpload[body.orgId]) {//body.destEnv]) {
 					itemsToUpload[body.orgId] = [];//body.destEnv] = [];
 				}
 				if ((body.im && !body.materialId && !body.assetChecked) || (body.subGroupOptions && !body.subGroupOptionIds && !body.assetChecked)) {
 					// option will get passed to asset queue
-					logItemEvent( events.needsReferencesOption(body.id, (body.im && !body.materialId), (body.subGroupOptions && !body.subGroupOptionIds)), body.sourceKey );
+					//logItemEvent( events.needsReferencesOption(body.id, (body.im && !body.materialId), (body.subGroupOptions && !body.subGroupOptionIds)), body.sourceKey );
 					// console.log({'event': 'needsAssets', type:'option', 'optionId': body.id});
 					sendItemToQueue(body);
 				} else {
@@ -988,17 +1004,17 @@ exports.handler = async (event) => {
 					}
 				}
 			} else if (body && body.type && body.type === 'item') {
-				logItemEvent( events.dequeueItem(body.id, getQueueTime()), body.sourceKey );
+				//logItemEvent( events.dequeueItem(body.id, getQueueTime()), body.sourceKey );
 				console.log('Item: ', body);
 				const item = createItem(body);
-				logItemEvent( events.creatingItem(body.id), body.sourceKey );
+				//logItemEvent( events.creatingItem(body.id), body.sourceKey );
 				if (!itemsToUpload[body.orgId]) {//body.destEnv]) {
 					//itemsToUpload[body.destEnv] = [];
 					itemsToUpload[body.orgId] = [];
 				}
 				if (!body.modelId) {
 					// item will get passed to asset queue
-					logItemEvent( events.needsReferencesItem(body.id, true), body.sourceKey );
+					//logItemEvent( events.needsReferencesItem(body.id, true), body.sourceKey );
 					// console.log({'event': 'needsAssets', type:'item', 'itemId': body.id});
 					sendItemToQueue(body);
 				} else {
@@ -1018,11 +1034,10 @@ exports.handler = async (event) => {
     
     // call product import API with complete items
     return Promise.all(Object.keys(itemsToUpload).map(key => pushItemsForEnv(key)))
-    .then( a => {	
-		return Promise.all([
-			flushItemsToQueue(), 
-			finishLogEvents()
-		]);	
-    });
+    .then( a => {
+		return finishLogEvents().then( _ => a );
+	}).then(a => {
+		return flushItemsToQueue();
+	});  
         
 };

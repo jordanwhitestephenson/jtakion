@@ -295,7 +295,7 @@ exports.handler = async (event) => {
             console.log(hasAllGroupOptions);
 			console.log('hasAllGroupOptions',hasAllGroupOptions);
             if (!hasAllGroupOptions) {
-				logItemEvent( events.notAllGroupOptionsComplete(item.id), item.sourceKey);
+				//logItemEvent( events.notAllGroupOptionsComplete(item.id), item.sourceKey);
                 return Promise.resolve(item);
             }
             
@@ -536,7 +536,7 @@ exports.handler = async (event) => {
         var params = {
             "Entries": items.map( (it, i) => {
                 console.log( {"event": "enqueue", "queue":queue.name, "objectType":it.type, "id":it.id} );
-                logItemEvent( events.enqueueItemOption(it.id, it.type, queue.name), it.sourceKey);
+                //logItemEvent( events.enqueueItemOption(it.id, it.type, queue.name), it.sourceKey);
                 return {
                     "Id":it.id,
                     "DelaySeconds": delay,
@@ -570,7 +570,7 @@ exports.handler = async (event) => {
 		if(notCancelled) {
 			if (body && body.type && body.type === 'option') {
 				
-				logItemEvent( events.dequeueOption(body.id, getQueueTime(r)), body.sourceKey);
+				//logItemEvent( events.dequeueOption(body.id, getQueueTime(r)), body.sourceKey);
 				
 				//TODO refactor to seperate getting material from getting subgroups
 				
@@ -580,7 +580,7 @@ exports.handler = async (event) => {
 			} else if (body && body.type && body.type === 'item') {
 				//console.log('Item: ', body);
 				
-				logItemEvent( events.dequeueItem(body.id, getQueueTime(r)), body.sourceKey);
+				//logItemEvent( events.dequeueItem(body.id, getQueueTime(r)), body.sourceKey);
 				
 				//TODO refactor to seperate getting subGroups from creating/updating model
 				
