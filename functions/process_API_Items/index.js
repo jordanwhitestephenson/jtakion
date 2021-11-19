@@ -867,7 +867,7 @@ exports.handler = async (event) => {
 						// reached specified timeout to check for completion but job still not done
 						// call api to cancel current job and put back on the queue for retry
 						//https://${threekitEnvDomain}/api/jobs/${jobId}/cancel?orgId=${orgId}
-						return axios.get(`${apiUrl}/jobs/${jobId}/cancel?orgId=${orgId}`, { 'headers': { 'Authorization': 'Bearer '+apiToken } })
+						return axios.post(`${apiUrl}/jobs/${jobId}/cancel?orgId=${orgId}`, { 'headers': { 'Authorization': 'Bearer '+apiToken } })
 							.then(res => {
 								console.log('response from job cancel call', res);									
 							})
