@@ -619,29 +619,51 @@ exports.handler = async (event) => {
     
     // send array of items that need assets created or updated to asset queue
     function flushItemsToQueue() {
-        //console.log("flushing ",itemsToQueueBuffer.length, " items to queue");
-        var params = {
-            "Entries": itemsToQueueBuffer.map( (it, i) => {
-                console.log( {"event": "enqueue", "queueType":"needAsset", "objectType":it.type, "id":it.id} );
-                logItemEvent( it.type == 'item' ? events.enqueueItem(it.id, Date.now() - start) : events.enqueueOption(it.id, Date.now() - start), it.sourceKey );
-                return {
-                    "Id":it.id,
-                    "MessageBody": JSON.stringify(it),
-                    "MessageAttributes":{"enqueueTime":{'DataType':'Number','StringValue':Date.now().toString()} }
-                };
-            }),
-            "QueueUrl" : process.env.itemsNeedingAssetsQueue//'https://sqs.us-east-1.amazonaws.com/890084055036/itemsNeedingAssets'
-        };
-        
-        //console.log("sending to queue ", util.inspect(params, {depth: 5}) );
-        
-        itemsToQueueBuffer = [];
-        itemsToQueueBufferLength = 0;
-        
-        const messageSendPromise = sqs.sendMessageBatch(params).send();
-        // const messageSendPromise = Promise.resolve("sent to queue");
-        
-        return messageSendPromise;
+        console.log("flushing ",itemsToQueueBuffer.length, " items to queue");
+        if(itemsToQueueBuffer.length > 0){
+			var params = {
+				"Entries": itemsToQueueBuffer.map( (it, i) => {
+					console.log( {"event": "enqueue", "queueType":"needAsset", "objectType":it.type, "id":it.id} );
+					//logItemEvent( it.type == 'item' ? events.enqueueItem(it.id, Date.now() - start) : events.enqueueOption(it.id, Date.now() - start), it.sourceKey );
+					return {
+						"Id":it.id,
+						"MessageBody": JSON.stringify(it),
+						"MessageAttributes":{"enqueueTime":{'DataType':'Number','StringValue':Date.now().toString()} }
+					};
+				}),
+				"QueueUrl" : process.env.itemsNeedingAssetsQueue//'https://sqs.us-east-1.amazonaws.com/890084055036/itemsNeedingAssets'
+			};
+			
+			console.log("sending to queue ", util.inspect(params, {depth: 5}) );
+			
+			itemsToQueueBuffer = [];
+			itemsToQueueBufferLength = 0;
+			
+			const messageSendPromise = sqs.sendMessageBatch(params).send();
+			
+			return messageSendPromise;
+		} else {
+            return Promise.resolve("flushed no items to queue");
+        }
+    }
+
+	function requeueFailedJobItem(item) {
+    	var params = {
+			"Entries": [
+				{
+					"Id":item.id,
+					"MessageBody": JSON.stringify(item),
+					"MessageAttributes":{"enqueueTime":{'DataType':'Number','StringValue':Date.now().toString()} }	
+				}
+			],
+			"QueueUrl" : process.env.parsedApiItemsQueue
+		};
+		
+		console.log("sending failed job item to queue ", util.inspect(params, {depth: 5}) );
+		
+		const messageSendPromise = sqs.sendMessageBatch(params).send();
+		
+		return messageSendPromise;
     }
     
     async function pushItemsForEnv(key) {
@@ -875,9 +897,53 @@ exports.handler = async (event) => {
 								throw error;
 							});
 					} else if (status === 'pending') {
+						console.log('item import job polling timed out for items '+itemsToUploadEnv.map(i => i.m));
 						// reached specified timeout to check for completion but job still not done
-						console.log('item import job polling timed for items '+itemsToUploadEnv.map(i => i.m));
-						throw new Error('item import job polling timed out for items '+itemsToUploadEnv.map(i => i.m));
+						// call api to cancel current job and put back on the queue for retry
+						//https://${threekitEnvDomain}/api/jobs/${jobId}/cancel?orgId=${orgId}
+						const config = { 'headers': {
+							'Authorization': 'Bearer '+apiToken
+						}};
+						return axios.post(`${apiUrl}/jobs/${jobId}/cancel?orgId=${orgId}`, {}, config)
+							.then(res => {
+								console.log('response from job cancel call', res);									
+							})
+							.catch(err => {
+								console.log('error calling cancel job api', err);
+							})
+							.finally(() => {
+								// track retries
+								itemsToUploadEnv.forEach(itm => {
+									let bodyToRetry;
+									if(itm.m.itemId) {
+										bodyToRetry = itemToBodyMap[itm.m.itemId];
+									} else {
+										bodyToRetry = itemToBodyMap[itm.m.optionId];
+									}
+									bodyToRetry.jobTries = (bodyToRetry.jobTries || 0) +1;
+									if(bodyToRetry.jobTries < process.env.jobRetryLimit) {
+										//requeue item/option
+										return requeueFailedJobItem(bodyToRetry);
+									} else {
+										//tried max number of times
+										//write to logs
+										let keyArray;
+										let idOfItem;
+										if(itm.m.itemId) {
+											idOfItem = itm.m.itemId;
+											keyArray = bodySourceKeys[itm.m.itemId];
+										} else {
+											idOfItem = itm.m.optionId;
+											keyArray = bodySourceKeys[itm.m.optionId];
+										}
+										keyArray.forEach(k => {
+											logItemEvent( events.unknownErrorApiCall(`${apiUrl}/jobs/${jobId}`, JSON.stringify(itemsToUploadEnv), `Job timed out ${process.env.jobRetryLimit} times. Item ${idOfItem} failed to import.`), k);			
+										});
+										return 'done';
+									}
+								});
+							});	
+						//throw new Error('item import job polling timed out for items '+itemsToUploadEnv.map(i => i.m));
 						//return item;
 					} else {
 						// error - job failed
@@ -915,6 +981,7 @@ exports.handler = async (event) => {
     
     const bodySourceKeys = {};
 	const orgMap = {};
+	const itemToBodyMap = {};
     for(let i=0; i<event.Records.length; i++) {
     	let r = event.Records[i];
         const body = JSON.parse(r.body);
@@ -952,6 +1019,7 @@ exports.handler = async (event) => {
 					//itemsToUpload[body.destEnv].push(option);
 					let exists = await checkAssetExists(body.groupId, body.catalog.code, body.id, body.sourceKey);
 					if(!exists) {
+						itemToBodyMap[option.m.optionId] = body;
 						itemsToUpload[body.orgId].push(option);
 					}
 				}
@@ -971,6 +1039,7 @@ exports.handler = async (event) => {
 					sendItemToQueue(body);
 				} else {
 					//itemsToUpload[body.destEnv].push(item);
+					itemToBodyMap[item.m.itemId] = body;
 					itemsToUpload[body.orgId].push(item);
 				}
 			}
@@ -985,8 +1054,10 @@ exports.handler = async (event) => {
     
     // call product import API with complete items
     return Promise.all(Object.keys(itemsToUpload).map(key => pushItemsForEnv(key)))
-    .then( a => {
-        return finishLogEvents().then( _ => a );
-    });
+	.then( a => {
+		return finishLogEvents().then( _ => a );
+	}).then(a => {
+		return flushItemsToQueue();
+	});
         
 };
