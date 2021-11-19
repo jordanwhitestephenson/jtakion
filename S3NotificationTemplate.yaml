@@ -391,6 +391,7 @@ Resources:
                     dbArn: !Sub "arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:cluster:${RDSDBCluster}"
                     secretArn: !Ref SecretsManagerSecret
                     logPrefix: !Sub "${environment}"
+                    jobRetryLimit: 3
             FunctionName: !Sub "process_API_Items-${environment}"
             Handler: "index.handler"
             Architectures: 

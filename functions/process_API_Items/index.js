@@ -707,7 +707,8 @@ exports.handler = async (event) => {
 				const jobId = res.data.jobId;
 				//poll for job completion
 				return pollJob(jobId, apiUrl, apiToken, {
-					timeout: 1000 * 60 * 10,
+					//timeout: 1000 * 60 * 10,
+					timeout: 1000,
 					frequency: 2000,
 				}).then(pollResult => {
 					let status = pollResult.status;
@@ -862,9 +863,50 @@ exports.handler = async (event) => {
 								throw error;
 							});
 					} else if (status === 'pending') {
-						// reached specified timeout to check for completion but job still not done
 						console.log('item import job polling timed out for items '+itemsToUploadEnv.map(i => i.m));
-						throw new Error('item import job polling timed out for items '+itemsToUploadEnv.map(i => i.m));
+						// reached specified timeout to check for completion but job still not done
+						// call api to cancel current job and put back on the queue for retry
+						//https://${threekitEnvDomain}/api/jobs/${jobId}/cancel?orgId=${orgId}
+						return axios.get(`${apiUrl}/jobs/${jobId}/cancel?orgId=${orgId}`, { 'headers': { 'Authorization': 'Bearer '+apiToken } })
+							.then(res => {
+								console.log('response from job cancel call', res);									
+							})
+							.catch(err => {
+								console.log('error calling cancel job api', err);
+							})
+							.finally(() => {
+								// track retries
+								itemsToUploadEnv.forEach(itm => {
+									let bodyToRetry;
+									if(itm.m.itemId) {
+										bodyToRetry = itemToBodyMap[itm.m.itemId];
+									} else {
+										bodyToRetry = itemToBodyMap[itm.m.optionId];
+									}
+									bodyToRetry.jobTries = (bodyToRetry.jobTries || 0) +1;
+									if(bodyToRetry.jobTries < process.env.jobRetryLimit) {
+										//requeue item/option
+										return sendItemToQueue(bodyToRetry);
+									} else {
+										//tried max number of times
+										//write to logs
+										let keyArray;
+										let idOfItem;
+										if(itm.m.itemId) {
+											idOfItem = itm.m.itemId;
+											keyArray = bodySourceKeys[itm.m.itemId];
+										} else {
+											idOfItem = itm.m.optionId;
+											keyArray = bodySourceKeys[itm.m.optionId];
+										}
+										keyArray.forEach(k => {
+											logItemEvent( events.unknownErrorApiCall(`${apiUrl}/jobs/${jobId}`, JSON.stringify(itemsToUploadEnv), `Job timed out ${process.env.jobRetryLimit} times. Item ${idOfItem} failed to import.`), k);			
+										});
+										return 'done';
+									}
+								});
+							});											
+						//throw new Error('item import job polling timed out for items '+itemsToUploadEnv.map(i => i.m));
 					} else {
 						// error - job failed
 						console.log('item import job failed for items '+itemsToUploadEnv.map(i => i.m));
@@ -883,6 +925,7 @@ exports.handler = async (event) => {
 					}
 				}).catch(error => {
 					console.log('polling error ',error);
+
 					throw error;
 				});				
 			});
@@ -899,6 +942,7 @@ exports.handler = async (event) => {
     
     const bodySourceKeys = {};
 	const orgMap = {};
+	const itemToBodyMap = {};
     for(let i=0; i<event.Records.length; i++) {
     	let r = event.Records[i];
         const body = JSON.parse(r.body);
@@ -936,6 +980,7 @@ exports.handler = async (event) => {
 					//itemsToUpload[body.destEnv].push(option);
 					let exists = await checkAssetExists(body.groupId, body.catalog.code, body.id, body.sourceKey);
 					if(!exists) {
+						itemToBodyMap[option.m.optionId] = body;
 						itemsToUpload[body.orgId].push(option);
 					}
 				}
@@ -955,6 +1000,7 @@ exports.handler = async (event) => {
 					sendItemToQueue(body);
 				} else {
 					//itemsToUpload[body.destEnv].push(item);
+					itemToBodyMap[item.m.itemId] = body;
 					itemsToUpload[body.orgId].push(item);
 				}
 			}
@@ -969,8 +1015,12 @@ exports.handler = async (event) => {
     
     // call product import API with complete items
     return Promise.all(Object.keys(itemsToUpload).map(key => pushItemsForEnv(key)))
-    .then( a => {
+    .then( a => {		
         return finishLogEvents().then( _ => a );
-    });
+    }).then(a => {
+		if (itemsToQueueBuffer.length > 0) {
+			return flushItemsToQueue().then( _ => a);
+		}
+	});
         
 };

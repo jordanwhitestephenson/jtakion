@@ -30,13 +30,13 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {//destEnv) => {
     
     async function writeItem(item) {
         // console.log( {"event": "parse", "objectType":"item", "itemId":item.id} );
-        logItemEvent( {"event": "parse", "objectType":"item", "objectId":item.id, "process":"parse"}, sourceKey );
+        //logItemEvent( {"event": "parse", "objectType":"item", "objectId":item.id, "process":"parse"}, sourceKey );
         itemsToWrite.push(item);
     }
     
     async function writeOptionGroup(optionGroup) {
         // console.log( {"event": "parse", "objectType":"group", "optionGroupId":optionGroup.id, "optionsCount": optionGroup.options.length} );
-        logItemEvent( {"event": "parse", "objectType":"group", "objectId":optionGroup.id, "optionsCount": optionGroup.options.length, "process":"parse"}, sourceKey );
+        //logItemEvent( {"event": "parse", "objectType":"group", "objectId":optionGroup.id, "optionsCount": optionGroup.options.length, "process":"parse"}, sourceKey );
         optionGroupsMap[optionGroup.id] = optionGroup;
     }
 
