@@ -503,7 +503,32 @@ exports.handler = async (event) => {
 					} else if (status === 'pending') {
 						// reached specified timeout to check for completion but job still not done
 						console.log('model import job polling timed for item '+item.pn);
-						return item;
+						// reached specified timeout to check for completion but job still not done
+						// call api to cancel current job and put back on the queue for retry
+						//https://${threekitEnvDomain}/api/jobs/${jobId}/cancel?orgId=${orgId}
+						const config = { 'headers': {
+							'Authorization': 'Bearer '+apiToken
+						}};
+						return axios.post(`${apiUrl}/jobs/${jobId}/cancel?orgId=${orgId}`, {}, config)
+							.then(res => {
+								console.log('response from job cancel call', res);									
+							})
+							.catch(err => {
+								console.log('error calling cancel job api', err);
+							})
+							.finally(() => {
+								// track retries
+								item.jobTries = (item.jobTries || 0) +1;
+								if(item.jobTries < process.env.jobRetryLimit) {
+									//requeue item/option
+									return item;
+								} else {
+									//tried max number of times
+									//write to logs
+									logItemEvent( events.unknownErrorApiCall(`${apiUrl}/jobs/${jobId}`, JSON.stringify(item), `Job timed out ${process.env.jobRetryLimit} times. Model for item ${item.pn} failed to import.`), sourceKey);			
+									return item;
+								}
+							});
 					} else {
 						// error - job failed
 						console.log('model import job failed for item '+item.pn);
