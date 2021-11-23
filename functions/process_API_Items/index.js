@@ -705,7 +705,7 @@ exports.handler = async (event) => {
 						// http.ClientRequest in node.js
 						console.log(error.request);
 						keyArray.forEach(k => {
-							logItemEvent( events.noResponseApiCall(apiUrl+'/products/import?orgId='+orgId+' start: '+formattedStart+' end: '+formattedEnd+' duration: '+importDuration+' seconds', JSON.stringify(itemsToUploadEnv), ''), k);				
+							logItemEvent( events.noResponseApiCall(apiUrl+'/products/import?orgId='+orgId+' start: '+formattedStart+' end: '+formattedEnd+' duration: '+importDuration+' seconds', JSON.stringify(itemsToUploadEnv), error), k);				
 						});
 					} else {
 						// Something happened in setting up the request that triggered an Error
@@ -823,7 +823,7 @@ exports.handler = async (event) => {
 												// http.ClientRequest in node.js
 												console.log(error.request);
 												keyArray.forEach(k => {
-													logItemEvent( events.noResponseApiCall(`${apiUrl}/files/${fileId}/content start: ${formattedStart} end: ${formattedEnd} duration: ${filesDuration} seconds`, '', ''), k);				
+													logItemEvent( events.noResponseApiCall(`${apiUrl}/files/${fileId}/content start: ${formattedStart} end: ${formattedEnd} duration: ${filesDuration} seconds`, '', error), k);				
 												});
 											} else {
 												// Something happened in setting up the request that triggered an Error
@@ -865,7 +865,7 @@ exports.handler = async (event) => {
 										// http.ClientRequest in node.js
 										console.log(error.request);
 										keyArray.forEach(k => {
-											logItemEvent( events.noResponseApiCall(`${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId} start: ${formattedStart} end: ${formattedEnd} duration: ${runsDuration} seconds`, '', ''), k);				
+											logItemEvent( events.noResponseApiCall(`${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId} start: ${formattedStart} end: ${formattedEnd} duration: ${runsDuration} seconds`, '', error), k);				
 										});
 									} else {
 										// Something happened in setting up the request that triggered an Error
