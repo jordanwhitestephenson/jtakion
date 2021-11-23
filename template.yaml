@@ -520,7 +520,7 @@ Resources:
             MaximumMessageSize: "262144"
             MessageRetentionPeriod: "345600"
             ReceiveMessageWaitTimeSeconds: "0"
-            VisibilityTimeout: "120"
+            VisibilityTimeout: "300"
             QueueName: !Sub "optionsNeedingMaterialRetry-${environment}"
 
     optionsNeedingMaterialSQSQueue:
