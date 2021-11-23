@@ -494,7 +494,7 @@ Resources:
             MaximumMessageSize: "262144"
             MessageRetentionPeriod: "345600"
             ReceiveMessageWaitTimeSeconds: "0"
-            VisibilityTimeout: "150"
+            VisibilityTimeout: "720"
             QueueName: !Sub "itemsNeedingAssets-${environment}"
             RedrivePolicy: 
               deadLetterTargetArn:
@@ -511,7 +511,7 @@ Resources:
             MaximumMessageSize: "262144"
             MessageRetentionPeriod: "345600"
             ReceiveMessageWaitTimeSeconds: "0"
-            VisibilityTimeout: "120"
+            VisibilityTimeout: "720"
             QueueName: !Sub "parsedAPIItems-${environment}"
             RedrivePolicy: 
               deadLetterTargetArn:
@@ -537,7 +537,7 @@ Resources:
             MaximumMessageSize: "262144"
             MessageRetentionPeriod: "345600"
             ReceiveMessageWaitTimeSeconds: "0"
-            VisibilityTimeout: "120"
+            VisibilityTimeout: "300"
             QueueName: !Sub "optionsNeedingMaterial-${environment}"
 
     processItemFailureSQSQueue:
