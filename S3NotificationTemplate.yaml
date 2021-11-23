@@ -611,7 +611,7 @@ Resources:
     createAndIdMaterialRetryLambdaEventSourceMapping:
         Type: "AWS::Lambda::EventSourceMapping"
         Properties:
-            BatchSize: 1
+            BatchSize: 10
             EventSourceArn: !GetAtt optionsNeedingMaterialRetrySQSQueue.Arn
             FunctionName: !GetAtt createAndIdMaterialLambdaFunction.Arn
             Enabled: true
@@ -620,7 +620,7 @@ Resources:
     createAndIdMaterialLambdaEventSourceMapping:
         Type: "AWS::Lambda::EventSourceMapping"
         Properties:
-            BatchSize: 1
+            BatchSize: 10
             EventSourceArn: !GetAtt optionsNeedingMaterialSQSQueue.Arn
             FunctionName: !GetAtt createAndIdMaterialLambdaFunction.Arn
             Enabled: true
@@ -629,7 +629,7 @@ Resources:
     processAPIAssetsLambdaEventSourceMapping:
         Type: "AWS::Lambda::EventSourceMapping"
         Properties:
-            BatchSize: 1
+            BatchSize: 2
             EventSourceArn: !GetAtt itemsNeedingAssetsSQSQueue.Arn
             FunctionName: !GetAtt processAPIAssetsLambdaFunction.Arn
             Enabled: true
@@ -647,7 +647,7 @@ Resources:
     processAPIItemsLambdaEventSourceMapping:
         Type: "AWS::Lambda::EventSourceMapping"
         Properties:
-            BatchSize: 1
+            BatchSize: 2
             EventSourceArn: !GetAtt parsedAPIItemsSQSQueue.Arn
             FunctionName: !GetAtt processAPIItemsLambdaFunction.Arn
             Enabled: true
