@@ -181,88 +181,95 @@ exports.handler = async (event) => {
 			const fileId = cachedFile.id;
             if (!fileId) {
                 console.log('Image not found in cache ', image.file);
-				logApiCallError({message:'Option Id:'+optionId+' - Image not found in DAM: '+image.file}, damUrl, '', sourceKey);
+				logApiCallError({message:'Option Id:'+optionId+' - Image not found in DAM: '+image.file}, damUrl, '', sourceKey);				
             }
             
-            var zip = new JSZip();
-            
-            //const imageFileName = image.code.replace(/ /g, '-')+".jpg";
-			const imageFileName = cachedFile.fileName.replace(/ /g, '-');
-            
-            const textureDefinition = { "image": imageFileName };
-            const textureFileName = image.code.replace(/ /g, '-')+".pbrtex";
-            zip.file( textureFileName , JSON.stringify( textureDefinition ) );
-            
-            const materialDefinition = { "baseMap": textureFileName };
-            const materialFileName = image.code.replace(/ /g, '-')+".pbrmat";
-            zip.file( materialFileName , JSON.stringify( materialDefinition ) );
-            
-            //TODO replace with DAM server call to get image
-            // const getImagePromise = axios.get( "https://teknion-assets.s3.amazonaws.com/"+image.file+".jpg", { responseType: 'arraybuffer' } )
-            //     .then( r => r.data )
-            //     .catch(err => {
-            //         console.log("Image not found ", image.file+".jpg", err);
-            //         return axios.get( "https://teknion-assets.s3.amazonaws.com/52_Ebony.jpg", { responseType: 'arraybuffer' } ).then( r => r.data);
-            //     });
-            
-            
-            const requestUrl = damUrl+"/"+fileId+"/download/";
-            const authHeader = await getAuthHeaderForRequest({url: requestUrl, method: 'GET'});
-            const getImagePromise = axios.get( requestUrl, { headers: authHeader } )
-                .then( r => {
-                    if (r.data && r.data.s3_file) {
-						var s3Url = r.data.s3_file;
-                        console.log('Found S3 Location for ', imageFileName, ": ", r.data.s3_file);
-                        return axios.get(s3Url, { responseType: 'arraybuffer' })
-                            .then( r => {
-                                console.log('Found file for ', imageFileName);
-                                return r.data;
-                            })
-                        .catch(err => {
-                            console.log("Image not found in Bynder: "+image.file+".jpg", err);
-							logApiCallError(err, s3Url, "Option Id: "+optionId+" - Image not found in Bynder ", image.file+".jpg", sourceKey);
-                            return axios.get( "https://teknion-assets.s3.amazonaws.com/52_Ebony.jpg", { responseType: 'arraybuffer' } ).then( r => r.data);
-                        });
-                    }
-                })
-                .catch(err => {
-                    console.log("Image not found in DAM ", image.file+".jpg", err);
-					logApiCallError(err, damUrl+"/"+fileId+"/download/", "Option Id: "+optionId+" - Image not found in DAM: "+ image.file+".jpg", sourceKey);
-                    return axios.get( "https://teknion-assets.s3.amazonaws.com/52_Ebony.jpg", { responseType: 'arraybuffer' } ).then( r => r.data);
-                });
-            
-            zip.file ( imageFileName , getImagePromise );
-            
-            return zip.generateAsync({type : "nodebuffer"}).then( z => {
-                // console.log("got zip file ready to send ", z);
-                
-                const filename = image.code.replace(/ /, '-')+".pbrzip";
-                const fileUploadData = new FormData();
-                fileUploadData.append('file', z, filename);
-                
-                const fileUploadConfig = { 'headers': {
-                        'Authorization': 'Bearer '+apiToken,
-                        ...fileUploadData.getHeaders()
-                    },
-                    maxContentLength: Infinity,
-                    maxBodyLength: Infinity
-                };
-                // console.log("Start API call to upload zip", filename );
-                
-                if(false){
-                    var params = {Bucket: 'teknion-pbr-upload', Key: filename, Body: z};
-                    s3.upload(params, function(err, data) {
-                      console.log(err, data);
-                    });
-                }
-                
-                const filesStartTime = Date.now();
-                return axios.post(
-                    apiUrl+'/files?orgId='+orgId,
-                    fileUploadData,
-                    fileUploadConfig
-                ).catch(error => {
-                    const filesEndTime = Date.now();										
+			var zip = new JSZip();
+			
+			//const imageFileName = image.code.replace(/ /g, '-')+".jpg";
+			let imageFileName
+			if (!fileId) {
+				imageFileName = image.code.replace(/ /g, '-')+".jpg";
+			} else {
+				imageFileName = cachedFile.fileName.replace(/ /g, '-');
+			}
+			const textureDefinition = { "image": imageFileName };
+			const textureFileName = image.code.replace(/ /g, '-')+".pbrtex";
+			zip.file( textureFileName , JSON.stringify( textureDefinition ) );
+			
+			const materialDefinition = { "baseMap": textureFileName };
+			const materialFileName = image.code.replace(/ /g, '-')+".pbrmat";
+			zip.file( materialFileName , JSON.stringify( materialDefinition ) );
+			
+			//TODO replace with DAM server call to get image
+			// const getImagePromise = axios.get( "https://teknion-assets.s3.amazonaws.com/"+image.file+".jpg", { responseType: 'arraybuffer' } )
+			//     .then( r => r.data )
+			//     .catch(err => {
+			//         console.log("Image not found ", image.file+".jpg", err);
+			//         return axios.get( "https://teknion-assets.s3.amazonaws.com/52_Ebony.jpg", { responseType: 'arraybuffer' } ).then( r => r.data);
+			//     });
+			let getImagePromise;
+			if(!fileId) {
+				getImagePromise = axios.get( "https://teknion-assets.s3.amazonaws.com/52_Ebony.jpg", { responseType: 'arraybuffer' } ).then( r => r.data);
+			} else {
+				const requestUrl = damUrl+"/"+fileId+"/download/";
+				const authHeader = await getAuthHeaderForRequest({url: requestUrl, method: 'GET'});
+				getImagePromise = axios.get( requestUrl, { headers: authHeader } )
+					.then( r => {
+						if (r.data && r.data.s3_file) {
+							var s3Url = r.data.s3_file;
+							console.log('Found S3 Location for ', imageFileName, ": ", r.data.s3_file);
+							return axios.get(s3Url, { responseType: 'arraybuffer' })
+								.then( r => {
+									console.log('Found file for ', imageFileName);
+									return r.data;
+								})
+							.catch(err => {
+								console.log("Image not found in Bynder: "+image.file+".jpg", err);
+								logApiCallError(err, s3Url, "Option Id: "+optionId+" - Image not found in Bynder ", image.file+".jpg", sourceKey);
+								return axios.get( "https://teknion-assets.s3.amazonaws.com/52_Ebony.jpg", { responseType: 'arraybuffer' } ).then( r => r.data);
+							});
+						}
+					})
+					.catch(err => {
+						console.log("Image not found in DAM ", image.file+".jpg", err);
+						logApiCallError(err, damUrl+"/"+fileId+"/download/", "Option Id: "+optionId+" - Image not found in DAM: "+ image.file+".jpg", sourceKey);
+						return axios.get( "https://teknion-assets.s3.amazonaws.com/52_Ebony.jpg", { responseType: 'arraybuffer' } ).then( r => r.data);
+					});
+			}
+			
+			zip.file ( imageFileName , getImagePromise );
+			
+			return zip.generateAsync({type : "nodebuffer"}).then( z => {
+				// console.log("got zip file ready to send ", z);
+				
+				const filename = image.code.replace(/ /, '-')+".pbrzip";
+				const fileUploadData = new FormData();
+				fileUploadData.append('file', z, filename);
+				
+				const fileUploadConfig = { 'headers': {
+						'Authorization': 'Bearer '+apiToken,
+						...fileUploadData.getHeaders()
+					},
+					maxContentLength: Infinity,
+					maxBodyLength: Infinity
+				};
+				// console.log("Start API call to upload zip", filename );
+				
+				if(false){
+					var params = {Bucket: 'teknion-pbr-upload', Key: filename, Body: z};
+					s3.upload(params, function(err, data) {
+					console.log(err, data);
+					});
+				}
+				
+				const filesStartTime = Date.now();
+				return axios.post(
+					apiUrl+'/files?orgId='+orgId,
+					fileUploadData,
+					fileUploadConfig
+				).catch(error => {
+					const filesEndTime = Date.now();										
 					let filesDuration = Math.abs(filesStartTime - filesEndTime) / 1000;
 					const startDate = new Date(filesStartTime);
 					const endDate = new Date(filesEndTime);
@@ -272,41 +279,41 @@ exports.handler = async (event) => {
 					logApiCallError(error, apiUrl+'/files?orgId='+orgId+' start: '+formattedStart+' end: '+formattedEnd+' duration: '+filesDuration+' seconds', 'failed calling files API with pbrzip for option Id: '+optionId, sourceKey);
 					throw error;
 				}).then( r => {
-                    console.log({'event': 'fileUpload', 'fileName': filename, 'result': JSON.stringify(r.data)});
-                    return r.data;
-                }).then( fileUpload => {
-                    
-                    // console.log("file uploaded ", fileUpload.files[0].id);
-                    
-                    const importJobData = {
-                      "fileId": fileUpload.files[0].id,
-                      "orgId": orgId,
-                      "sync": false,
-                      "title": "Import "+filename
-                    };
-                    
-                    const assetStartTime = Date.now();
-                    return axios.post(
-                        apiUrl+'/asset-jobs/import?orgId='+orgId,
-                        importJobData, 
-                        { 'headers': { 'Authorization': 'Bearer '+apiToken } }
-                    ).catch(error => {
-                        const assetEndTime = Date.now();										
-    					let assetDuration = Math.abs(assetStartTime - assetEndTime) / 1000;
-    					const startDate = new Date(assetStartTime);
-    					const endDate = new Date(assetEndTime);
-    					let formattedStart = startDate.toISOString();
-    					let formattedEnd = endDate.toISOString();
+					console.log({'event': 'fileUpload', 'fileName': filename, 'result': JSON.stringify(r.data)});
+					return r.data;
+				}).then( fileUpload => {
+					
+					// console.log("file uploaded ", fileUpload.files[0].id);
+					
+					const importJobData = {
+					"fileId": fileUpload.files[0].id,
+					"orgId": orgId,
+					"sync": false,
+					"title": "Import "+filename
+					};
+					
+					const assetStartTime = Date.now();
+					return axios.post(
+						apiUrl+'/asset-jobs/import?orgId='+orgId,
+						importJobData, 
+						{ 'headers': { 'Authorization': 'Bearer '+apiToken } }
+					).catch(error => {
+						const assetEndTime = Date.now();										
+						let assetDuration = Math.abs(assetStartTime - assetEndTime) / 1000;
+						const startDate = new Date(assetStartTime);
+						const endDate = new Date(assetEndTime);
+						let formattedStart = startDate.toISOString();
+						let formattedEnd = endDate.toISOString();
 						console.log(error);
 						logApiCallError(error, apiUrl+'/asset-jobs/import?orgId='+orgId+' start: '+formattedStart+' end: '+formattedEnd+' duration: '+assetDuration+' seconds', JSON.stringify(importJobData), sourceKey);
 					}).then( r => {
-                        console.log({'event': 'assetsImportJobStarted', 'fileId': fileUpload.files[0].id, 'jobId': r.data.jobId });
+						console.log({'event': 'assetsImportJobStarted', 'fileId': fileUpload.files[0].id, 'jobId': r.data.jobId });
 						console.log('asset-jobs/import results',r.data);
-                        return r.data;
-                    });
-                });
-                
-            });
+						return r.data;
+					});
+				});
+				
+			});
         }
 
         
