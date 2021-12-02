@@ -33,11 +33,11 @@ exports.handler = async (event) => {
     
     /* Helper functions */
 
-	function logApiCallError(error, url, body, sourceKey) {
+	function logApiCallError(error, url, body, sourceKey, orgId) {
 		if (error.response) {
 			// The request was made and the server responded with a status code
 			// that falls out of the range of 2xx
-			logItemEvent( events.failedApiCall(url, body, error.response.data, error.response.status, error.response.headers), sourceKey);
+			logItemEvent( events.failedApiCall(url, body, error.response.data, error.response.status, error.response.headers), sourceKey, orgId);
 			console.log(error.response.data);
 			console.log(error.response.status);
 			console.log(error.response.headers);
@@ -46,12 +46,12 @@ exports.handler = async (event) => {
 			// `error.request` is an instance of XMLHttpRequest in the browser and an instance of
 			// http.ClientRequest in node.js
 			console.log(error.request);
-			logItemEvent( events.noResponseApiCall(url, body, error.request), sourceKey);			
+			logItemEvent( events.noResponseApiCall(url, body, error.request), sourceKey, orgId);			
 		} else {
 			// Something happened in setting up the request that triggered an Error
 			console.log('Error', error.message);
 			console.log('APIERROR', error);
-			logItemEvent( events.unknownErrorApiCall(url, body, error.message), sourceKey);				
+			logItemEvent( events.unknownErrorApiCall(url, body, error.message), sourceKey, orgId);				
 		}
 	}
     
