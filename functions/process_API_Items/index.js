@@ -280,7 +280,7 @@ exports.handler = async (event) => {
  		return prom;
 	}
 
-	function logApiCallError(error, url, body, sourceKey) {
+	/*function logApiCallError(error, url, body, sourceKey) {
 		if (error.response) {
 			// The request was made and the server responded with a status code
 			// that falls out of the range of 2xx
@@ -299,7 +299,7 @@ exports.handler = async (event) => {
 			console.log('Error', error.message);
 			logItemEvent( events.unknownErrorApiCall(url, body, error.message), sourceKey);				
 		}
-	}
+	}*/
     
     //create a item and assets for a group
     function createOption (option) {         
@@ -694,7 +694,7 @@ exports.handler = async (event) => {
 						// The request was made and the server responded with a status code
 						// that falls out of the range of 2xx
 						keyArray.forEach(k => {
-							logItemEvent( events.failedApiCall(apiUrl+'/products/import?orgId='+orgId+' start: '+formattedStart+' end: '+formattedEnd+' duration: '+importDuration+' seconds', JSON.stringify(itemsToUploadEnv), error.response.data, error.response.status, error.response.headers), k);			
+							logItemEvent( events.failedApiCall(apiUrl+'/products/import?orgId='+orgId+' start: '+formattedStart+' end: '+formattedEnd+' duration: '+importDuration+' seconds', JSON.stringify(itemsToUploadEnv), error.response.data, error.response.status, error.response.headers), k, orgId);			
 						});					
 						console.log(error.response.data);
 						console.log(error.response.status);
@@ -705,13 +705,13 @@ exports.handler = async (event) => {
 						// http.ClientRequest in node.js
 						console.log(error.request);
 						keyArray.forEach(k => {
-							logItemEvent( events.noResponseApiCall(apiUrl+'/products/import?orgId='+orgId+' start: '+formattedStart+' end: '+formattedEnd+' duration: '+importDuration+' seconds', JSON.stringify(itemsToUploadEnv), error), k);				
+							logItemEvent( events.noResponseApiCall(apiUrl+'/products/import?orgId='+orgId+' start: '+formattedStart+' end: '+formattedEnd+' duration: '+importDuration+' seconds', JSON.stringify(itemsToUploadEnv), error), k, orgId);				
 						});
 					} else {
 						// Something happened in setting up the request that triggered an Error
 						console.log('Error', error.message);
 						keyArray.forEach(k => {
-							logItemEvent( events.unknownErrorApiCall(apiUrl+'/products/import?orgId='+orgId+' start: '+formattedStart+' end: '+formattedEnd+' duration: '+importDuration+' seconds', JSON.stringify(itemsToUploadEnv), error.message), k);			
+							logItemEvent( events.unknownErrorApiCall(apiUrl+'/products/import?orgId='+orgId+' start: '+formattedStart+' end: '+formattedEnd+' duration: '+importDuration+' seconds', JSON.stringify(itemsToUploadEnv), error.message), k, orgId);			
 						});
 					}
 				});
@@ -748,7 +748,7 @@ exports.handler = async (event) => {
 												if(p.metadata.itemId){
 													let sourceKeyArray = bodySourceKeys[p.metadata.itemId];														
 													sourceKeyArray.forEach(sourceKey => {
-														logItemEvent( events.createdItem(p.metadata.itemId, p.id, Date.now() - t),  sourceKey);	
+														logItemEvent( events.createdItem(p.metadata.itemId, p.id, Date.now() - t),  sourceKey, orgId);	
 														let completedItemPromise = writeCompletedItemToDatabase(p.metadata.itemId, 'item', sourceKey);
 														promises.push(completedItemPromise);			
 													});																	
@@ -756,7 +756,7 @@ exports.handler = async (event) => {
 												} else {
 													let sourceKeyArray = bodySourceKeys[p.metadata.optionId];
 													sourceKeyArray.forEach(sourceKey => {					
-														logItemEvent( events.createdOption(p.metadata.optionId, p.id, Date.now() - t), sourceKey );
+														logItemEvent( events.createdOption(p.metadata.optionId, p.id, Date.now() - t), sourceKey, orgId );
 														let completedItemPromise = writeCompletedAndAssetToDatabase(p.metadata.optionId, 'option', sourceKey, p.id, p.metadata.groupId, p.metadata.catalogCode, p.metadata.optionId, p.name);
 														promises.push(completedItemPromise);
 													});
@@ -772,13 +772,13 @@ exports.handler = async (event) => {
 												if(p.m.itemId){
 													let sourceKeyArray = bodySourceKeys[p.m.itemId];		
 													sourceKeyArray.forEach(sourceKey => {				
-														logItemEvent( events.errorCreatingItem(p.m.itemId), sourceKey );
+														logItemEvent( events.errorCreatingItem(p.m.itemId), sourceKey, orgId );
 													});
 													return p.m.itemId;
 												} else {
 													let sourceKeyArray = bodySourceKeys[p.m.optionId];	
 													sourceKeyArray.forEach(sourceKey => {					
-														logItemEvent( events.errorCreatingOption(p.m.optionId),  sourceKey);
+														logItemEvent( events.errorCreatingOption(p.m.optionId),  sourceKey, orgId);
 													});
 													return p.m.optionId;
 												}
@@ -812,7 +812,7 @@ exports.handler = async (event) => {
 												// The request was made and the server responded with a status code
 												// that falls out of the range of 2xx
 												keyArray.forEach(k => {
-													logItemEvent( events.failedApiCall(`${apiUrl}/files/${fileId}/content start: ${formattedStart} end: ${formattedEnd} duration: ${filesDuration} seconds`, '', error.response.data, error.response.status, error.response.headers), k);			
+													logItemEvent( events.failedApiCall(`${apiUrl}/files/${fileId}/content start: ${formattedStart} end: ${formattedEnd} duration: ${filesDuration} seconds`, '', error.response.data, error.response.status, error.response.headers), k, orgId);			
 												});					
 												console.log(error.response.data);
 												console.log(error.response.status);
@@ -823,13 +823,13 @@ exports.handler = async (event) => {
 												// http.ClientRequest in node.js
 												console.log(error.request);
 												keyArray.forEach(k => {
-													logItemEvent( events.noResponseApiCall(`${apiUrl}/files/${fileId}/content start: ${formattedStart} end: ${formattedEnd} duration: ${filesDuration} seconds`, '', error), k);				
+													logItemEvent( events.noResponseApiCall(`${apiUrl}/files/${fileId}/content start: ${formattedStart} end: ${formattedEnd} duration: ${filesDuration} seconds`, '', error), k, orgId);				
 												});
 											} else {
 												// Something happened in setting up the request that triggered an Error
 												console.log('Error', error.message);
 												keyArray.forEach(k => {
-													logItemEvent( events.unknownErrorApiCall(`${apiUrl}/files/${fileId}/content start: ${formattedStart} end: ${formattedEnd} duration: ${filesDuration} seconds`, '', error.message), k);			
+													logItemEvent( events.unknownErrorApiCall(`${apiUrl}/files/${fileId}/content start: ${formattedStart} end: ${formattedEnd} duration: ${filesDuration} seconds`, '', error.message), k, orgId);			
 												});
 											}
 										});
@@ -854,7 +854,7 @@ exports.handler = async (event) => {
 										// The request was made and the server responded with a status code
 										// that falls out of the range of 2xx
 										keyArray.forEach(k => {
-											logItemEvent( events.failedApiCall(`${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId} start: ${formattedStart} end: ${formattedEnd} duration: ${runsDuration} seconds`, '', error.response.data, error.response.status, error.response.headers), k);			
+											logItemEvent( events.failedApiCall(`${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId} start: ${formattedStart} end: ${formattedEnd} duration: ${runsDuration} seconds`, '', error.response.data, error.response.status, error.response.headers), k, orgId);			
 										});					
 										console.log(error.response.data);
 										console.log(error.response.status);
@@ -865,13 +865,13 @@ exports.handler = async (event) => {
 										// http.ClientRequest in node.js
 										console.log(error.request);
 										keyArray.forEach(k => {
-											logItemEvent( events.noResponseApiCall(`${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId} start: ${formattedStart} end: ${formattedEnd} duration: ${runsDuration} seconds`, '', error), k);				
+											logItemEvent( events.noResponseApiCall(`${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId} start: ${formattedStart} end: ${formattedEnd} duration: ${runsDuration} seconds`, '', error), k, orgId);				
 										});
 									} else {
 										// Something happened in setting up the request that triggered an Error
 										console.log('Error', error.message);
 										keyArray.forEach(k => {
-											logItemEvent( events.unknownErrorApiCall(`${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId} start: ${formattedStart} end: ${formattedEnd} duration: ${runsDuration} seconds`, '', error.message), k);			
+											logItemEvent( events.unknownErrorApiCall(`${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId} start: ${formattedStart} end: ${formattedEnd} duration: ${runsDuration} seconds`, '', error.message), k, orgId);			
 										});
 									}
 								});
@@ -918,7 +918,7 @@ exports.handler = async (event) => {
 											keyArray = bodySourceKeys[itm.m.optionId];
 										}
 										keyArray.forEach(k => {
-											logItemEvent( events.unknownErrorApiCall(`${apiUrl}/jobs/${jobId}`, JSON.stringify(itemsToUploadEnv), `Job timed out ${process.env.jobRetryLimit} times. Item ${idOfItem} failed to import.`), k);			
+											logItemEvent( events.unknownErrorApiCall(`${apiUrl}/jobs/${jobId}`, JSON.stringify(itemsToUploadEnv), `Job timed out ${process.env.jobRetryLimit} times. Item ${idOfItem} failed to import.`), k, orgId);			
 										});
 										return 'done';
 									}
@@ -936,7 +936,7 @@ exports.handler = async (event) => {
 								keyArray = bodySourceKeys[itm.m.optionId];
 							}
 							keyArray.forEach(k => {
-								logItemEvent( events.unknownErrorApiCall(apiUrl+'/products/import?orgId='+orgId, JSON.stringify(itemsToUploadEnv), 'job failed'), k);			
+								logItemEvent( events.unknownErrorApiCall(apiUrl+'/products/import?orgId='+orgId, JSON.stringify(itemsToUploadEnv), 'job failed'), k, orgId);			
 							});						
 						});
 						throw new Error('item import job failed for items '+itemsToUploadEnv.map(i => i.m));

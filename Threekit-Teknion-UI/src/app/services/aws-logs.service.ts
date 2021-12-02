@@ -27,6 +27,8 @@ export class AwsLogsService {
 	  if(this.paramsService.logPrefix && this.paramsService.logPrefix !== "") {
 		  prefix = '/' + this.paramsService.logPrefix;
 	  }
+    let orgId = this.paramsService.orgId;
+    prefix = prefix + '/' + orgId;
 
       const params: any = {
         logGroupName: `${prefix}${this.logGroupPrefix}${cleanedLogGroupName}`, /* required */
@@ -56,6 +58,8 @@ export class AwsLogsService {
 	  if(this.paramsService.logPrefix && this.paramsService.logPrefix !== "") {
 		  prefix = '/' + this.paramsService.logPrefix;
 	  }
+    let orgId = this.paramsService.orgId;
+    prefix = prefix + '/' + orgId;
 
       const params: any = {
         logGroupNamePrefix: `${prefix}${this.logGroupPrefix}${searchParam ? searchParam : ''}`
@@ -81,6 +85,8 @@ export class AwsLogsService {
 		if(this.paramsService.logPrefix && this.paramsService.logPrefix !== "") {
 			prefix = '/' + this.paramsService.logPrefix;
 		}
+    let orgId = this.paramsService.orgId;
+    prefix = prefix + '/' + orgId;
   
         const params: any = {
           logGroupName: `${prefix}${this.logGroupPrefix}${cleanedLogGroupName}`

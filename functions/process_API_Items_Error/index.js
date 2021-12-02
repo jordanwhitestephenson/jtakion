@@ -48,7 +48,7 @@ exports.handler = async (event) => {
 	}
 	event.Records.forEach(r => {
 		const body = JSON.parse(r.body);
-		logProgressEvent(progressEvents.itemCompleted(body.id), body.sourceKey);
+		logProgressEvent(progressEvents.itemCompleted(body.id), body.sourceKey, body.orgId);
 	});
 
 	return finishProgressLogEvents().then( _ => {});

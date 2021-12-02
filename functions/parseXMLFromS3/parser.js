@@ -111,7 +111,7 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {//destEnv) => {
 						postProcessParsedOptionGroup(group);
 					}
 				} else {
-					logItemEvent({'event':'error', 'errorSource':'itemGroupMissing', 'objectType':'item', 'objectId': item.id, 'missingGroup':ig.id}, sourceKey);
+					logItemEvent({'event':'error', 'errorSource':'itemGroupMissing', 'objectType':'item', 'objectId': item.id, 'missingGroup':ig.id}, sourceKey, orgId);
 					parseErrorsExist = true;
 				}
             } );
@@ -163,7 +163,7 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {//destEnv) => {
         if(option.im) {
             option.image = imagesMap[option.im];
 			if(!imagesMap.hasOwnProperty(option.im)) {
-				logItemEvent({'event':'error', 'errorSource':'optionImageMissing', 'objectType':'option', 'objectId': option.id, 'missingImage':option.im}, sourceKey);
+				logItemEvent({'event':'error', 'errorSource':'optionImageMissing', 'objectType':'option', 'objectId': option.id, 'missingImage':option.im}, sourceKey, orgId);
 				parseErrorsExist = true;
 			}
         }
@@ -179,7 +179,7 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {//destEnv) => {
 					postProcessParsedOptionGroup(subgroup);
 				}
 			} else {
-				logItemEvent({'event':'error', 'errorSource':'optionSubgroupMissing', 'objectType':'option', 'objectId': option.id, 'missingSubGroup':option.subgroupId}, sourceKey);
+				logItemEvent({'event':'error', 'errorSource':'optionSubgroupMissing', 'objectType':'option', 'objectId': option.id, 'missingSubGroup':option.subgroupId}, sourceKey, orgId);
 				parseErrorsExist = true;
 			}
         }
@@ -412,7 +412,7 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {//destEnv) => {
     }).on('error', function(err) {
         //TODO capture any errors that occur when writing data to the file
         console.error('Sax Stream:', err);
-		logItemEvent( {"event": "error", "errorSource":"parse", "objectType":"parse", "error":JSON.stringify(err)}, sourceKey );
+		logItemEvent( {"event": "error", "errorSource":"parse", "objectType":"parse", "error":JSON.stringify(err)}, sourceKey, orgId );
 		parseErrorsExist = true;
     }).on('close', function() {
         console.log('Done.');

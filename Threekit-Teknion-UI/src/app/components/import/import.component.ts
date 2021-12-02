@@ -94,7 +94,8 @@ export class ImportComponent implements OnInit {
 
   importFile() {
     this.isUploading = true;
-	let uploadName = this.fileUpload.name.replace(/\)|\)/g, '_');
+	//let uploadName = this.fileUpload.name.replace(/\)|\)/g, '_');
+  let uploadName = this.fileUpload.name.replace(/[^\\.\\-_/#A-Za-z0-9]+/g,'-');
     //this.fileUploadName = `${this.fileUpload.name.substring(0, this.fileUpload.name.length - 4)}-${Date.now()}`;
 	this.fileUploadName = `${uploadName.substring(0, uploadName.length - 4)}-${Date.now()}`;
     //this.s3Service.uploadFileToS3(this.fileUpload, this.fileUploadName, this.destEnv)

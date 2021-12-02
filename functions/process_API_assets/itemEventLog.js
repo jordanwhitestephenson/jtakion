@@ -12,10 +12,10 @@ const logPromises = {};
 
 const guid = uuidv4();
 
-function logItemEvent(itemEvent, sourceKey){
+function logItemEvent(itemEvent, sourceKey, orgId){
     // console.log("logging item event to stream",sourceKey);
     
-    return stepLogStreamPromise(sourceKey)( (logStreamPromise) => {
+    return stepLogStreamPromise(sourceKey, orgId)( (logStreamPromise) => {
         
         if(itemEvent){
             const event = createLogEvent(itemEvent);
@@ -40,10 +40,10 @@ function finishFlushingLogEvents(){
 }
 
 
-function stepLogStreamPromise(sourceKey){
+function stepLogStreamPromise(sourceKey, orgId){
     if(!logPromises[sourceKey]) {
         let logPrefix = process.env.logPrefix;
-        const logGroupName = (logPrefix===undefined?"":("/" + logPrefix)) +cloudWatchLogGroupName + "/" + sourceKey;
+        const logGroupName = (logPrefix===undefined?"":("/" + logPrefix)) + "/" + orgId + cloudWatchLogGroupName + "/" + sourceKey;
         const logStreamName = logProcessName + "_" + guid;
 
 		//replace non-valid characters from logGroupName with -

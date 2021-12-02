@@ -96,7 +96,7 @@ exports.handler = async (event) => {
     const sourceKey = srcKey.split('.').slice(0,-1).join('.').replace(':nm',':total').replace(/[^\\.\\-_/#A-Za-z0-9]+/g,'-');
     
     //logItemEvent({"objectType":"environment", "IMPORT_ENVIRONMENT": destEnv}, sourceKey );
-	logItemEvent({"objectType":"environment", "IMPORT_ENVIRONMENT": orgName}, sourceKey );
+	logItemEvent({"objectType":"environment", "IMPORT_ENVIRONMENT": orgName}, sourceKey, orgId );
 
 	/*const orgId =  await getOrgId(destEnv);
     const apiUrl = await getApiUrl(destEnv);
@@ -459,7 +459,7 @@ exports.handler = async (event) => {
 	}
 
 	function handleDeletes(catalogCode) {
-		logItemEvent({"event": "deleteStart", "objectType":'optiondelete'}, sourceKey);
+		logItemEvent({"event": "deleteStart", "objectType":'optiondelete'}, sourceKey, orgId);
 		return axios.get(
 			apiUrl+'/assets?orgId='+orgId+'&metadata={ "isOption": 1,"catalogCode":"'+catalogCode+'" }&all=true',
 			{ 'headers': { 'Authorization': 'Bearer '+apiToken } }
@@ -487,7 +487,7 @@ exports.handler = async (event) => {
 		if (error.response) {
 			// The request was made and the server responded with a status code
 			// that falls out of the range of 2xx
-			logItemEvent({'event': 'error', 'errorSource':objectType, 'objectType':objectType, 'url':url, 'errorData':error.response.data, 'errorStatus':error.response.status, 'headers':JSON.stringify(error.response.headers)}, sourceKey);	
+			logItemEvent({'event': 'error', 'errorSource':objectType, 'objectType':objectType, 'url':url, 'errorData':error.response.data, 'errorStatus':error.response.status, 'headers':JSON.stringify(error.response.headers)}, sourceKey, orgId);	
 			console.log(error.response.data);
 			console.log(error.response.status);
 			console.log(error.response.headers);
@@ -495,10 +495,10 @@ exports.handler = async (event) => {
 			// The request was made but no response was received
 			// `error.request` is an instance of XMLHttpRequest in the browser and an instance of
 			// http.ClientRequest in node.js
-			logItemEvent({'event': 'error', 'errorSource':objectType, 'objectType':objectType, 'url':url, 'request':error.request}, sourceKey);										
+			logItemEvent({'event': 'error', 'errorSource':objectType, 'objectType':objectType, 'url':url, 'request':error.request}, sourceKey, orgId);										
 		} else {
 			// Something happened in setting up the request that triggered an Error
-			logItemEvent({'event': 'error', 'errorSource':objectType, 'objectType':objectType, 'url':url, 'message':error.message}, sourceKey);						
+			logItemEvent({'event': 'error', 'errorSource':objectType, 'objectType':objectType, 'url':url, 'message':error.message}, sourceKey, orgId);						
 		}
 	}
 
@@ -537,7 +537,7 @@ exports.handler = async (event) => {
 					} else {
 						priceZoneName = price.zoneId;
 					}
-					logItemEvent({'event': 'error', 'errorSource':'priceZoneNotFound', 'objectType':'item', 'objectId': item.id, 'priceZone':priceZoneName}, sourceKey);
+					logItemEvent({'event': 'error', 'errorSource':'priceZoneNotFound', 'objectType':'item', 'objectId': item.id, 'priceZone':priceZoneName}, sourceKey, orgId);
 					parseErrorsExist = true;
 				}
 			});
@@ -559,7 +559,7 @@ exports.handler = async (event) => {
 							} else {
 								priceZoneName = price.zoneId;
 							}
-							logItemEvent({'event': 'error', 'errorSource':'priceZoneNotFound', 'objectType':'option', 'objectId': option.id, 'priceZone':priceZoneName}, sourceKey);	
+							logItemEvent({'event': 'error', 'errorSource':'priceZoneNotFound', 'objectType':'option', 'objectId': option.id, 'priceZone':priceZoneName}, sourceKey, orgId);	
 							parseErrorsExist = true;								
 						}						
 					});
@@ -582,19 +582,19 @@ exports.handler = async (event) => {
 		
 		return handleDeletes(parsed.catalogCode).then(res => {
 			console.log('finished deletes');
-			logItemEvent({"event": "deleteComplete", "objectType":'optiondelete'}, sourceKey);
+			logItemEvent({"event": "deleteComplete", "objectType":'optiondelete'}, sourceKey, orgId);
 			return handleTranslations(parsed).then(res => {
 				console.log('finished translations');
-				logItemEvent({"event": "translations-added", "objectType":'translation'}, sourceKey);
+				logItemEvent({"event": "translations-added", "objectType":'translation'}, sourceKey, orgId);
 				if(parseErrorsExist) {
-					logItemEvent({"event": "error", "errorSource": "parseErrors", "objectType":"parse"}, sourceKey);
+					logItemEvent({"event": "error", "errorSource": "parseErrors", "objectType":"parse"}, sourceKey, orgId);
 					return Promise.all([
 						finishLogEvents()
 					]);
 				} else {
 					return pushAllItems(parsed).then( r => {
 						console.log('total items in import',totalItems);
-						logItemEvent({"TOTAL_ITEMS": totalItems,"Id":"TOTAL_ITEMS"}, sourceKey );						
+						logItemEvent({"TOTAL_ITEMS": totalItems,"Id":"TOTAL_ITEMS"}, sourceKey, orgId );						
 						return Promise.all([
 							r,
 							flushItemsToQueue(), 

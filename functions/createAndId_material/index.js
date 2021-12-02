@@ -137,7 +137,7 @@ exports.handler = async (event) => {
 			let formattedStart = startDate.toISOString();
 			let formattedEnd = endDate.toISOString();
 			console.log(error);
-			logApiCallError(error, apiUrl+'/assets?orgId='+orgId+'&name='+materialName+'&type=texture start: '+formattedStart+' end: '+formattedEnd+' duration: '+thumbDuration+' seconds', null, sourceKey);
+			logApiCallError(error, apiUrl+'/assets?orgId='+orgId+'&name='+materialName+'&type=texture start: '+formattedStart+' end: '+formattedEnd+' duration: '+thumbDuration+' seconds', null, sourceKey, orgId);
 			throw error;
 		});
 	}
@@ -169,7 +169,7 @@ exports.handler = async (event) => {
     			let formattedStart = startDate.toISOString();
     			let formattedEnd = endDate.toISOString();
 				console.log(error);
-				logApiCallError(error, apiUrl+'/assets?orgId='+orgId+'&name='+materialName+'&type=material start: '+formattedStart+' end: '+formattedEnd+' duration: '+matDuration+' seconds', null, sourceKey);
+				logApiCallError(error, apiUrl+'/assets?orgId='+orgId+'&name='+materialName+'&type=material start: '+formattedStart+' end: '+formattedEnd+' duration: '+matDuration+' seconds', null, sourceKey, orgId);
 				throw error;
 			});
         }
@@ -181,7 +181,7 @@ exports.handler = async (event) => {
 			const fileId = cachedFile.id;
             if (!fileId) {
                 console.log('Image not found in cache ', image.file);
-				logApiCallError({message:'Option Id:'+optionId+' - Image not found in DAM: '+image.file}, damUrl, '', sourceKey);				
+				logApiCallError({message:'Option Id:'+optionId+' - Image not found in DAM: '+image.file}, damUrl, '', sourceKey, orgId);				
             }
             
 			var zip = new JSZip();
@@ -226,14 +226,14 @@ exports.handler = async (event) => {
 								})
 							.catch(err => {
 								console.log("Image not found in Bynder: "+image.file+".jpg", err);
-								logApiCallError(err, s3Url, "Option Id: "+optionId+" - Image not found in Bynder ", image.file+".jpg", sourceKey);
+								logApiCallError(err, s3Url, "Option Id: "+optionId+" - Image not found in Bynder ", image.file+".jpg", sourceKey, orgId);
 								return axios.get( "https://teknion-assets.s3.amazonaws.com/52_Ebony.jpg", { responseType: 'arraybuffer' } ).then( r => r.data);
 							});
 						}
 					})
 					.catch(err => {
 						console.log("Image not found in DAM ", image.file+".jpg", err);
-						logApiCallError(err, damUrl+"/"+fileId+"/download/", "Option Id: "+optionId+" - Image not found in DAM: "+ image.file+".jpg", sourceKey);
+						logApiCallError(err, damUrl+"/"+fileId+"/download/", "Option Id: "+optionId+" - Image not found in DAM: "+ image.file+".jpg", sourceKey, orgId);
 						return axios.get( "https://teknion-assets.s3.amazonaws.com/52_Ebony.jpg", { responseType: 'arraybuffer' } ).then( r => r.data);
 					});
 			}
@@ -276,7 +276,7 @@ exports.handler = async (event) => {
 					let formattedStart = startDate.toISOString();
 					let formattedEnd = endDate.toISOString();
 					console.log(error);
-					logApiCallError(error, apiUrl+'/files?orgId='+orgId+' start: '+formattedStart+' end: '+formattedEnd+' duration: '+filesDuration+' seconds', 'failed calling files API with pbrzip for option Id: '+optionId, sourceKey);
+					logApiCallError(error, apiUrl+'/files?orgId='+orgId+' start: '+formattedStart+' end: '+formattedEnd+' duration: '+filesDuration+' seconds', 'failed calling files API with pbrzip for option Id: '+optionId, sourceKey, orgId);
 					throw error;
 				}).then( r => {
 					console.log({'event': 'fileUpload', 'fileName': filename, 'result': JSON.stringify(r.data)});
@@ -305,7 +305,7 @@ exports.handler = async (event) => {
 						let formattedStart = startDate.toISOString();
 						let formattedEnd = endDate.toISOString();
 						console.log(error);
-						logApiCallError(error, apiUrl+'/asset-jobs/import?orgId='+orgId+' start: '+formattedStart+' end: '+formattedEnd+' duration: '+assetDuration+' seconds', JSON.stringify(importJobData), sourceKey);
+						logApiCallError(error, apiUrl+'/asset-jobs/import?orgId='+orgId+' start: '+formattedStart+' end: '+formattedEnd+' duration: '+assetDuration+' seconds', JSON.stringify(importJobData), sourceKey, orgId);
 					}).then( r => {
 						console.log({'event': 'assetsImportJobStarted', 'fileId': fileUpload.files[0].id, 'jobId': r.data.jobId });
 						console.log('asset-jobs/import results',r.data);
@@ -349,7 +349,7 @@ exports.handler = async (event) => {
         					let formattedStart = startDate.toISOString();
         					let formattedEnd = endDate.toISOString();
 							console.log(error);
-							logApiCallError(error, apiUrl+'/jobs/'+option.materialJobId+' start: '+formattedStart+' end: '+formattedEnd+' duration: '+matJobDuration+' seconds', null, sourceKey);
+							logApiCallError(error, apiUrl+'/jobs/'+option.materialJobId+' start: '+formattedStart+' end: '+formattedEnd+' duration: '+matJobDuration+' seconds', null, sourceKey, orgId);
 							throw error;
 						}).then( r => {
                             console.log({'event': 'jobRetrieved', 'jobId': option.materialJobId, 'status': r.data.status});
@@ -370,7 +370,7 @@ exports.handler = async (event) => {
 								.then(res => {
 									const { runs } = res.data;
 									if(runs[0].resultCode === 'Failed') {
-										logApiCallError({message:'Job Failed'}, apiUrl+'/jobs/'+option.materialJobId+' result: Failed resultMessage: '+runs[0].resultMessage, null, sourceKey);
+										logApiCallError({message:'Job Failed'}, apiUrl+'/jobs/'+option.materialJobId+' result: Failed resultMessage: '+runs[0].resultMessage, null, sourceKey, orgId);
 										return Promise.resolve({jobId:job.id});
 									} else {
 										//if status is complete get
@@ -393,7 +393,7 @@ exports.handler = async (event) => {
 									const endDate = new Date(runsEndTime);
 									let formattedStart = startDate.toISOString();
 									let formattedEnd = endDate.toISOString();
-									logApiCallError(error, runsUrl+' start: '+formattedStart+' end: '+formattedEnd+' duration: '+runsDuration+' seconds', null, sourceKey);
+									logApiCallError(error, runsUrl+' start: '+formattedStart+' end: '+formattedEnd+' duration: '+runsDuration+' seconds', null, sourceKey, orgId);
 									return Promise.resolve({jobId:job.id});
 								});                             
                         } else {

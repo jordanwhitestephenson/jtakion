@@ -156,11 +156,11 @@ exports.handler = async (event) => {
 		}
     }
 
-	function logApiCallError(error, url, body, sourceKey) {
+	function logApiCallError(error, url, body, sourceKey, orgId) {
 		if (error.response) {
 			// The request was made and the server responded with a status code
 			// that falls out of the range of 2xx
-			logItemEvent( events.failedApiCall(url, body, error.response.data, error.response.status, error.response.headers), sourceKey);
+			logItemEvent( events.failedApiCall(url, body, error.response.data, error.response.status, error.response.headers), sourceKey, orgId);
 			console.log(error.response.data);
 			console.log(error.response.status);
 			console.log(error.response.headers);
@@ -169,11 +169,11 @@ exports.handler = async (event) => {
 			// `error.request` is an instance of XMLHttpRequest in the browser and an instance of
 			// http.ClientRequest in node.js
 			console.log(error.request);
-			logItemEvent( events.noResponseApiCall(url, body, error.request), sourceKey);			
+			logItemEvent( events.noResponseApiCall(url, body, error.request), sourceKey, orgId);			
 		} else {
 			// Something happened in setting up the request that triggered an Error
 			console.log('Unkown api call Error:', error);
-			logItemEvent( events.unknownErrorApiCall(url, body, error.message), sourceKey);				
+			logItemEvent( events.unknownErrorApiCall(url, body, error.message), sourceKey, orgId);				
 		}
 	}
     
@@ -481,7 +481,7 @@ exports.handler = async (event) => {
 										let formattedStart = startDate.toISOString();
 										let formattedEnd = endDate.toISOString();
 										console.log('error during files content', error);
-										logApiCallError(error, `${apiUrl}/files/${fileId}/content start: ${formattedStart} end: ${formattedEnd} duration: ${filesDuration} seconds`, '', sourceKey);
+										logApiCallError(error, `${apiUrl}/files/${fileId}/content start: ${formattedStart} end: ${formattedEnd} duration: ${filesDuration} seconds`, '', sourceKey, orgId);
 										throw error;
 									});
 							}).catch(error => {
@@ -492,7 +492,7 @@ exports.handler = async (event) => {
 								let formattedStart = startDate.toISOString();
 								let formattedEnd = endDate.toISOString();
 								console.log('error during jobs runs', error);
-								logApiCallError(error, `${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId} start: ${formattedStart} end: ${formattedEnd} duration: ${runsDuration} seconds`, '', sourceKey);
+								logApiCallError(error, `${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId} start: ${formattedStart} end: ${formattedEnd} duration: ${runsDuration} seconds`, '', sourceKey, orgId);
 								throw error;
 							});
 					} else if (status === 'pending') {
@@ -520,14 +520,14 @@ exports.handler = async (event) => {
 								} else {
 									//tried max number of times
 									//write to logs
-									logItemEvent( events.unknownErrorApiCall(`${apiUrl}/jobs/${jobId}`, JSON.stringify(item), `Job timed out ${process.env.jobRetryLimit} times. Model for item ${item.pn} failed to import.`), sourceKey);			
+									logItemEvent( events.unknownErrorApiCall(`${apiUrl}/jobs/${jobId}`, JSON.stringify(item), `Job timed out ${process.env.jobRetryLimit} times. Model for item ${item.pn} failed to import.`), sourceKey, orgId);			
 									return item;
 								}
 							});
 					} else {
 						// error - job failed
 						console.log('model import job failed for item '+item.pn);
-						logApiCallError({'message':'job failed'}, apiUrl+'/products/import?orgId='+orgId, JSON.stringify(uploadModelData), sourceKey);					
+						logApiCallError({'message':'job failed'}, apiUrl+'/products/import?orgId='+orgId, JSON.stringify(uploadModelData), sourceKey, orgId);					
 						return item;
 					}
 				}).catch(error => {
@@ -542,7 +542,7 @@ exports.handler = async (event) => {
 				let formattedStart = startDate.toISOString();
 				let formattedEnd = endDate.toISOString();
 				console.log('error during products import', error);
-				logApiCallError(error, apiUrl+'/products/import?orgId='+orgId+' start: '+formattedStart+' end: '+formattedEnd+' duration: '+importDuration+' seconds', JSON.stringify(uploadModelData), sourceKey);
+				logApiCallError(error, apiUrl+'/products/import?orgId='+orgId+' start: '+formattedStart+' end: '+formattedEnd+' duration: '+importDuration+' seconds', JSON.stringify(uploadModelData), sourceKey, orgId);
 				return item;
 			});
         }).catch(error => {
@@ -649,7 +649,7 @@ exports.handler = async (event) => {
         if (itemsFailedGettingAssets.length > 0) {
             //console.log({'event': 'itemsFailedGettingAssets', 'items': JSON.stringify(itemsFailedGettingAssets)});
 			itemsFailedGettingAssets.forEach(ifga => {
-				logItemEvent( events.itemsFailedGettingAssets(ifga.id, MAX_NUMBER_OF_RETRIES), ifga.sourceKey);
+				logItemEvent( events.itemsFailedGettingAssets(ifga.id, MAX_NUMBER_OF_RETRIES), ifga.sourceKey, ifga.orgId);
 			});
 			
         }
