@@ -628,7 +628,7 @@ exports.handler = async (event) => {
 			itemsToQueueBufferLength = 0;
 			
 			const messageSendPromise = sqs.sendMessageBatch(params).send();
-			
+			console.log('flush messageSendPromise: ', messageSendPromise);
 			return messageSendPromise;
 		} else {
             return Promise.resolve("flushed no items to queue");
@@ -1028,8 +1028,9 @@ exports.handler = async (event) => {
     }
     
     if (itemsToQueueBuffer.length > 0) {
+		console.log('before flush items to queue1');
         flushItemsToQueue().then(r => {
-			console.log('flush items to queue result ', r);
+			console.log('flush items to queue result1 ', r);
 		});
     }
     
@@ -1038,7 +1039,7 @@ exports.handler = async (event) => {
     .then( a => {
 		return finishLogEvents().then( _ => a );
 	}).then(a => {
-		console.log('before flush items to queue');
+		console.log('before flush items to queue2');
 		return flushItemsToQueue().then( r => {
 			console.log('flush items to queue result at end ', r);
 		});

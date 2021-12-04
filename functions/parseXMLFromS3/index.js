@@ -271,6 +271,7 @@ exports.handler = async (event) => {
                     //logItemEvent(  {"event": "enqueue-processItem", "objectType":it.type, "objectId":it.id, "duration":Date.now() - start, "process":"parse"}, sourceKey ); 
                     return {
                         "Id":it.id,
+						"DelaySeconds": 30,
                         "MessageBody": JSON.stringify(it),
                         "MessageAttributes":{"enqueueTime":{'DataType':'Number','StringValue':Date.now().toString() } }
                     };
