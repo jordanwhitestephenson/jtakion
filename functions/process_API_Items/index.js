@@ -1028,7 +1028,9 @@ exports.handler = async (event) => {
     }
     
     if (itemsToQueueBuffer.length > 0) {
-        flushItemsToQueue();
+        flushItemsToQueue().then(r => {
+			console.log('flush items to queue result ', r);
+		});
     }
     
     // call product import API with complete items
@@ -1036,7 +1038,10 @@ exports.handler = async (event) => {
     .then( a => {
 		return finishLogEvents().then( _ => a );
 	}).then(a => {
-		return flushItemsToQueue();
+		console.log('before flush items to queue');
+		return flushItemsToQueue().then( r => {
+			console.log('flush items to queue result at end ', r);
+		});
 	});  
         
 };
