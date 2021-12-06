@@ -406,7 +406,7 @@ Resources:
                 - processAPIItemsIAMRole
                 - "Arn"
             Runtime: "nodejs12.x"
-            Timeout: 720
+            Timeout: 660
             ReservedConcurrentExecutions: 50
             TracingConfig: 
                 Mode: "PassThrough"
@@ -461,7 +461,7 @@ Resources:
                 - processAPIAssetsIAMRole
                 - "Arn"
             Runtime: "nodejs12.x"
-            Timeout: 720
+            Timeout: 660
             ReservedConcurrentExecutions: 50
             TracingConfig: 
                 Mode: "PassThrough"
@@ -494,7 +494,7 @@ Resources:
             MaximumMessageSize: "262144"
             MessageRetentionPeriod: "345600"
             ReceiveMessageWaitTimeSeconds: "0"
-            VisibilityTimeout: "720"
+            VisibilityTimeout: "660"
             QueueName: !Sub "itemsNeedingAssets-${environment}"
             RedrivePolicy: 
               deadLetterTargetArn:
@@ -511,7 +511,7 @@ Resources:
             MaximumMessageSize: "262144"
             MessageRetentionPeriod: "345600"
             ReceiveMessageWaitTimeSeconds: "0"
-            VisibilityTimeout: "720"
+            VisibilityTimeout: "660"
             QueueName: !Sub "parsedAPIItems-${environment}"
             RedrivePolicy: 
               deadLetterTargetArn:

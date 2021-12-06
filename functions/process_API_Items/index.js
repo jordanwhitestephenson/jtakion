@@ -627,7 +627,7 @@ exports.handler = async (event) => {
 			itemsToQueueBuffer = [];
 			itemsToQueueBufferLength = 0;
 			
-			const messageSendPromise = sqs.sendMessageBatch(params).send();
+			const messageSendPromise = sqs.sendMessageBatch(params).promise();
 			console.log('flush messageSendPromise: ', messageSendPromise);
 			return messageSendPromise;
 		} else {
@@ -649,7 +649,7 @@ exports.handler = async (event) => {
 		
 		console.log("sending failed job item to queue ", util.inspect(params, {depth: 5}) );
 		
-		const messageSendPromise = sqs.sendMessageBatch(params).send();
+		const messageSendPromise = sqs.sendMessageBatch(params).promise();
 		
 		return messageSendPromise;
     }
@@ -1027,10 +1027,15 @@ exports.handler = async (event) => {
 		}
     }
     
-    if (itemsToQueueBuffer.length > 0) {
+    /*if (itemsToQueueBuffer.length > 0) {
 		console.log('before flush items to queue1');
         flushItemsToQueue().then(r => {
 			console.log('flush items to queue result1 ', r);
+			if(r.Failed.length > 0) {
+				console.log('num failed', r.Failed);
+			}
+		}, e => {
+			console.log('flush items to queue result1 error', e);
 		});
     }
     
@@ -1043,6 +1048,23 @@ exports.handler = async (event) => {
 		return flushItemsToQueue().then( r => {
 			console.log('flush items to queue result at end ', r);
 		});
-	});  
+	});  */
+	console.log('before flush items to queue1');
+	return flushItemsToQueue().then(r => {
+		console.log('flush items to queue result1 ', r);
+		if(r.Failed && r.Failed.length > 0) {
+			console.log('num failed', r.Failed);
+			throw new Error('failed sending to queue');
+		}
+		return Promise.all(Object.keys(itemsToUpload).map(key => pushItemsForEnv(key)))
+		    .then( a => {
+				return finishLogEvents().then( _ => a );
+			}).then(a => {
+				console.log('before flush items to queue2');
+				return flushItemsToQueue().then( r => {
+					console.log('flush items to queue result at end ', r);
+				});
+			});
+	});
         
 };
