@@ -15,6 +15,9 @@ Parameters:
     S3RESOURCEBUCKET:
         Type: "String"
         Default: "teknionimporterbuildresources"
+    EXPORTENVIRONMENT:
+        Type: "String"
+        Default: "default"
 
 Resources:
 
@@ -763,7 +766,7 @@ Resources:
             IntegrationType: "AWS_PROXY"
             IntegrationUri: !GetAtt orderExportLambdaFunction.Arn
             RequestParameters: 
-                "append:querystring.environment": "default"
+                "append:querystring.environment": !Sub "${EXPORTENVIRONMENT}"
             TimeoutInMillis: 30000
             PayloadFormatVersion: "2.0"
 
