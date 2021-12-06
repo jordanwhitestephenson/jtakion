@@ -431,8 +431,8 @@ END=GR
 	
     const response = {
 		statusCode: 200,
-		//headers: { "Content-Type": "text/plain; charset=UTF-8", "Content-Disposition": "attachment; filename=\"orderExport.sif\"" }, //downloadable response
-		headers: { "Content-Type": "text/plain; charset=UTF-8" }, //inline response
+		headers: { "Content-Type": "text/plain; charset=UTF-8", "Content-Disposition": "attachment; filename=\"orderExport.sif\"" }, //downloadable response
+		//headers: { "Content-Type": "text/plain; charset=UTF-8" }, //inline response
 		body: base64data,
 		isBase64Encoded: true
     };
