@@ -391,7 +391,7 @@ END=GR
 	let productIds = new Set();
 	let assetNames = new Set();	
 	//find top level product ids to look up and all asset names to look up pricing
-	orderResult.items.forEach((item) => {
+	orderResult.cart.forEach((item) => {
 		productIds.add(item.configuration.productId);
 		let variantKeys = Object.keys(item.configuration.variant);
 		for(let i=0; i< variantKeys.length; i++) {
@@ -421,7 +421,7 @@ END=GR
 	let header = addHeader(orderResult, cust);
 	let sifbody = header;
 	//loop through items in order
-	orderResult.items.forEach((item) => {
+	orderResult.cart.forEach((item) => {
 		//create the item part of the SIF file
 		let itm = addItem(item, productMap, productNameMap);
 		sifbody += itm;
