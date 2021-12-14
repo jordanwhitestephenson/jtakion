@@ -326,6 +326,10 @@ exports.handler = async (event) => {
             }];
         }
         item.product.tags = [option.groupTag];
+		let uiLabel = option.description;
+		if(option.im) {
+			uiLabel = option.im;
+		}
         item.product.metadata = [
             {
                 'type': 'Number',
@@ -368,6 +372,13 @@ exports.handler = async (event) => {
 				'blacklist': [],
                 'values': [],
                 'defaultValue': 1
+			},
+			{
+				'type': 'String',
+				'name': '_UI_label',
+				'blacklist': [],
+                'values': [],
+                'defaultValue': uiLabel
 			}
         ];
         if(option.displayAttributesAs) {
