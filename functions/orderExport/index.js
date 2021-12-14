@@ -99,7 +99,7 @@ exports.handler = async (event) => {
         });
 	}
 
-	async function getCustomer(customerId, apiUrl, apiToken) {
+	/*async function getCustomer(customerId, apiUrl, apiToken) {
         return axios.get(
             apiUrl+'/customers/'+customerId,
             { 'headers': { 'Authorization': 'Bearer '+apiToken } }
@@ -108,25 +108,27 @@ exports.handler = async (event) => {
         .then( (res) => {
 			return res.data;
         });
-	}
+	}*/
 
-	function configVariantProduct(obj, assetNames) {
+	function configVariantProduct(obj, assetNames, productIds) {
 		let keys = Object.keys(obj);
 		let key = keys[0];
 		assetNames.add(obj[key].itemName);
+		productIds.add(obj[key].assetId);
 		if(!obj[key].configuration || obj[key].configuration === '') {
 			return;
 		} else {
-			return configVariantProduct(obj[key].configuration, assetNames);
+			return configVariantProduct(obj[key].configuration, assetNames, productIds);
 		}
 	}
-	function configVariant(obj, assetNames) {
+	function configVariant(obj, assetNames, productIds) {
 		if(typeof obj === 'object') {
 			assetNames.add(obj.itemName);
+			productIds.add(obj.assetId);
 			if(!obj.configuration || obj.configuration === '') {				
 				return;
 			} else {
-				return configVariantProduct(obj.configuration, assetNames);
+				return configVariantProduct(obj.configuration, assetNames, productIds);
 			}
 		}
 	}
@@ -135,49 +137,35 @@ exports.handler = async (event) => {
 		let keys = Object.keys(obj);
 		let key = keys[0];
 		let priceCurrencyResult1 = getPriceAndCurrency(productNameMap, obj[key].itemName, obj[key].assetId);
-		result += addSingleOsl(key, priceCurrencyResult1);
+		let assetId = obj[key].assetId;
+		result += addOsl(key, assetId, productMap, priceCurrencyResult1);
 		oslIndex++;
 		if(obj[key].configuration === '' || obj[key].configuration === undefined) {
-			let priceCurrencyResult = getPriceAndCurrency(productNameMap, obj[key].itemName, obj[key].assetId);
-			result += addSingleOsl(obj[key].itemName, priceCurrencyResult);
-			oslIndex++;
 			return result;
 		} else {
 			return processConfigVariant(obj[key].configuration, productMap, result, productNameMap);
 		}
 	}
 
-	function addSingleOsl(value, priceCurrencyResult) {
-		if(!value) {
-			value = '';
-		}
-		return `OSL=${oslIndex}
-OG=
-ON=
-OD=${value}
-OP=${priceCurrencyResult.price}
-END=OSL
-`;
-	}
-
-	function addOsl(key, value, priceCurrencyResult) {
-		if(!value) {
-			value = '';
-		}
+	function addOsl(key, assetId, productMap, priceCurrencyResult) {		
 		if(!key) {
 			key = '';
 		}
+		let value = '';
+		let optionCode = '';
+		if(assetId) {			
+			console.log('assetId', assetId);
+			let product = productMap[assetId];
+			console.log('product', product);
+			optionCode = product.metadata.optionCode;
+			if(!optionCode) {
+				optionCode = '';
+			}
+			value = product.name;
+		}		
 		let osl = `OSL=${oslIndex}
-OG=
-ON=
-OD=${key}
-OP=
-END=OSL
-`;
-oslIndex++;
-osl += `OSL=${oslIndex}
-OG=
-ON=
+OG=${key}
+ON=${optionCode}
 OD=${value}
 OP=${priceCurrencyResult.price}
 END=OSL
@@ -211,6 +199,7 @@ return osl;
 
 	function addItem(item, productMap, productNameMap) {
 		let product = productMap[item.configuration.productId];
+		console.log('addItem', product);
 		let priceCurrencyResult = getPriceAndCurrency(productNameMap, product.name, product.id);
 
 		let sifitem = `PN=${product.name}
@@ -247,18 +236,23 @@ NT=
 		for(let i=0; i< variantKeys.length; i++) {
 			let key = variantKeys[i];
 			let val = item.configuration.variant[key];
+			oslIndex = 0;
 			//check if val has children
 			if(typeof val === 'object') {
 				if(!val.configuration || val.configuration === '') {
 					let priceCurrencyResult = getPriceAndCurrency(productNameMap, val.itemName, val.assetId);
-					sifitem += addOsl(key, val.itemName, priceCurrencyResult);
-				} else {					
-					let result = addSingleOsl(key, {price:''}); //this is the label for a nested config, it has no price
+					sifitem += addOsl(key, val.assetId, productMap, priceCurrencyResult);
+				} else {	
+					//let result = addSingleOsl(key, {price:''}); //this is the label for a nested config, it has no price
+					//oslIndex++;
+					//sifitem += processConfigVariant(val.configuration, productMap, result, productNameMap);
+					let priceCurrencyResult = getPriceAndCurrency(productNameMap, val.itemName, val.assetId);
+					let result = addOsl(key, val.assetId, productMap, priceCurrencyResult);
 					oslIndex++;
 					sifitem += processConfigVariant(val.configuration, productMap, result, productNameMap);
 				}
 			} else {
-				sifitem += addOsl(key, val, {price:'',currency:''});
+				sifitem += addOsl(key, val, null, productMap, {price:'',currency:''});
 			}
 			oslIndex++;
 		}
@@ -397,11 +391,12 @@ END=GR
 		for(let i=0; i< variantKeys.length; i++) {
 			let key = variantKeys[i];
 			let val = item.configuration.variant[key];
-			configVariant(val, assetNames);
+			configVariant(val, assetNames, productIds);
 		}
 	});
 	//call asset API to get top level product info (names of top level products not included in order response)
 	const productMap = await getProducts(apiUrl, apiToken, orgId, productIds);
+	console.log('productMap',productMap);
 	Object.keys(productMap).forEach(key => {
 		assetNames.add(productMap[key].name);
 	});
