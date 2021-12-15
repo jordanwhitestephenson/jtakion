@@ -318,7 +318,8 @@ exports.handler = async (event) => {
             const defaultValue = attrValues.length === 1 ? attrValues[0] : {"assetId": ""};
             item.product.attributes = [{
                 "type": "Asset",
-                "name": option.description,
+                //"name": option.description,
+				"name": option.subGroupName,
                 "blacklist": [],
                 "assetType": "item",
                 "values": attrValues,
