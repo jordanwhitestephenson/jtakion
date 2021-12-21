@@ -50,7 +50,7 @@ exports.handler = async (event) => {
 		let productPromises = [];
 		productList.forEach(item => {
 			productPromises.push(axios.get(
-				apiUrl+'/assets/'+item+'?orgId='+orgId,
+				apiUrl+'/assets/export/'+item+'?orgId='+orgId,
 				{ 'headers': { 'Authorization': 'Bearer '+apiToken } }
 			));
 		});
@@ -62,27 +62,6 @@ exports.handler = async (event) => {
 				productMap[res.data.id] = res.data;
 			});
 			return productMap;
-		});
-	}
-
-	async function getProductsByName(apiUrl, apiToken, orgId, assetNames) {
-		let productPromises = [];
-		assetNames.forEach(item => {
-			productPromises.push(axios.get(
-				apiUrl+'/products/export/json?orgId='+orgId+'&name='+encodeURIComponent(item),
-				{ 'headers': { 'Authorization': 'Bearer '+apiToken } }
-			));
-		});
-		console.log('# price calls: '+productPromises.length);
-		return Promise.all(productPromises).then(results => {
-			console.log('completed price calls');		
-			let productNameMap = {};
-			results.forEach(res => {
-				if(res.data && res.data.length > 0) {
-					productNameMap[res.data[0].product.name] = res.data;
-				}
-			});
-			return productNameMap;
 		});
 	}
 
@@ -133,17 +112,17 @@ exports.handler = async (event) => {
 		}
 	}
 
-	function processConfigVariant(obj, productMap, result, productNameMap) {
+	function processConfigVariant(obj, productMap, result) {
 		let keys = Object.keys(obj);
 		let key = keys[0];
-		let priceCurrencyResult1 = getPriceAndCurrency(productNameMap, obj[key].itemName, obj[key].assetId);
+		let priceCurrencyResult1 = getPriceAndCurrency(productMap, obj[key].assetId);
 		let assetId = obj[key].assetId;
 		result += addOsl(key, assetId, productMap, priceCurrencyResult1);
 		oslIndex++;
 		if(obj[key].configuration === '' || obj[key].configuration === undefined) {
 			return result;
 		} else {
-			return processConfigVariant(obj[key].configuration, productMap, result, productNameMap);
+			return processConfigVariant(obj[key].configuration, productMap, result);
 		}
 	}
 
@@ -157,7 +136,13 @@ exports.handler = async (event) => {
 			console.log('assetId', assetId);
 			let product = productMap[assetId];
 			console.log('product', product);
-			optionCode = product.metadata.optionCode;
+			if(product) {
+				product.metadata.forEach(met => {
+					if(met.name === 'optionCode') {
+						optionCode = met.defaultValue;
+					}
+				});
+			}
 			if(!optionCode) {
 				optionCode = '';
 			}
@@ -173,22 +158,18 @@ END=OSL
 return osl;
 	}
 
-	function getPriceAndCurrency(productNameMap, productName, assetId) {
-		let queries = productNameMap[productName];
+	function getPriceAndCurrency(productMap, assetId) {
+		let product = productMap[assetId];
 		let price = '';
 		let cur = '';
-		if(queries) {
-			queries.forEach(q => {
-				if(assetId === q.product.id) {
-					q.product.attributes.forEach(attr => {
-						if(attr.name === 'Pricing') {
-							let curs = attr.values[0].currencies;
-							Object.keys(curs).forEach(key => {
-								if(price === '') {
-									cur = key;
-									price = curs[key];
-								}
-							});
+		if(product) {
+			product.attributes.forEach(attr => {
+				if(attr.name === 'Pricing') {
+					let curs = attr.values[0].currencies;
+					Object.keys(curs).forEach(key => {
+						if(price === '') {
+							cur = key;
+							price = curs[key];
 						}
 					});
 				}
@@ -197,10 +178,10 @@ return osl;
 		return {price:price,currency:cur};
 	}
 
-	function addItem(item, productMap, productNameMap) {
+	function addItem(item, productMap) {
 		let product = productMap[item.configuration.productId];
 		console.log('addItem', product);
-		let priceCurrencyResult = getPriceAndCurrency(productNameMap, product.name, product.id);
+		let priceCurrencyResult = getPriceAndCurrency(productMap, product.id);
 
 		let sifitem = `PN=${product.name}
 PD=${product.description}
@@ -231,31 +212,29 @@ WT=
 VO=
 NT=
 `;
-		let variantKeys = Object.keys(item.configuration.variant);
 		oslIndex = 0;
-		for(let i=0; i< variantKeys.length; i++) {
-			let key = variantKeys[i];
-			let val = item.configuration.variant[key];
-			oslIndex = 0;
-			//check if val has children
-			if(typeof val === 'object') {
-				if(!val.configuration || val.configuration === '') {
-					let priceCurrencyResult = getPriceAndCurrency(productNameMap, val.itemName, val.assetId);
-					sifitem += addOsl(key, val.assetId, productMap, priceCurrencyResult);
-				} else {	
-					//let result = addSingleOsl(key, {price:''}); //this is the label for a nested config, it has no price
-					//oslIndex++;
-					//sifitem += processConfigVariant(val.configuration, productMap, result, productNameMap);
-					let priceCurrencyResult = getPriceAndCurrency(productNameMap, val.itemName, val.assetId);
-					let result = addOsl(key, val.assetId, productMap, priceCurrencyResult);
-					oslIndex++;
-					sifitem += processConfigVariant(val.configuration, productMap, result, productNameMap);
+		product.attributes.forEach(attr => {
+			let key = attr.name;
+			if(key !== 'Pricing') {
+				let val = item.configuration.variant[key];
+				oslIndex = 0;
+				//check if val has children
+				if(typeof val === 'object') {
+					if(!val.configuration || val.configuration === '') {
+						let priceCurrencyResult = getPriceAndCurrency(productMap, val.assetId);
+						sifitem += addOsl(key, val.assetId, productMap, priceCurrencyResult);
+					} else {							
+						let priceCurrencyResult = getPriceAndCurrency(productMap, val.assetId);
+						let result = addOsl(key, val.assetId, productMap, priceCurrencyResult);
+						oslIndex++;
+						sifitem += processConfigVariant(val.configuration, productMap, result);
+					}
+				} else {
+					sifitem += addOsl(key, val, productMap, {price:'',currency:''});
 				}
-			} else {
-				sifitem += addOsl(key, val, null, productMap, {price:'',currency:''});
+				oslIndex++;
 			}
-			oslIndex++;
-		}
+		});
 		sifitem += `TK=
 `;
 		return sifitem;
@@ -397,11 +376,6 @@ END=GR
 	//call asset API to get top level product info (names of top level products not included in order response)
 	const productMap = await getProducts(apiUrl, apiToken, orgId, productIds);
 	console.log('productMap',productMap);
-	Object.keys(productMap).forEach(key => {
-		assetNames.add(productMap[key].name);
-	});
-	//call products API to get prices for each asset name
-	const productNameMap = await getProductsByName(apiUrl, apiToken, orgId, assetNames);
 	
 	const customerId = orderResult.customerId;	  
 	//parse order result - if customerId field has a value call the customer API
@@ -418,7 +392,7 @@ END=GR
 	//loop through items in order
 	orderResult.cart.forEach((item) => {
 		//create the item part of the SIF file
-		let itm = addItem(item, productMap, productNameMap);
+		let itm = addItem(item, productMap);
 		sifbody += itm;
 	});
 
