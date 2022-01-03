@@ -93,7 +93,9 @@ exports.handler = async (event) => {
 		let keys = Object.keys(obj);
 		let key = keys[0];
 		assetNames.add(obj[key].itemName);
-		productIds.add(obj[key].assetId);
+    if(obj[key].assetId && obj[key].assetId !== '') {
+		  productIds.add(obj[key].assetId);
+    }
 		if(!obj[key].configuration || obj[key].configuration === '') {
 			return;
 		} else {
@@ -103,7 +105,9 @@ exports.handler = async (event) => {
 	function configVariant(obj, assetNames, productIds) {
 		if(typeof obj === 'object') {
 			assetNames.add(obj.itemName);
-			productIds.add(obj.assetId);
+      if(obj.assetId && obj.assetId !== '') {
+			  productIds.add(obj.assetId);
+      }
 			if(!obj.configuration || obj.configuration === '') {				
 				return;
 			} else {
