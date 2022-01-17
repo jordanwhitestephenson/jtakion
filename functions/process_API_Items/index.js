@@ -380,6 +380,11 @@ exports.handler = async (event) => {
 				'blacklist': [],
                 'values': [],
                 'defaultValue': uiLabel
+			},
+			{
+				'type': 'String',
+				'name': 'source',
+				'defaultValue': option.sourceKey
 			}
         ];
         if(option.displayAttributesAs) {
@@ -518,6 +523,11 @@ exports.handler = async (event) => {
 					'blacklist': [],
 					'values': [],
 					'defaultValue': JSON.stringify(item.displayAttributesAs)
+				},
+				{
+					'type': 'String',
+					'name': 'source',
+					'defaultValue': item.sourceKey
 				}
             ],
 			'rules': []
