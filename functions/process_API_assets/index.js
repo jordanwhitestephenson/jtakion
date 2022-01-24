@@ -327,7 +327,8 @@ exports.handler = async (event) => {
             const modelId = item.id + '_3D';
             let uploadModel = {
                 'query': {
-                    'name': modelId
+                    'name': modelId,
+					"parentFolderId": "assets"
                 }, 
                 'product': {
                     'name': modelId,
