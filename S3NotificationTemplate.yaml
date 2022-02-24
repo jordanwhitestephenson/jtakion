@@ -5,7 +5,11 @@ Description: ""
 Parameters:
     environment:
         Type: "String"
-        Default: "test"
+        Default: "dev"
+        AllowedValues:
+        - "dev"
+        - "staging"
+        - "prod"
     S3INPUTBUCKETNAME:
         Type: "String"
         Default: "teknioninput-test"
@@ -18,6 +22,15 @@ Parameters:
     EXPORTENVIRONMENT:
         Type: "String"
         Default: "default"
+
+Mappings: 
+  envMap: 
+    dev: 
+      apiUrl: https://preview.threekit.com/api
+    staging: 
+      apiUrl: https://preview.threekit.com/api
+    prod: 
+      apiUrl: https://www.threekit.com/api
 
 Resources:
 
@@ -257,6 +270,10 @@ Resources:
         Type: "AWS::Lambda::Function"
         Properties:
             Description: ""
+            Environment:
+                Variables:
+                    apiUrl: !FindInMap [envMap, !Sub "${environment}", "apiUrl"]
+                    env: !Sub "${environment}"
             FunctionName: !Sub "orderExport-${environment}"
             Handler: "index.handler"
             Architectures: 

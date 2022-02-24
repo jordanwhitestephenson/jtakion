@@ -2,16 +2,17 @@
 const axios = require('axios');
 const date = require('date-and-time');
 
-const getParameter = require('./parameters.js').getParameter;
-const getApiUrl = (environmentName) => getParameter("api-url")(environmentName);
-const getApiToken = (environmentName) => getParameter("api-token")(environmentName);
-const getOrgId = (environmentName) => getParameter("org-id")(environmentName);
+const getApiToken = require('./parameters.js').getApiToken;
 
 exports.handler = async (event) => {
 	console.log("request: " + JSON.stringify(event));
+	const env = process.env.env;
+	const apiUrl = process.env.apiUrl;
 	const orderId = event.pathParameters.orderId;
-	const env = event.queryStringParameters.environment;
-	console.log('Creating SIF for orderId: '+ orderId + ' in env: '+env);
+	const orgId = event.queryStringParameters.orgId;
+	console.log('Creating SIF for orderId: '+ orderId + ',with orgId: '+ orgId + ', in env: '+env);
+	const apiToken = await getApiToken(orgId)(env); 
+	console.log("found api token ",apiToken);
 	let oslIndex = 0;
 
 	/********************/
@@ -347,10 +348,6 @@ END=GR
 	/************************/
 	/* end helper functions */
 	/************************/
-
-	const apiUrl = await getApiUrl(env);
-	const apiToken = await getApiToken(env);
-	const orgId = await getOrgId(env);
 
 	//call the ThreeKit order API
 	let orderResult;
