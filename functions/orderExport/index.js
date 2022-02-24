@@ -6,8 +6,8 @@ const getApiToken = require('./parameters.js').getApiToken;
 
 exports.handler = async (event) => {
 	console.log("request: " + JSON.stringify(event));
-	const env = process.env.env;
 	const apiUrl = process.env.apiUrl;
+	const env = event.queryStringParameters.env;
 	const orderId = event.pathParameters.orderId;
 	const orgId = event.queryStringParameters.orgId;
 	console.log('Creating SIF for orderId: '+ orderId + ',with orgId: '+ orgId + ', in env: '+env);
