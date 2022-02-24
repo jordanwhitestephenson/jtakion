@@ -265,7 +265,7 @@ Resources:
             Description: ""
             Environment:
                 Variables:
-                    apiUrl: !FindInMap [envMap, !Sub "${environment}", "apiUrl"]
+                    apiUrl: !FindInMap [envMap, !Ref environment, "apiUrl"]
                     env: !Sub "${environment}"
             FunctionName: !Sub "orderExport-${environment}"
             Handler: "index.handler"
