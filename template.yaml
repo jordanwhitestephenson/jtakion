@@ -30,7 +30,7 @@ Mappings:
     staging: 
       apiUrl: https://preview.threekit.com/api
     prod: 
-      apiUrl: https://www.threekit.com/api
+      apiUrl: https://admin-fts.threekit.com/api
 
 Resources:
 
@@ -48,7 +48,8 @@ Resources:
                             "Effect": "Allow",
                             "Action": [
                                 "ssm:GetParametersByPath",
-                                "ssm:GetParameters"
+                                "ssm:GetParameters",
+                                "ssm:GetParameter"
                             ],
                             "Resource": "arn:aws:ssm:*:${AWS::AccountId}:parameter/*"
                         }

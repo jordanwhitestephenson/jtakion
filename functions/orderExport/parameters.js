@@ -29,24 +29,20 @@ const getParameter = (parameterName) => async (environmentName) =>{
 
 const getApiToken = (orgId) => async (environmentName) =>{
     
-    const prefix = "/"+environmentName+"/threekit-import/api-tokens";
+    const parameterName = "/"+environmentName+"/threekit-import/api-tokens/"+orgId;
     
     if( !apiKeyCache[orgId]){
         const params = {
-            "Path":prefix
+            "Name":parameterName
         };
-        apiKeyCache[orgId] = ssm.getParametersByPath(params).promise().then( res => {
-            return res["Parameters"].reduce( (agg, next) => {
-                const name = next["Name"].substring( prefix.length +1 );
-                agg[name]=next["Value"];
-                return agg;
-            }, {});
+        apiKeyCache[orgId] = ssm.getParameter(params).promise().then( res => {
+            return res["Parameter"]["Value"];
         });
     }
     
-    const forEnv = await apiKeyCache[orgId];
+    const foundKey = await apiKeyCache[orgId];
     
-    return forEnv[orgId];
+    return foundKey;
 }
 
 module.exports.getParameter = getParameter;
