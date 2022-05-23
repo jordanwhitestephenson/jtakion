@@ -1,0 +1,128 @@
+{
+    "product": {
+        "name": "Around Guest Chair PDP",
+        "type": "item",
+        "metadata": [
+            {
+                "type": "String",
+                "name": "family",
+                "blacklist": [],
+                "values": [],
+                "defaultValue": "around-guest-chair-pdp"
+            },
+            {
+                "type": "String",
+                "name": "type",
+                "blacklist": [],
+                "values": [],
+                "defaultValue": "family"
+            },
+            {
+                "type": "String",
+                "name": "catalog-version",
+                "blacklist": [],
+                "values": [],
+                "defaultValue": "tfs-usr-test-1.001"
+            }
+        ],
+        "tags": [
+            "catalog-version_tfs-usr-test-1.001",
+            "type_family",
+            "family_around-guest-chair-pdp"
+        ],
+        "proxyId": "75ed9de5-bfbc-4a55-9217-256414f8a58a",
+        "rules": [
+            {
+                "conditions": [],
+                "actions": [
+                    {
+                        "type": "custom-script",
+                        "content": "function getMetadata(api, assetId, metadataKey){\n\tconst theItem = api.scene.get({id: assetId});\n\tif(!theItem) return '';\n\t\n\tconst theMetadataValue= theItem.configurator.metadata.find((i)=>i.name===metadataKey)?.defaultValue;\n    return theMetadataValue;\n\t\n}\n\nfunction getOptionCode(api, obj, arr){\n    const theAssetId = obj?.assetId;\n    if(!theAssetId) return '';\n    const theOptionCode = getMetadata(api, theAssetId, 'optionCode');\n    if(theOptionCode && !theOptionCode.startsWith('~')) arr.push(theOptionCode);\n    if(obj.configuration){\n        const theAttributes = Object.keys(obj.configuration);\n        if(theAttributes && theAttributes.length > 0) {\n            for (let attr in obj.configuration) {\n                getOptionCode(api, obj.configuration[`${attr}`], arr);\n            }\n        }\n    }\n}\n\nfunction setAttributeContentsInTree( api, attr_config){\n    const attr_arr = attr_config.getDisplayAttributes();\nif(!attr_arr) return undefined;\n    //strucure of an attribute in the Json\n    const selectedOptionName = attr_config.name;\n    let result = {\n        selectedOptionName : selectedOptionName,\n    };\n    \n    attr_arr.forEach((attr)=>{ \n        nestedConfig = attr_config.getNestedConfigurator(attr);\n        //when there's no further nested configuration\n        if(!nestedConfig){\n            result[`${attr.name}`] = {\n                configuration: attr_config.configuration[`${attr.name}`],\n                optionCode : getMetadata(api, attr_config.configuration[`${attr.name}`]?.assetId, 'optionCode')\n        }\n        }else{\n            result[`${attr.name}`] = setAttributeContentsInTree(api, nestedConfig);\n        }\n        \n    });\n\n    result.optionCode = attr_config.metadata.itemId ? attr_config.metadata.itemId : attr_config.metadata.optionCode;\n\n    return result;\n}\n\n    let attr_arr0= api.configurator.getDisplayAttributes();\n\n    let style_attr = attr_arr0?.find(attr => attr.name === \"Style\");\n\n    let selectedStyle = style_attr?.values.find(val => val.assetId===style_attr.value.assetId);\n    let style_config = api.configurator.getNestedConfigurator(style_attr);\n\n    let styleConfiguration = selectedStyle ? {\n        [`${selectedStyle.name}`] : setAttributeContentsInTree(api, style_config)\n    } : {};\n//Now styleConfiguration has the current configuration, need to fetch the previously saved configuration to compare and set attributes values accordingly\n    if(!window.cache) window.cache = {};\n    const prevStyleConfiguration = window.cache.prevStyleConfiguration;\n//...code here....\n\n//After all the attributes are set to the similar value or first option in the option list, get the current configuration and set to window.cache\n    attr_arr0= api.configurator.getDisplayAttributes();\n    style_attr = attr_arr0?.find(attr => attr.name === \"Style\");\n    selectedStyle = style_attr?.values.find(val => val.assetId===style_attr.value.assetId);\n    style_config = api.configurator.getNestedConfigurator(style_attr);\n    styleConfiguration = selectedStyle ? {\n        [`${selectedStyle.name}`] : setAttributeContentsInTree(api, style_config)\n    } : {};\n    \n    window.cache.prevStyleConfiguration = styleConfiguration;\n\n    //orderCode:\n    const configuration_level0 = api.configurator?.getFullConfiguration();\n    const theVariant = configuration_level0?.Style.configuration?._Variant;\n\n    if(!theVariant || !theVariant.assetId) return;//don't have _Variant\n\n    let orderCode = getMetadata(api, theVariant.assetId, 'itemId');\n    const optionCode_arr = [];\n    getOptionCode(api, theVariant, optionCode_arr);\n    orderCode = orderCode+ optionCode_arr.join('');\n    api.configurator.setConfiguration({\n    \"_OrderCode\": orderCode,\n});\n",
+                        "enabled": false,
+                        "error": "",
+                        "name": "custom-script"
+                    }
+                ],
+                "name": "Set OrderCode",
+                "disabled": false
+            },
+            {
+                "conditions": [],
+                "actions": [
+                    {
+                        "type": "custom-script",
+                        "content": "(async () => {\n  const Style = api.configuration;\n  if (!Style) return;\n  const player = api.enableApi(\"player\");\n  const configurator = await player.getConfigurator();\n  if (!configurator) return;\n  const attrs = configurator.getDisplayAttributes();\n  const styleAttr = attrs.find((entry) => entry.name === \"Style\");\n  const styleConfigurator = configurator.getNestedConfigurator(styleAttr);\n  if (!styleConfigurator) return;\n  const styleAttrs = styleConfigurator.getDisplayAttributes();\n  const variantAttr = styleAttrs.find((entry) => entry.name === \"_Variant\");\n  if (!variantAttr) return;\n  const variantConfigurator =\n    styleConfigurator.getNestedConfigurator(variantAttr);\n  if (!variantConfigurator) return;\n  if (!variantConfigurator.metadata.visualization) return;\n  api.configurator.setConfiguration({\n    _visibility: variantConfigurator.metadata.visualization,\n  });\n})();",
+                        "enabled": false,
+                        "error": "",
+                        "name": "custom-script"
+                    }
+                ],
+                "name": "Set Visibility",
+                "disabled": false
+            },
+            {
+                "conditions": [],
+                "actions": [
+                    {
+                        "type": "custom-script",
+                        "content": "function getNestedValue(attr) {\n  if (!attr || !attr.assetId) return null; // no valid nested attr value\n  // check if attr has nested attr\n  const { configurator } = api.scene.get({ id: attr.assetId });\n  const { attributes = [] } = configurator || {};\n  const nestedAttr = attributes.find(({ type }) => type === \"Asset\");\n  if (!nestedAttr) {\n    // this attr is a leaf node, so no further nesting to traverse, just return its value\n    return attr;\n  }\n  // at this point, we have a nested attribute we need to dive into\n  if (!attr.configuration) {\n    // no configuration means nested attr not set\n    return null;\n  }\n  // get nested attr\n  const nestedAttrName = nestedAttr.name;\n  return getNestedValue(attr.configuration[nestedAttrName]);\n}\n(async () => {\n  const Style = api.configuration;\n  if (!Style) return;\n  const player = api.enableApi(\"player\");\n  const configurator = await player.getConfigurator();\n  if (!configurator) return;\n  const attrs = configurator.getDisplayAttributes();\n  const styleAttr = attrs.find((entry) => entry.name === \"Style\");\n  const styleConfigurator = configurator.getNestedConfigurator(styleAttr);\n  if (!styleConfigurator) return;\n  const styleAttrs = styleConfigurator.getDisplayAttributes();\n  const variantAttr = styleAttrs.find((entry) => entry.name === \"_Variant\");\n  if (!variantAttr) return;\n  const variantConfigurator =\n    styleConfigurator.getNestedConfigurator(variantAttr);\n  if (!variantConfigurator) return;\n  const { _UI_displayAttributesAs } = variantConfigurator.metadata;\n  if (!_UI_displayAttributesAs) return;\n\n  let attributeMetadata;\n  try {\n    attributeMetadata = JSON.parse(_UI_displayAttributesAs);\n  } catch (err) {\n    console.error(\n      `Could not parse _UI_displayAttributesAs metadata string' ${_UI_displayAttributesAs}'`\n    );\n    return;\n  }\n  console.log(attributeMetadata);\n  const materialObj = {};\n  const config = variantConfigurator.getFullConfiguration();\n  console.log(config);\n  Object.entries(attributeMetadata).forEach(([attribute, meta]) => {\n    console.log(attribute, meta);\n    if (meta.layer && config[attribute]) {\n      console.log();\n      materialObj[meta.layer] = getNestedValue(config[attribute]);\n    }\n  });\n  api.configurator.setConfiguration({ _material: JSON.stringify(materialObj) });\n})();",
+                        "enabled": false,
+                        "error": "",
+                        "name": "custom-script"
+                    }
+                ],
+                "name": "Set Material",
+                "disabled": false
+            }
+        ],
+        "attributes": [
+            {
+                "id": "89d685a0-d872-43fb-9640-cfe7df04f041",
+                "type": "Asset",
+                "name": "Style",
+                "blacklist": [],
+                "assetType": "item",
+                "values": [
+                    [
+                        "AND",
+                        "catalog-version_tfs-usr-test-1.001",
+                        "#type_product",
+                        "#family_around-guest-chair-pdp"
+                    ]
+                ],
+                "defaultValue": {
+                    "assetId": ""
+                }
+            },
+            {
+                "id": "2baec184-ba5d-4df2-98c7-60d088b1a27a",
+                "type": "String",
+                "name": "_OrderCode",
+                "blacklist": [],
+                "values": [],
+                "defaultValue": ""
+            },
+            {
+                "id": "afae640c-1c15-497e-8f6c-a9b5b03d87fb",
+                "type": "String",
+                "name": "_visibility",
+                "blacklist": [],
+                "values": [],
+                "defaultValue": ""
+            },
+            {
+                "id": "3b10c2bc-633a-4e3e-866a-bc1959a887cf",
+                "type": "String",
+                "name": "_material",
+                "blacklist": [],
+                "values": [],
+                "defaultValue": ""
+            }
+        ],
+        "asset": {
+            "assetId": "75ed9de5-bfbc-4a55-9217-256414f8a58a",
+            "configuration": "",
+            "type": "model"
+        }
+    }
+}

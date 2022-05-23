@@ -1,0 +1,1000 @@
+<?xml version="1.0" ?>
+<VISUALIZATION>
+    <PRODUCT_FAMILIES>
+        <PRODUCT_FAMILY name="Around Guest Chair PDP" pdp_3d_model="Around_Guest_3D.fbx">
+            <PRODUCTS_AUX>
+                <DESCRIPTIONS>
+                    <TEXT lang_id="lang0">Style</TEXT>
+                </DESCRIPTIONS>
+            </PRODUCTS_AUX>
+            <PRODUCTS>
+                <PRODUCT group_code="NARJ">
+                    <DESCRIPTIONS>
+                        <TEXT lang_id="lang0">Around Guest Chair, Mesh Back</TEXT>
+                    </DESCRIPTIONS>
+                    <PGOS>
+                        <GROUP pgoid="pgo_127358">
+                            <DESCRIPTIONS>
+                                <TEXT lang_id="lang0">Frame Style</TEXT>
+                            </DESCRIPTIONS>
+                            <OPTIONS>
+                                <OPTION name="A">
+                                    <DESCRIPTIONS>
+                                        <TEXT lang_id="lang0">Four Leg with Casters, Soft</TEXT>
+                                    </DESCRIPTIONS>
+                                </OPTION>
+                                <OPTION name="B">
+                                    <DESCRIPTIONS>
+                                        <TEXT lang_id="lang0">Four Leg with Glides, Hard</TEXT>
+                                    </DESCRIPTIONS>
+                                </OPTION>
+                                <OPTION name="C">
+                                    <DESCRIPTIONS>
+                                        <TEXT lang_id="lang0">Four Leg with Glides, Soft</TEXT>
+                                    </DESCRIPTIONS>
+                                </OPTION>
+                                <OPTION name="G">
+                                    <DESCRIPTIONS>
+                                        <TEXT lang_id="lang0">Four Leg with Casters, Hard</TEXT>
+                                    </DESCRIPTIONS>
+                                </OPTION>
+                            </OPTIONS>
+                        </GROUP>
+                    </PGOS>
+                    <ITEMS>
+                        <ITEM pn="NARJA">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_127358" value="A"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-ARPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-BSPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-GDPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-GDPT" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-STFB" visible="true"/>
+                                <LAYER name="BackFrameMain" visible="true"/>
+                                <LAYER name="BackMesh" visible="true"/>
+                                <LAYER name="FrameCasters" visible="true"/>
+                                <LAYER name="FrameGlides" visible="false"/>
+                                <LAYER name="FrameMain" visible="false"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NARJB">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_127358" value="B"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-ARPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-BSPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-GDPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-GDPT" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-STFB" visible="true"/>
+                                <LAYER name="BackFrameMain" visible="false"/>
+                                <LAYER name="BackMesh" visible="true"/>
+                                <LAYER name="FrameCasters" visible="false"/>
+                                <LAYER name="FrameGlides" visible="true"/>
+                                <LAYER name="FrameMain" visible="true"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NARJC">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_127358" value="C"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-ARPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-BSPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-GDPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-GDPT" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-STFB" visible="true"/>
+                                <LAYER name="BackFrameMain" visible="true"/>
+                                <LAYER name="BackMesh" visible="true"/>
+                                <LAYER name="FrameCasters" visible="false"/>
+                                <LAYER name="FrameGlides" visible="true"/>
+                                <LAYER name="FrameMain" visible="false"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NARJG">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_127358" value="G"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-ARPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-BSPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-GDPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-GDPT" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-STFB" visible="true"/>
+                                <LAYER name="BackFrameMain" visible="true"/>
+                                <LAYER name="BackMesh" visible="true"/>
+                                <LAYER name="FrameCasters" visible="true"/>
+                                <LAYER name="FrameGlides" visible="false"/>
+                                <LAYER name="FrameMain" visible="false"/>
+                            </LAYERS>
+                        </ITEM>
+                    </ITEMS>
+                </PRODUCT>
+                <PRODUCT group_code="NARY">
+                    <DESCRIPTIONS>
+                        <TEXT lang_id="lang0">Around Guest Chair, Upholstered Back (Single
+                            Upholstery)</TEXT>
+                    </DESCRIPTIONS>
+                    <PGOS>
+                        <GROUP pgoid="pgo_2577">
+                            <DESCRIPTIONS>
+                                <TEXT lang_id="lang0">Upholstery / Back Style</TEXT>
+                            </DESCRIPTIONS>
+                            <OPTIONS>
+                                <OPTION name="S">
+                                    <DESCRIPTIONS>
+                                        <TEXT lang_id="lang0">Single Upholstery</TEXT>
+                                    </DESCRIPTIONS>
+                                </OPTION>
+                            </OPTIONS>
+                        </GROUP>
+                        <GROUP pgoid="pgo_127358">
+                            <DESCRIPTIONS>
+                                <TEXT lang_id="lang0">Frame Style</TEXT>
+                            </DESCRIPTIONS>
+                            <OPTIONS>
+                                <OPTION name="A">
+                                    <DESCRIPTIONS>
+                                        <TEXT lang_id="lang0">Four Leg with Casters, Soft</TEXT>
+                                    </DESCRIPTIONS>
+                                </OPTION>
+                                <OPTION name="B">
+                                    <DESCRIPTIONS>
+                                        <TEXT lang_id="lang0">Four Leg with Glides, Hard</TEXT>
+                                    </DESCRIPTIONS>
+                                </OPTION>
+                                <OPTION name="C">
+                                    <DESCRIPTIONS>
+                                        <TEXT lang_id="lang0">Four Leg with Glides, Soft</TEXT>
+                                    </DESCRIPTIONS>
+                                </OPTION>
+                                <OPTION name="G">
+                                    <DESCRIPTIONS>
+                                        <TEXT lang_id="lang0">Four Leg with Casters, Hard</TEXT>
+                                    </DESCRIPTIONS>
+                                </OPTION>
+                            </OPTIONS>
+                        </GROUP>
+                    </PGOS>
+                    <ITEMS>
+                        <ITEM pn="NARYAS">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_2577" value="A"/>
+                                <PGO_VALUE pgoid="pgo_127358" value="S"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-ARPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-BSPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-BYFB" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-GDPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-GDPT" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-STFB" visible="false"/>
+                                <LAYER name="BackFrameMain" visible="false"/>
+                                <LAYER name="BackFrameUpholstery" visible="false"/>
+                                <LAYER name="FrameCasters" visible="false"/>
+                                <LAYER name="FrameGlides" visible="false"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NARYBS">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_2577" value="B"/>
+                                <PGO_VALUE pgoid="pgo_127358" value="S"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-ARPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-BSPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-BYFB" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-GDPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-GDPT" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-STFB" visible="false"/>
+                                <LAYER name="BackFrameMain" visible="false"/>
+                                <LAYER name="BackFrameUpholstery" visible="false"/>
+                                <LAYER name="FrameCasters" visible="false"/>
+                                <LAYER name="FrameGlides" visible="false"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NARYCS">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_2577" value="C"/>
+                                <PGO_VALUE pgoid="pgo_127358" value="S"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-ARPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-BSPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-BYFB" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-GDPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-GDPT" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-STFB" visible="false"/>
+                                <LAYER name="BackFrameMain" visible="false"/>
+                                <LAYER name="BackFrameUpholstery" visible="false"/>
+                                <LAYER name="FrameCasters" visible="false"/>
+                                <LAYER name="FrameGlides" visible="false"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NARYGS">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_2577" value="G"/>
+                                <PGO_VALUE pgoid="pgo_127358" value="S"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-ARPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-BSPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-BYFB" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-GDPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-GDPT" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-STFB" visible="false"/>
+                                <LAYER name="BackFrameMain" visible="false"/>
+                                <LAYER name="BackFrameUpholstery" visible="false"/>
+                                <LAYER name="FrameCasters" visible="false"/>
+                                <LAYER name="FrameGlides" visible="false"/>
+                            </LAYERS>
+                        </ITEM>
+                    </ITEMS>
+                </PRODUCT>
+                <PRODUCT group_code="NARY_">
+                    <DESCRIPTIONS>
+                        <TEXT lang_id="lang0">Around Guest Chair, Upholstered Back (Dual
+                            Upholstery)</TEXT>
+                    </DESCRIPTIONS>
+                    <PGOS>
+                        <GROUP pgoid="pgo_3275">
+                            <DESCRIPTIONS>
+                                <TEXT lang_id="lang0">Upholstery / Back Style</TEXT>
+                            </DESCRIPTIONS>
+                            <OPTIONS>
+                                <OPTION name="D">
+                                    <DESCRIPTIONS>
+                                        <TEXT lang_id="lang0">Dual Upholstered Seat &amp;
+                                            Back</TEXT>
+                                    </DESCRIPTIONS>
+                                </OPTION>
+                            </OPTIONS>
+                        </GROUP>
+                        <GROUP pgoid="pgo_127358">
+                            <DESCRIPTIONS>
+                                <TEXT lang_id="lang0">Frame Style</TEXT>
+                            </DESCRIPTIONS>
+                            <OPTIONS>
+                                <OPTION name="A">
+                                    <DESCRIPTIONS>
+                                        <TEXT lang_id="lang0">Four Leg with Casters, Soft</TEXT>
+                                    </DESCRIPTIONS>
+                                </OPTION>
+                                <OPTION name="B">
+                                    <DESCRIPTIONS>
+                                        <TEXT lang_id="lang0">Four Leg with Glides, Hard</TEXT>
+                                    </DESCRIPTIONS>
+                                </OPTION>
+                                <OPTION name="C">
+                                    <DESCRIPTIONS>
+                                        <TEXT lang_id="lang0">Four Leg with Glides, Soft</TEXT>
+                                    </DESCRIPTIONS>
+                                </OPTION>
+                                <OPTION name="G">
+                                    <DESCRIPTIONS>
+                                        <TEXT lang_id="lang0">Four Leg with Casters, Hard</TEXT>
+                                    </DESCRIPTIONS>
+                                </OPTION>
+                            </OPTIONS>
+                        </GROUP>
+                    </PGOS>
+                    <ITEMS>
+                        <ITEM pn="NARYAD">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_3275" value="A"/>
+                                <PGO_VALUE pgoid="pgo_127358" value="D"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-ARPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-BSPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-GDPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-GDPT" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-STFB" visible="false"/>
+                                <LAYER name="BackFrameMain" visible="false"/>
+                                <LAYER name="BackFrameUpholstery" visible="false"/>
+                                <LAYER name="BackUpholsteryDual" visible="false"/>
+                                <LAYER name="FrameCasters" visible="false"/>
+                                <LAYER name="FrameGlides" visible="false"/>
+                                <LAYER name="SeatBackFrameMain" visible="false"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NARYBD">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_3275" value="B"/>
+                                <PGO_VALUE pgoid="pgo_127358" value="D"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-ARPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-BSPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-GDPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-GDPT" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-STFB" visible="false"/>
+                                <LAYER name="BackFrameMain" visible="false"/>
+                                <LAYER name="BackFrameUpholstery" visible="false"/>
+                                <LAYER name="BackUpholsteryDual" visible="false"/>
+                                <LAYER name="FrameCasters" visible="false"/>
+                                <LAYER name="FrameGlides" visible="false"/>
+                                <LAYER name="SeatBackFrameMain" visible="false"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NARYCD">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_3275" value="C"/>
+                                <PGO_VALUE pgoid="pgo_127358" value="D"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-ARPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-BSPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-GDPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-GDPT" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-STFB" visible="false"/>
+                                <LAYER name="BackFrameMain" visible="false"/>
+                                <LAYER name="BackFrameUpholstery" visible="false"/>
+                                <LAYER name="BackUpholsteryDual" visible="false"/>
+                                <LAYER name="FrameCasters" visible="false"/>
+                                <LAYER name="FrameGlides" visible="false"/>
+                                <LAYER name="SeatBackFrameMain" visible="false"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NARYGD">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_3275" value="G"/>
+                                <PGO_VALUE pgoid="pgo_127358" value="D"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-ARPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-BSPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-GDPL" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-GDPT" visible="false"/>
+                                <LAYER name="A-FURN-3-CHAR-STFB" visible="false"/>
+                                <LAYER name="BackFrameMain" visible="false"/>
+                                <LAYER name="BackFrameUpholstery" visible="false"/>
+                                <LAYER name="BackUpholsteryDual" visible="false"/>
+                                <LAYER name="FrameCasters" visible="false"/>
+                                <LAYER name="FrameGlides" visible="false"/>
+                                <LAYER name="SeatBackFrameMain" visible="false"/>
+                            </LAYERS>
+                        </ITEM>
+                    </ITEMS>
+                </PRODUCT>
+            </PRODUCTS>
+        </PRODUCT_FAMILY>
+        <PRODUCT_FAMILY name="Just-Us Chair PDP" pdp_3d_model="Justus_3D.fbx">
+            <PRODUCTS_AUX>
+                <DESCRIPTIONS>
+                    <TEXT lang_id="lang0">Style</TEXT>
+                </DESCRIPTIONS>
+            </PRODUCTS_AUX>
+            <PRODUCTS>
+                <PRODUCT group_code="NJUU">
+                    <DESCRIPTIONS>
+                        <TEXT lang_id="lang0">Just-Us Chair, Upholstered Seat</TEXT>
+                    </DESCRIPTIONS>
+                    <ITEMS>
+                        <ITEM pn="NJUU">
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-ARPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-BKFB" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-BKPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-BSPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-FMPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-MCPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-STFB" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-STPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUPT" visible="true"/>
+                            </LAYERS>
+                        </ITEM>
+                    </ITEMS>
+                </PRODUCT>
+            </PRODUCTS>
+        </PRODUCT_FAMILY>
+        <PRODUCT_FAMILY name="Sabrina Synchro-Tilt Task Chair PDP"
+            pdp_3d_model="Sabrina_Synchro_3D.fbx">
+            <PRODUCTS_AUX>
+                <DESCRIPTIONS>
+                    <TEXT lang_id="lang0">Style</TEXT>
+                </DESCRIPTIONS>
+            </PRODUCTS_AUX>
+            <PRODUCTS>
+                <PRODUCT group_code="NSBY">
+                    <DESCRIPTIONS>
+                        <TEXT lang_id="lang0">Sabrina Synchro-Tilt Task Chair, Dual
+                            Upholstery</TEXT>
+                    </DESCRIPTIONS>
+                    <PGOS>
+                        <GROUP pgoid="pgo_3989">
+                            <DESCRIPTIONS>
+                                <TEXT lang_id="lang0">Style</TEXT>
+                            </DESCRIPTIONS>
+                            <OPTIONS>
+                                <OPTION name="C">
+                                    <DESCRIPTIONS>
+                                        <TEXT lang_id="lang0">No Headrest - With Coat Hanger</TEXT>
+                                    </DESCRIPTIONS>
+                                </OPTION>
+                                <OPTION name="H">
+                                    <DESCRIPTIONS>
+                                        <TEXT lang_id="lang0">With Headrest - No Coat Hanger</TEXT>
+                                    </DESCRIPTIONS>
+                                </OPTION>
+                                <OPTION name="N">
+                                    <DESCRIPTIONS>
+                                        <TEXT lang_id="lang0">No Headrest - No Coat Hanger</TEXT>
+                                    </DESCRIPTIONS>
+                                </OPTION>
+                                <OPTION name="Y">
+                                    <DESCRIPTIONS>
+                                        <TEXT lang_id="lang0">With Headrest - With Coat
+                                            Hanger</TEXT>
+                                    </DESCRIPTIONS>
+                                </OPTION>
+                            </OPTIONS>
+                        </GROUP>
+                        <GROUP pgoid="pgo_17030">
+                            <DESCRIPTIONS>
+                                <TEXT lang_id="lang0">Lumbar Element</TEXT>
+                            </DESCRIPTIONS>
+                            <OPTIONS>
+                                <OPTION name="N">
+                                    <DESCRIPTIONS>
+                                        <TEXT lang_id="lang0">No Lumbar Element</TEXT>
+                                    </DESCRIPTIONS>
+                                </OPTION>
+                                <OPTION name="Y">
+                                    <DESCRIPTIONS>
+                                        <TEXT lang_id="lang0">With Lumbar Element</TEXT>
+                                    </DESCRIPTIONS>
+                                </OPTION>
+                            </OPTIONS>
+                        </GROUP>
+                        <GROUP pgoid="pgo_143135">
+                            <DESCRIPTIONS>
+                                <TEXT lang_id="lang0">Arm Style</TEXT>
+                            </DESCRIPTIONS>
+                            <OPTIONS>
+                                <OPTION name="A">
+                                    <DESCRIPTIONS>
+                                        <TEXT lang_id="lang0">Fixed Polished Aluminum Arms</TEXT>
+                                    </DESCRIPTIONS>
+                                </OPTION>
+                                <OPTION name="H">
+                                    <DESCRIPTIONS>
+                                        <TEXT lang_id="lang0">Hght Adj T-Arms w/Pvt &amp; Dpth Adj
+                                            Arm Pad</TEXT>
+                                    </DESCRIPTIONS>
+                                </OPTION>
+                                <OPTION name="N">
+                                    <DESCRIPTIONS>
+                                        <TEXT lang_id="lang0">No Arms</TEXT>
+                                    </DESCRIPTIONS>
+                                </OPTION>
+                            </OPTIONS>
+                        </GROUP>
+                    </PGOS>
+                    <ITEMS>
+                        <ITEM pn="NSBYCNA">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_3989" value="C"/>
+                                <PGO_VALUE pgoid="pgo_17030" value="N"/>
+                                <PGO_VALUE pgoid="pgo_143135" value="A"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-BS" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-FMPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUSS" visible="true"/>
+                                <LAYER name="AdjustableArmRest" visible="false"/>
+                                <LAYER name="CoatHanger" visible="true"/>
+                                <LAYER name="FixedArmRest" visible="true"/>
+                                <LAYER name="FixedArmRestPad" visible="true"/>
+                                <LAYER name="HeadRestFrame" visible="false"/>
+                                <LAYER name="HeadRestMesh" visible="false"/>
+                                <LAYER name="LumbarElement" visible="false"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NSBYCNH">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_3989" value="C"/>
+                                <PGO_VALUE pgoid="pgo_17030" value="N"/>
+                                <PGO_VALUE pgoid="pgo_143135" value="H"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-BS" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-FMPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUSS" visible="true"/>
+                                <LAYER name="AdjustableArmRest" visible="true"/>
+                                <LAYER name="CoatHanger" visible="true"/>
+                                <LAYER name="FixedArmRest" visible="false"/>
+                                <LAYER name="FixedArmRestPad" visible="false"/>
+                                <LAYER name="HeadRestFrame" visible="false"/>
+                                <LAYER name="HeadRestMesh" visible="false"/>
+                                <LAYER name="LumbarElement" visible="false"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NSBYCNN">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_3989" value="C"/>
+                                <PGO_VALUE pgoid="pgo_17030" value="N"/>
+                                <PGO_VALUE pgoid="pgo_143135" value="N"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-BS" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-FMPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUSS" visible="true"/>
+                                <LAYER name="AdjustableArmRest" visible="false"/>
+                                <LAYER name="CoatHanger" visible="true"/>
+                                <LAYER name="FixedArmRest" visible="false"/>
+                                <LAYER name="FixedArmRestPad" visible="false"/>
+                                <LAYER name="HeadRestFrame" visible="false"/>
+                                <LAYER name="HeadRestMesh" visible="false"/>
+                                <LAYER name="LumbarElement" visible="false"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NSBYCYA">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_3989" value="C"/>
+                                <PGO_VALUE pgoid="pgo_17030" value="Y"/>
+                                <PGO_VALUE pgoid="pgo_143135" value="A"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-BS" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-FMPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUSS" visible="true"/>
+                                <LAYER name="AdjustableArmRest" visible="false"/>
+                                <LAYER name="CoatHanger" visible="true"/>
+                                <LAYER name="FixedArmRest" visible="true"/>
+                                <LAYER name="FixedArmRestPad" visible="true"/>
+                                <LAYER name="HeadRestFrame" visible="false"/>
+                                <LAYER name="HeadRestMesh" visible="false"/>
+                                <LAYER name="LumbarElement" visible="true"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NSBYCYH">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_3989" value="C"/>
+                                <PGO_VALUE pgoid="pgo_17030" value="Y"/>
+                                <PGO_VALUE pgoid="pgo_143135" value="H"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-BS" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-FMPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUSS" visible="true"/>
+                                <LAYER name="AdjustableArmRest" visible="true"/>
+                                <LAYER name="CoatHanger" visible="true"/>
+                                <LAYER name="FixedArmRest" visible="false"/>
+                                <LAYER name="FixedArmRestPad" visible="false"/>
+                                <LAYER name="HeadRestFrame" visible="false"/>
+                                <LAYER name="HeadRestMesh" visible="false"/>
+                                <LAYER name="LumbarElement" visible="true"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NSBYCYN">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_3989" value="C"/>
+                                <PGO_VALUE pgoid="pgo_17030" value="Y"/>
+                                <PGO_VALUE pgoid="pgo_143135" value="N"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-BS" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-FMPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUSS" visible="true"/>
+                                <LAYER name="AdjustableArmRest" visible="false"/>
+                                <LAYER name="CoatHanger" visible="true"/>
+                                <LAYER name="FixedArmRest" visible="false"/>
+                                <LAYER name="FixedArmRestPad" visible="false"/>
+                                <LAYER name="HeadRestFrame" visible="false"/>
+                                <LAYER name="HeadRestMesh" visible="false"/>
+                                <LAYER name="LumbarElement" visible="true"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NSBYHNA">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_3989" value="H"/>
+                                <PGO_VALUE pgoid="pgo_17030" value="N"/>
+                                <PGO_VALUE pgoid="pgo_143135" value="A"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-BS" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-FMPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUSS" visible="true"/>
+                                <LAYER name="AdjustableArmRest" visible="false"/>
+                                <LAYER name="CoatHanger" visible="false"/>
+                                <LAYER name="FixedArmRest" visible="true"/>
+                                <LAYER name="FixedArmRestPad" visible="true"/>
+                                <LAYER name="HeadRestFrame" visible="true"/>
+                                <LAYER name="HeadRestMesh" visible="true"/>
+                                <LAYER name="LumbarElement" visible="false"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NSBYHNH">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_3989" value="H"/>
+                                <PGO_VALUE pgoid="pgo_17030" value="N"/>
+                                <PGO_VALUE pgoid="pgo_143135" value="H"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-BS" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-FMPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUSS" visible="true"/>
+                                <LAYER name="AdjustableArmRest" visible="true"/>
+                                <LAYER name="CoatHanger" visible="false"/>
+                                <LAYER name="FixedArmRest" visible="false"/>
+                                <LAYER name="FixedArmRestPad" visible="false"/>
+                                <LAYER name="HeadRestFrame" visible="true"/>
+                                <LAYER name="HeadRestMesh" visible="true"/>
+                                <LAYER name="LumbarElement" visible="false"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NSBYHNN">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_3989" value="H"/>
+                                <PGO_VALUE pgoid="pgo_17030" value="N"/>
+                                <PGO_VALUE pgoid="pgo_143135" value="N"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-BS" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-FMPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUSS" visible="true"/>
+                                <LAYER name="AdjustableArmRest" visible="false"/>
+                                <LAYER name="CoatHanger" visible="false"/>
+                                <LAYER name="FixedArmRest" visible="false"/>
+                                <LAYER name="FixedArmRestPad" visible="false"/>
+                                <LAYER name="HeadRestFrame" visible="true"/>
+                                <LAYER name="HeadRestMesh" visible="true"/>
+                                <LAYER name="LumbarElement" visible="false"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NSBYHYA">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_3989" value="H"/>
+                                <PGO_VALUE pgoid="pgo_17030" value="Y"/>
+                                <PGO_VALUE pgoid="pgo_143135" value="A"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-BS" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-FMPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUSS" visible="true"/>
+                                <LAYER name="AdjustableArmRest" visible="false"/>
+                                <LAYER name="CoatHanger" visible="false"/>
+                                <LAYER name="FixedArmRest" visible="true"/>
+                                <LAYER name="FixedArmRestPad" visible="true"/>
+                                <LAYER name="HeadRestFrame" visible="true"/>
+                                <LAYER name="HeadRestMesh" visible="true"/>
+                                <LAYER name="LumbarElement" visible="true"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NSBYHYH">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_3989" value="H"/>
+                                <PGO_VALUE pgoid="pgo_17030" value="Y"/>
+                                <PGO_VALUE pgoid="pgo_143135" value="H"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-BS" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-FMPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUSS" visible="true"/>
+                                <LAYER name="AdjustableArmRest" visible="true"/>
+                                <LAYER name="CoatHanger" visible="false"/>
+                                <LAYER name="FixedArmRest" visible="false"/>
+                                <LAYER name="FixedArmRestPad" visible="false"/>
+                                <LAYER name="HeadRestFrame" visible="true"/>
+                                <LAYER name="HeadRestMesh" visible="true"/>
+                                <LAYER name="LumbarElement" visible="true"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NSBYHYN">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_3989" value="H"/>
+                                <PGO_VALUE pgoid="pgo_17030" value="Y"/>
+                                <PGO_VALUE pgoid="pgo_143135" value="N"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-BS" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-FMPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUSS" visible="true"/>
+                                <LAYER name="AdjustableArmRest" visible="false"/>
+                                <LAYER name="CoatHanger" visible="false"/>
+                                <LAYER name="FixedArmRest" visible="false"/>
+                                <LAYER name="FixedArmRestPad" visible="false"/>
+                                <LAYER name="HeadRestFrame" visible="true"/>
+                                <LAYER name="HeadRestMesh" visible="true"/>
+                                <LAYER name="LumbarElement" visible="true"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NSBYNNA">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_3989" value="N"/>
+                                <PGO_VALUE pgoid="pgo_17030" value="N"/>
+                                <PGO_VALUE pgoid="pgo_143135" value="A"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-BS" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-FMPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUSS" visible="true"/>
+                                <LAYER name="AdjustableArmRest" visible="false"/>
+                                <LAYER name="CoatHanger" visible="false"/>
+                                <LAYER name="FixedArmRest" visible="true"/>
+                                <LAYER name="FixedArmRestPad" visible="true"/>
+                                <LAYER name="HeadRestFrame" visible="false"/>
+                                <LAYER name="HeadRestMesh" visible="false"/>
+                                <LAYER name="LumbarElement" visible="false"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NSBYNNH">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_3989" value="N"/>
+                                <PGO_VALUE pgoid="pgo_17030" value="N"/>
+                                <PGO_VALUE pgoid="pgo_143135" value="H"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-BS" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-FMPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUSS" visible="true"/>
+                                <LAYER name="AdjustableArmRest" visible="true"/>
+                                <LAYER name="CoatHanger" visible="false"/>
+                                <LAYER name="FixedArmRest" visible="false"/>
+                                <LAYER name="FixedArmRestPad" visible="false"/>
+                                <LAYER name="HeadRestFrame" visible="false"/>
+                                <LAYER name="HeadRestMesh" visible="false"/>
+                                <LAYER name="LumbarElement" visible="false"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NSBYNNN">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_3989" value="N"/>
+                                <PGO_VALUE pgoid="pgo_17030" value="N"/>
+                                <PGO_VALUE pgoid="pgo_143135" value="N"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-BS" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-FMPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUSS" visible="true"/>
+                                <LAYER name="AdjustableArmRest" visible="false"/>
+                                <LAYER name="CoatHanger" visible="false"/>
+                                <LAYER name="FixedArmRest" visible="false"/>
+                                <LAYER name="FixedArmRestPad" visible="false"/>
+                                <LAYER name="HeadRestFrame" visible="false"/>
+                                <LAYER name="HeadRestMesh" visible="false"/>
+                                <LAYER name="LumbarElement" visible="false"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NSBYNYA">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_3989" value="N"/>
+                                <PGO_VALUE pgoid="pgo_17030" value="Y"/>
+                                <PGO_VALUE pgoid="pgo_143135" value="A"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-BS" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-FMPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUSS" visible="true"/>
+                                <LAYER name="AdjustableArmRest" visible="false"/>
+                                <LAYER name="CoatHanger" visible="false"/>
+                                <LAYER name="FixedArmRest" visible="true"/>
+                                <LAYER name="FixedArmRestPad" visible="true"/>
+                                <LAYER name="HeadRestFrame" visible="false"/>
+                                <LAYER name="HeadRestMesh" visible="false"/>
+                                <LAYER name="LumbarElement" visible="true"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NSBYNYH">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_3989" value="N"/>
+                                <PGO_VALUE pgoid="pgo_17030" value="Y"/>
+                                <PGO_VALUE pgoid="pgo_143135" value="H"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-BS" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-FMPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUSS" visible="true"/>
+                                <LAYER name="AdjustableArmRest" visible="true"/>
+                                <LAYER name="CoatHanger" visible="false"/>
+                                <LAYER name="FixedArmRest" visible="false"/>
+                                <LAYER name="FixedArmRestPad" visible="false"/>
+                                <LAYER name="HeadRestFrame" visible="false"/>
+                                <LAYER name="HeadRestMesh" visible="false"/>
+                                <LAYER name="LumbarElement" visible="true"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NSBYNYN">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_3989" value="N"/>
+                                <PGO_VALUE pgoid="pgo_17030" value="Y"/>
+                                <PGO_VALUE pgoid="pgo_143135" value="N"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-BS" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-FMPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUSS" visible="true"/>
+                                <LAYER name="AdjustableArmRest" visible="false"/>
+                                <LAYER name="CoatHanger" visible="false"/>
+                                <LAYER name="FixedArmRest" visible="false"/>
+                                <LAYER name="FixedArmRestPad" visible="false"/>
+                                <LAYER name="HeadRestFrame" visible="false"/>
+                                <LAYER name="HeadRestMesh" visible="false"/>
+                                <LAYER name="LumbarElement" visible="true"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NSBYYNA">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_3989" value="Y"/>
+                                <PGO_VALUE pgoid="pgo_17030" value="N"/>
+                                <PGO_VALUE pgoid="pgo_143135" value="A"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-BS" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-FMPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUSS" visible="true"/>
+                                <LAYER name="AdjustableArmRest" visible="false"/>
+                                <LAYER name="CoatHanger" visible="true"/>
+                                <LAYER name="FixedArmRest" visible="true"/>
+                                <LAYER name="FixedArmRestPad" visible="true"/>
+                                <LAYER name="HeadRestFrame" visible="true"/>
+                                <LAYER name="HeadRestMesh" visible="true"/>
+                                <LAYER name="LumbarElement" visible="false"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NSBYYNH">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_3989" value="Y"/>
+                                <PGO_VALUE pgoid="pgo_17030" value="N"/>
+                                <PGO_VALUE pgoid="pgo_143135" value="H"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-BS" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-FMPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUSS" visible="true"/>
+                                <LAYER name="AdjustableArmRest" visible="true"/>
+                                <LAYER name="CoatHanger" visible="true"/>
+                                <LAYER name="FixedArmRest" visible="false"/>
+                                <LAYER name="FixedArmRestPad" visible="false"/>
+                                <LAYER name="HeadRestFrame" visible="true"/>
+                                <LAYER name="HeadRestMesh" visible="true"/>
+                                <LAYER name="LumbarElement" visible="false"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NSBYYNN">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_3989" value="Y"/>
+                                <PGO_VALUE pgoid="pgo_17030" value="N"/>
+                                <PGO_VALUE pgoid="pgo_143135" value="N"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-BS" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-FMPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUSS" visible="true"/>
+                                <LAYER name="AdjustableArmRest" visible="false"/>
+                                <LAYER name="CoatHanger" visible="true"/>
+                                <LAYER name="FixedArmRest" visible="false"/>
+                                <LAYER name="FixedArmRestPad" visible="false"/>
+                                <LAYER name="HeadRestFrame" visible="true"/>
+                                <LAYER name="HeadRestMesh" visible="true"/>
+                                <LAYER name="LumbarElement" visible="false"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NSBYYYA">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_3989" value="Y"/>
+                                <PGO_VALUE pgoid="pgo_17030" value="Y"/>
+                                <PGO_VALUE pgoid="pgo_143135" value="A"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-BS" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-FMPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUSS" visible="true"/>
+                                <LAYER name="AdjustableArmRest" visible="false"/>
+                                <LAYER name="CoatHanger" visible="true"/>
+                                <LAYER name="FixedArmRest" visible="true"/>
+                                <LAYER name="FixedArmRestPad" visible="true"/>
+                                <LAYER name="HeadRestFrame" visible="true"/>
+                                <LAYER name="HeadRestMesh" visible="true"/>
+                                <LAYER name="LumbarElement" visible="true"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NSBYYYH">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_3989" value="Y"/>
+                                <PGO_VALUE pgoid="pgo_17030" value="Y"/>
+                                <PGO_VALUE pgoid="pgo_143135" value="H"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-BS" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-FMPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUSS" visible="true"/>
+                                <LAYER name="AdjustableArmRest" visible="true"/>
+                                <LAYER name="CoatHanger" visible="true"/>
+                                <LAYER name="FixedArmRest" visible="false"/>
+                                <LAYER name="FixedArmRestPad" visible="false"/>
+                                <LAYER name="HeadRestFrame" visible="true"/>
+                                <LAYER name="HeadRestMesh" visible="true"/>
+                                <LAYER name="LumbarElement" visible="true"/>
+                            </LAYERS>
+                        </ITEM>
+                        <ITEM pn="NSBYYYN">
+                            <PGO_VALUES>
+                                <PGO_VALUE pgoid="pgo_3989" value="Y"/>
+                                <PGO_VALUE pgoid="pgo_17030" value="Y"/>
+                                <PGO_VALUE pgoid="pgo_143135" value="N"/>
+                            </PGO_VALUES>
+                            <LAYERS>
+                                <LAYER name="A-FURN-3-CHAR-BS" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-CTPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-FMPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUPL" visible="true"/>
+                                <LAYER name="A-FURN-3-CHAR-SUSS" visible="true"/>
+                                <LAYER name="AdjustableArmRest" visible="false"/>
+                                <LAYER name="CoatHanger" visible="true"/>
+                                <LAYER name="FixedArmRest" visible="false"/>
+                                <LAYER name="FixedArmRestPad" visible="false"/>
+                                <LAYER name="HeadRestFrame" visible="true"/>
+                                <LAYER name="HeadRestMesh" visible="true"/>
+                                <LAYER name="LumbarElement" visible="true"/>
+                            </LAYERS>
+                        </ITEM>
+                    </ITEMS>
+                </PRODUCT>
+            </PRODUCTS>
+        </PRODUCT_FAMILY>
+    </PRODUCT_FAMILIES>
+</VISUALIZATION>

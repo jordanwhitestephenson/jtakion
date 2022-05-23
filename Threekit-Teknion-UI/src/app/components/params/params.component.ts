@@ -15,14 +15,11 @@ export class ParamsComponent implements OnInit {
 
 	  console.log(this.route.snapshot.queryParamMap);
 	  console.log(this.route.snapshot.paramMap);
-	  if(this.route.snapshot.queryParamMap.has('orgId') && this.route.snapshot.queryParamMap.has('appid') && this.route.snapshot.paramMap.has('publicToken') && this.route.snapshot.paramMap.has('baseUrl')) {
-		this.paramsService.setOrigParams(this.route.snapshot.queryParamMap.get('orgId'), this.route.snapshot.queryParamMap.get('appid'), this.route.snapshot.paramMap.get('publicToken'), this.route.snapshot.paramMap.get('baseUrl')).then(() => {
+
+		this.paramsService.setOrigParams('', '', '', '').then(() => {
 			this.router.navigate(['/import']);		
 		}).catch(err => {
 			console.error(err.message);
 		});	
-	  } else {
-		console.error('Invalid parameters passed to application.');
-	  }
   }
 }

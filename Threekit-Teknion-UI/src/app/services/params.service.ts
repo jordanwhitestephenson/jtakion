@@ -20,7 +20,7 @@ export class ParamsService {
 	private _cancelEndpoint;
 	private _logPrefix;
 
-	constructor(private http: HttpClient) { 
+	constructor(private http: HttpClient) {
 	}
 
 	public get orgId() {
@@ -76,10 +76,10 @@ export class ParamsService {
 	}
 
 	public async setOrigParams(oid:string, aid:string, tk:string, bu:string) {
-		this._apiBasePath = bu;
-		this._orgId = oid;
-		this._appId = aid;
-		this._threekitPublicToken = tk;
+		this._apiBasePath = 'https://preview.threekit.com/api';
+		this._orgId = '23de016e-e813-4e8c-a417-583fb95e63c9';
+		this._appId = 'c9c5fa53-9c25-4946-9560-117f3f9e71b6';
+		this._threekitPublicToken = 'd7cb9823-5adf-46db-aa6c-dd89938d54cc';
 		const data = await this.http.get<any>(this._apiBasePath+`/apps/${this._appId}?orgId=${this._orgId}&bearer_token=${this._threekitPublicToken}`).toPromise();
 		console.log('response', data, this);
 		this._awsAccessToken = data.configuration.at;

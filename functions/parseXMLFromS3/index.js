@@ -6,7 +6,7 @@ const util = require('util');
 const axios = require('axios');
 const FormData = require('form-data');
 const string2fileStream = require('string-to-file-stream');
-
+const fs = require('fs')
 AWS.config.setPromisesDependency(require('bluebird'));
 
 var Promise = require("bluebird");
@@ -57,7 +57,8 @@ exports.handler = async (event) => {
         sqs message event - with original s3 trigger event in body 
     */
     const eventBody = event.Records[0].s3 ? event.Records[0] : JSON.parse( event.Records[0].body )  ;
-    
+
+ 
     // Read options from the event parameter.
     console.log("Reading options from event:\n", util.inspect(eventBody, {depth: 5}));
     
@@ -245,13 +246,9 @@ exports.handler = async (event) => {
         
         var itemLength = JSON.stringify(item).length;
         
-        // console.log(" checking buffer size ("+itemsToQueueBuffer.length+") and length ("+(itemsToQueueBufferLength + itemLength)+") > "+maxQueueMessageSize );
         const sendPromise = 
             ( (itemsToQueueBuffer.length >= 10) || (itemsToQueueBufferLength + itemLength >= maxQueueMessageSize) ) ?
-            flushItemsToQueue() : Promise.resolve("item buffered for queue");
-          
-        // console.log(  {"event": "bufferQueue", "queueType":"parsed", "objectType":item.type, "id":item.id} );
-        
+            flushItemsToQueue() : Promise.resolve("item buffered for queue");        
         itemsToQueueBuffer.push(item);
         itemsToQueueBufferLength += itemLength;
 
@@ -262,12 +259,11 @@ exports.handler = async (event) => {
     }
     
     function flushItemsToQueue(){
-        console.log("flushing ",itemsToQueueBuffer.length, " items to queue");
+        console.log("flushing ",itemsToQueueBuffer, " items to queue");
         
         if(itemsToQueueBuffer.length > 0){
             var params = {
                 "Entries": itemsToQueueBuffer.map( (it, i) => {
-                    // console.log( {"event": "enqueue", "queueType":"parsed", "objectType":it.type, "id":it.id} );
                     //logItemEvent(  {"event": "enqueue-processItem", "objectType":it.type, "objectId":it.id, "duration":Date.now() - start, "process":"parse"}, sourceKey ); 
                     return {
                         "Id":it.id,
@@ -277,19 +273,10 @@ exports.handler = async (event) => {
                     };
                 }),
                 "QueueUrl" : process.env.parsedItemsQueue//'https://sqs.us-east-1.amazonaws.com/890084055036/parsedAPIItems'
-            };
-                
-            // console.log("sending to queue ", util.inspect(params, {depth: 5}) );
-            
+            };           
             itemsToQueueBuffer = [];
             itemsToQueueBufferLength = 0;
-            
-            // const t = Date.now();
-            
             const messageSendPromise = sqs.sendMessageBatch(params).promise();
-            // const messageSendPromise = Promise.resolve("sent to queue");
-            
-            // messageSendPromise.then( (f ) => {console.log("finished sending to queue in ",Date.now() - t, " - ", f) } );
             
             return messageSendPromise;
         } else {
@@ -543,30 +530,30 @@ exports.handler = async (event) => {
 				}
 			});
 		});
-		Object.keys(parsed.optionGroupsMap).forEach(key => {
-			let optionGroup = parsed.optionGroupsMap[key];
-			if(optionGroup.options) {
-				optionGroup.options.forEach(option => {
-					option.prices.forEach(price => {
-						if(price.priceZone && price.priceZone.name && pricebookByNameMap.hasOwnProperty(price.priceZone.name)) {
-							let pricebook = pricebookByNameMap[price.priceZone.name];
-							price['pricebookId'] = pricebook.id;
-							price['currencyCode'] = pricebook.currencies[0];
-							//price['currencyCode'] = convertCurrency(price.currency, option);
-						} else {
-							let priceZoneName;
-							if(price.priceZone && price.priceZone.name) {
-								priceZoneName = price.priceZone.name;
-							} else {
-								priceZoneName = price.zoneId;
-							}
-							logItemEvent({'event': 'error', 'errorSource':'priceZoneNotFound', 'objectType':'option', 'objectId': option.id, 'priceZone':priceZoneName}, sourceKey, orgId);	
-							parseErrorsExist = true;								
-						}						
-					});
-				});
-			}
-		});
+		// Object.keys(parsed.optionGroupsMap).forEach(key => {
+		// 	let optionGroup = parsed.optionGroupsMap[key];
+		// 	if(optionGroup.options) {
+		// 		optionGroup.options.forEach(option => {
+		// 			option.prices.forEach(price => {
+		// 				if(price.priceZone && price.priceZone.name && pricebookByNameMap.hasOwnProperty(price.priceZone.name)) {
+		// 					let pricebook = pricebookByNameMap[price.priceZone.name];
+		// 					price['pricebookId'] = pricebook.id;
+		// 					price['currencyCode'] = pricebook.currencies[0];
+		// 					//price['currencyCode'] = convertCurrency(price.currency, option);
+		// 				} else {
+		// 					let priceZoneName;
+		// 					if(price.priceZone && price.priceZone.name) {
+		// 						priceZoneName = price.priceZone.name;
+		// 					} else {
+		// 						priceZoneName = price.zoneId;
+		// 					}
+		// 					logItemEvent({'event': 'error', 'errorSource':'priceZoneNotFound', 'objectType':'option', 'objectId': option.id, 'priceZone':priceZoneName}, sourceKey, orgId);	
+		// 					parseErrorsExist = true;								
+		// 				}						
+		// 			});
+		// 		});
+		// 	}
+		// });
 		parsed.items.forEach(item => {
 			setUiDisplayAttributesAs(item, parsed.optionGroupsMap);
 		});

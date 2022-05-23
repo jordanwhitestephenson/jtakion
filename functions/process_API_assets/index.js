@@ -161,9 +161,6 @@ exports.handler = async (event) => {
 			// The request was made and the server responded with a status code
 			// that falls out of the range of 2xx
 			logItemEvent( events.failedApiCall(url, body, error.response.data, error.response.status, error.response.headers), sourceKey, orgId);
-			console.log(error.response.data);
-			console.log(error.response.status);
-			console.log(error.response.headers);
 		} else if (error.request) {
 			// The request was made but no response was received
 			// `error.request` is an instance of XMLHttpRequest in the browser and an instance of
@@ -182,7 +179,6 @@ exports.handler = async (event) => {
         console.log('metadata: '+metadata);		
 		return lookupAsset(option.sourceKey, option.subgroupId, option.catalog.code)
         .then( (res) => {
-			console.log('query results', res);
 			let columns = res.columnMetadata.map(c => c.name);
 			let data = res.records.map(r => {
 				let obj = {};
@@ -191,8 +187,6 @@ exports.handler = async (event) => {
 				});
 				return obj;
 			});
-			console.log(data);
-			console.log(option, option.subGroupOptions);
 			console.log('subgroupoptions: '+option.id+' products'+data.length+' '+option.subGroupOptions.length+' '+option.subGroupOptions+' '+!option.subGroupOptions.some(sgo => data.map(p => !p['option_id']).includes(sgo)));
 			if(data && !option.subGroupOptions.some(sgo => data.map(p => !p['option_id']).includes(sgo))) {
 				let optionIds = [];
@@ -227,7 +221,9 @@ exports.handler = async (event) => {
         if(!item.modelId || !hasGroupOptions){
 			return createOrUpdateModel(item).then( completeItem => {
 				console.log({'event': 'modelIdAdded', 'itemId': completeItem.id, 'modelId': completeItem.modelId});
+				console.log('***COMPLETEITEM', completeItem)
 				return completeItem;
+
 			});
         }else{
             return Promise.resolve(item);
@@ -448,7 +444,6 @@ exports.handler = async (event) => {
                 uploadModelConfig
             ).then( r => {
 				//get jobId based on result
-				//console.log('model job results ', r);
 				const jobId = r.data.jobId;
 				//poll for job completion
 				return pollJob(jobId, apiUrl, apiToken, {
@@ -458,7 +453,6 @@ exports.handler = async (event) => {
 					let status = pollResult.status;
 					let success = pollResult.success;
 					if (status === 'stopped' && success) {
-						//console.log('model job stopped, calling job runs api');
 						const runsUrl = `${apiUrl}/jobs/runs?orgId=${orgId}&jobId=${jobId}`;
 						const runsStartTime = Date.now();
 						return axios.get(runsUrl, { 'headers': { 'Authorization': 'Bearer '+apiToken } })
@@ -466,11 +460,9 @@ exports.handler = async (event) => {
 								const { runs } = res.data;
 								const { results } = runs[0];
 								const fileId = results.files[0].id;
-								//console.log('fileId ', fileId);
 								const filesStartTime = Date.now();
 								return axios.get(`${apiUrl}/files/${fileId}/content`, { 'headers': { 'Authorization': 'Bearer '+apiToken } })
 									.then(fileContent => {
-										//console.log('model job run results: ', fileContent);
 										//need to get the model id from the results
 										item.modelId = fileContent.data[0].id;
 										return item;
@@ -553,8 +545,6 @@ exports.handler = async (event) => {
     }
     
     function flushToItemQueue(items, queue, delay) {
-        //console.log("flushing ",items.length, " items to queue");
-        
         if(items.length <= 0){
             return Promise.resolve("no items to send to queue");
         }
@@ -562,7 +552,6 @@ exports.handler = async (event) => {
         var params = {
             "Entries": items.map( (it, i) => {
                 console.log( {"event": "enqueue", "queue":queue.name, "objectType":it.type, "id":it.id} );
-                //logItemEvent( events.enqueueItemOption(it.id, it.type, queue.name), it.sourceKey);
                 return {
                     "Id":it.id,
                     "DelaySeconds": delay,
@@ -585,8 +574,6 @@ exports.handler = async (event) => {
     
     const itemsToUpload = [];
     
-    // console.log(event.Records);
-    
     //event.Records.forEach(r => {
 	for(let i=0; i<event.Records.length; i++) {
 		let r = event.Records[i];
@@ -595,23 +582,14 @@ exports.handler = async (event) => {
 		let notCancelled = await checkIfJobCancelled(body.sourceKey);
 		if(notCancelled) {
 			if (body && body.type && body.type === 'option') {
-				
-				//logItemEvent( events.dequeueOption(body.id, getQueueTime(r)), body.sourceKey);
-				
-				//TODO refactor to seperate getting material from getting subgroups
-				
-				// console.log('Group: ', body);
 				const option = addMaterialsToOption(body);
 				itemsToUpload.push(option);
-			} else if (body && body.type && body.type === 'item') {
-				//console.log('Item: ', body);
-				
-				//logItemEvent( events.dequeueItem(body.id, getQueueTime(r)), body.sourceKey);
-				
-				//TODO refactor to seperate getting subGroups from creating/updating model
-				
+			} else if (body && body.type && body.type === 'item') {				
 				const item = addModelToItem(body);
-				//console.log({'event': 'modelIdAdded', 'itemId': item.id, 'modelId': item.modelId});
+				itemsToUpload.push(item);
+			}
+			else if (body && body.type && body.type === 'family') {				
+				const item = addModelToItem(body);
 				itemsToUpload.push(item);
 			}
 		} else {
@@ -620,15 +598,12 @@ exports.handler = async (event) => {
     };
     
     function needsMaterial(option){
-       // console.log('needsMaterial: '+option.id+' image: '+option.image+' materialId: '+option.materialId+' materialChecked: '+option.materialChecked);
         return option.image && !option.materialId && !option.materialChecked ;
     }
     function needsModel(item){
-        //console.log('needsModel: '+item.id+' item.modelid: '+item.modelId);
         return item.type === 'item' && !item.modelId ;
     }
     function needsSubGroup(option){
-        //console.log('needsSubGroup: '+option.id+' subGroupOptions: '+option.subGroupOptions+' subGroupOptionIds: '+option.subGroupOptionIds);
         return option.subGroupOptions && (!option.subGroupOptionIds || option.subGroupOptionIds.length !== option.subGroupOptions.length) ;
     }
     function exceedsCheckingAssets(option){
@@ -638,9 +613,7 @@ exports.handler = async (event) => {
         return (needsModel(o) || needsSubGroup(o)) && !exceedsCheckingAssets(o);
     }
     
-    return Promise.all(itemsToUpload).then( res => {
-        //console.log("response from promise.all", JSON.stringify(res) );
-        
+    return Promise.all(itemsToUpload).then( res => {        
         const done = res.filter( o => !needsMaterial(o) && !needsRetry(o) );
         const needingMaterial = res.filter( o => needsMaterial(o) );
         const needingRetry = res.filter( o => needsRetry(o) && !needsMaterial(o) );
@@ -648,7 +621,6 @@ exports.handler = async (event) => {
         const itemsFailedGettingAssets = done.filter( exceedsCheckingAssets );
         
         if (itemsFailedGettingAssets.length > 0) {
-            //console.log({'event': 'itemsFailedGettingAssets', 'items': JSON.stringify(itemsFailedGettingAssets)});
 			itemsFailedGettingAssets.forEach(ifga => {
 				logItemEvent( events.itemsFailedGettingAssets(ifga.id, MAX_NUMBER_OF_RETRIES), ifga.sourceKey, ifga.orgId);
 			});
