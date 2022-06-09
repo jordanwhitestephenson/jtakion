@@ -578,7 +578,7 @@ exports.handler = async (event) => {
 	for(let i=0; i<event.Records.length; i++) {
 		let r = event.Records[i];
         const body = JSON.parse(r.body);
-        //console.log('Body: ', body);
+        console.log('Body in forEach of events', body.type);
 		let notCancelled = await checkIfJobCancelled(body.sourceKey);
 		if(notCancelled) {
 			if (body && body.type && body.type === 'option') {

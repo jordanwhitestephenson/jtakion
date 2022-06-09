@@ -75,6 +75,7 @@
                 "disabled": false
             }
         ],
+     
         "attributes": [
             {
                 "id": "89d685a0-d872-43fb-9640-cfe7df04f041",
@@ -82,10 +83,11 @@
                 "name": "Style",
                 "blacklist": [],
                 "assetType": "item",
+        
                 "values": [
                     [
                         "AND",
-                        "catalog-version_tfs-usr-test-1.001",
+                        "#catalog-version_tfs-usr-test-1.001",
                         "#type_product",
                         "#family_around-guest-chair-pdp"
                     ]

@@ -60,7 +60,7 @@ exports.handler = async (event) => {
       });
       return obj;
     });
-    console.log(data, jobName, 'WHATS WRONG WITH THIS DATA')
+    console.log(data, jobName, "WHATS WRONG WITH THIS DATA");
     if (data.length > 0 && data[0]["stat"] === "cancelled") {
       return false;
     } else {
@@ -460,183 +460,155 @@ exports.handler = async (event) => {
       query: {
         metadata: {
           itemId: item.id,
-          catalog_code: item.family ? item.catalogCode : item.catalog.code,
+          catalog_code: item.catalog.code,
         },
       },
     };
     let product = {};
-    let family = {};
 
-    if (!item.family) {
-      product = {
-        name: item.pn,
-        type: "item",
-        orgId: item.orgId, //getOrgId(item.destEnv),
-        description: item.description,
+    product = {
+      name: item.pn,
+      type: "item",
+      orgId: item.orgId, //getOrgId(item.destEnv),
+      description: item.description,
 
-        tags: ["product", `${item.catalog.code}`],
-        metadata: [
-          {
-            type: "String",
-            name: "itemId",
-            blacklist: [],
-            values: [],
-            defaultValue: item.id,
-          },
-          {
-            type: "String",
-            name: "catalog_code",
-            blacklist: [],
-            values: [],
-            defaultValue: item.catalog.code,
-          },
-          {
-            type: "String",
-            name: "catalog_desc",
-            blacklist: [],
-            values: [],
-            defaultValue: item.catalog.desc,
-          },
-          {
-            type: "String",
-            name: "catalog_year",
-            blacklist: [],
-            values: [],
-            defaultValue: item.catalog.year,
-          },
-          {
-            type: "String",
-            name: "catalog_month",
-            blacklist: [],
-            values: [],
-            defaultValue: item.catalog.month,
-          },
-          {
-            type: "String",
-            name: "catalog_day",
-            blacklist: [],
-            values: [],
-            defaultValue: item.catalog.day,
-          },
-          {
-            type: "String",
-            name: "catalog_version",
-            blacklist: [],
-            values: [],
-            defaultValue: item.catalog.version,
-          },
-          {
-            type: "String",
-            name: "_UI_displayAttributesAs",
-            blacklist: [],
-            values: [],
-            defaultValue: JSON.stringify(item.displayAttributesAs),
-          },
-          {
-            type: "String",
-            name: "source",
-            defaultValue: item.sourceKey,
-          },
-        ],
-        rules: [],
-      };
-      if (
-        item.itemGroups &&
-        !item.itemGroups.some((grp) => !grp.attributeIds)
-      ) {
-        product.attributes = item.itemGroups.map((att) => {
-          const defaultValue =
-            att.attributeIds.length === 1
-              ? att.attributeIds[0]
-              : { assetId: "" };
-
-          return {
-            type: "Asset",
-            name: att.groupName,
-            blacklist: [],
-            assetType: "item",
-            values: att.attributeIds,
-            defaultValue: defaultValue,
-          };
-        });
-      }
-
-      let rule = {
-        conditions: [],
-        actions: [
-          {
-            type: "custom-script",
-            name: "custom-script",
-            content: ruleContent,
-            enabled: false,
-            error: "",
-          },
-        ],
-        name: "Propagate Nested Attribute Values",
-      };
-      product.rules.push(rule);
-
-      if (item.prices) {
-        if (!product.attributes) {
-          product.attributes = [];
-        }
-        let pricingObj = {
-          type: "Pricing",
-          name: "Pricing",
+      tags: ["product", `${item.catalog.code}`],
+      metadata: [
+        {
+          type: "String",
+          name: "itemId",
+          blacklist: [],
           values: [],
-        };
-        let pricebookToCurrencyMap = {};
-        item.prices.forEach((price) => {
-          if (!pricebookToCurrencyMap.hasOwnProperty(price.pricebookId)) {
-            //not in the map yet
-            let currencyArray = [
-              { code: price.currencyCode, price: price.price },
-            ];
-            pricebookToCurrencyMap[price.pricebookId] = currencyArray;
-          } else {
-            //in the map already
-            let currencyArray = pricebookToCurrencyMap[price.pricebookId];
-            currencyArray.push({
-              code: price.currencyCode,
-              price: price.price,
-            });
-          }
-        });
-        Object.keys(pricebookToCurrencyMap).forEach((pricebookId) => {
-          let priceObj = {
-            pricebook: pricebookId,
-            currencies: {},
-          };
-          let currencyArray = pricebookToCurrencyMap[pricebookId];
-          currencyArray.forEach((curr) => {
-            priceObj.currencies[curr.code] = parseFloat(curr.price);
-          });
-
-          pricingObj.values.push(priceObj);
-        });
-        product.attributes.push(pricingObj);
-      }
-    }
-    
-    if (item.family) {
-      family = {
-        name: item.name,
-        type: "item",
-        orgId: item.orgId, //getOrgId(item.destEnv),
-
-        tags: item.tags,
-        metadata: item.metadata,
-        proxyId: item.proxyId,
-        rules: item.rules,
-        attributes: item.attributes,
-        asset: {
-          assetId: item.modelId,
-          configuration: "",
-          type: "model",
+          defaultValue: item.id,
         },
-      };
+        {
+          type: "String",
+          name: "catalog_code",
+          blacklist: [],
+          values: [],
+          defaultValue: item.catalog.code,
+        },
+        {
+          type: "String",
+          name: "catalog_desc",
+          blacklist: [],
+          values: [],
+          defaultValue: item.catalog.desc,
+        },
+        {
+          type: "String",
+          name: "catalog_year",
+          blacklist: [],
+          values: [],
+          defaultValue: item.catalog.year,
+        },
+        {
+          type: "String",
+          name: "catalog_month",
+          blacklist: [],
+          values: [],
+          defaultValue: item.catalog.month,
+        },
+        {
+          type: "String",
+          name: "catalog_day",
+          blacklist: [],
+          values: [],
+          defaultValue: item.catalog.day,
+        },
+        {
+          type: "String",
+          name: "catalog_version",
+          blacklist: [],
+          values: [],
+          defaultValue: item.catalog.version,
+        },
+        {
+          type: "String",
+          name: "_UI_displayAttributesAs",
+          blacklist: [],
+          values: [],
+          defaultValue: JSON.stringify(item.displayAttributesAs),
+        },
+        {
+          type: "String",
+          name: "source",
+          defaultValue: item.sourceKey,
+        },
+      ],
+      rules: [],
+    };
+    if (item.itemGroups && !item.itemGroups.some((grp) => !grp.attributeIds)) {
+      product.attributes = item.itemGroups.map((att) => {
+        const defaultValue =
+          att.attributeIds.length === 1 ? att.attributeIds[0] : { assetId: "" };
+
+        return {
+          type: "Asset",
+          name: att.groupName,
+          blacklist: [],
+          assetType: "item",
+          values: att.attributeIds,
+          defaultValue: defaultValue,
+        };
+      });
     }
 
+    let rule = {
+      conditions: [],
+      actions: [
+        {
+          type: "custom-script",
+          name: "custom-script",
+          content: ruleContent,
+          enabled: false,
+          error: "",
+        },
+      ],
+      name: "Propagate Nested Attribute Values",
+    };
+    product.rules.push(rule);
+
+    if (item.prices) {
+      if (!product.attributes) {
+        product.attributes = [];
+      }
+      let pricingObj = {
+        type: "Pricing",
+        name: "Pricing",
+        values: [],
+      };
+      let pricebookToCurrencyMap = {};
+      item.prices.forEach((price) => {
+        if (!pricebookToCurrencyMap.hasOwnProperty(price.pricebookId)) {
+          //not in the map yet
+          let currencyArray = [
+            { code: price.currencyCode, price: price.price },
+          ];
+          pricebookToCurrencyMap[price.pricebookId] = currencyArray;
+        } else {
+          //in the map already
+          let currencyArray = pricebookToCurrencyMap[price.pricebookId];
+          currencyArray.push({
+            code: price.currencyCode,
+            price: price.price,
+          });
+        }
+      });
+      Object.keys(pricebookToCurrencyMap).forEach((pricebookId) => {
+        let priceObj = {
+          pricebook: pricebookId,
+          currencies: {},
+        };
+        let currencyArray = pricebookToCurrencyMap[pricebookId];
+        currencyArray.forEach((curr) => {
+          priceObj.currencies[curr.code] = parseFloat(curr.price);
+        });
+
+        pricingObj.values.push(priceObj);
+      });
+      product.attributes.push(pricingObj);
+    }
     if (item.modelId) {
       product.asset = {
         assetId: item.modelId,
@@ -645,13 +617,79 @@ exports.handler = async (event) => {
       };
     }
 
-    //NEW CODE//
-    if (item.family) {
-      uploadItem.product = family;
-    } else {
-      uploadItem.product = product;
+    uploadItem.product = product;
+
+    console.log(uploadItem, "uploadItem in createItem");
+    return uploadItem;
+  }
+  function createFamily(item) {
+    let uploadItem = {
+      m: { itemId: item.id },
+      query: {
+        metadata: {
+          itemId: item.id,
+          catalog_code: item.catalogCode,
+        },
+      },
+      product: {
+        name: item.name,
+        type: "item",
+        orgId: item.orgId,
+        tags: item.tags,
+        metadata: item.metadata,
+        proxyId: item.proxyId,
+        rules: item.rules,
+        attributes: item.attributes,
+        asset: {
+          assetId: "",
+          configuration: "",
+          type: "model",
+        },
+      },
     }
-    console.log("UPDLOAD ITEM RESPONSE,", uploadItem);
+    if (item.modelId) {
+      uploadItem.product.asset = {
+        assetId: item.modelId,
+        configuration: "",
+        type: "model",
+      };
+    };
+    console.log(uploadItem, "uploadItem in createNewFamily");
+    return uploadItem;
+  }
+  function createNewProduct(item) {
+
+    
+    let uploadItem = {
+      m: { itemId: item.id },
+      query: {
+        metadata: {
+          itemId: item.id,
+          catalog_code: item.catalogCode,
+        },
+      },
+      product: {
+        name: item.name,
+        type: "item",
+        metadata: item.metadata,
+        tags: item.tags,
+        rules: item.rules,
+        attributes: item.attributes,
+        forms: item.forms,
+        script: item.script,
+        orgId: item.orgId,
+        // proxyId: item.proxyId,
+        asset: item.asset,
+      },
+    };
+    if (item.modelId) {
+      uploadItem.product.asset = {
+        assetId: item.modelId,
+        configuration: "",
+        type: "model",
+      };
+    };
+    console.log(uploadItem, "uploadItem in createNewProduct");
     return uploadItem;
   }
 
@@ -700,8 +738,7 @@ exports.handler = async (event) => {
         }),
         QueueUrl: process.env.itemsNeedingAssetsQueue, //'https://sqs.us-east-1.amazonaws.com/890084055036/itemsNeedingAssets'
       };
-      console.log(params.Entries, 'PARAMS')
-
+      console.log(params.Entries, "PARAMS");
 
       console.log("sending to queue ", util.inspect(params, { depth: 5 }));
 
@@ -787,6 +824,7 @@ exports.handler = async (event) => {
             } else {
               keyArray = bodySourceKeys[itm.m.optionId];
             }
+            console.log(keyArray, "keyArraykeyArraykeyArray jun7");
             if (error.response) {
               // The request was made and the server responded with a status code
               // that falls out of the range of 2xx
@@ -857,6 +895,7 @@ exports.handler = async (event) => {
                       importDuration +
                       " seconds",
                     JSON.stringify(itemsToUploadEnv),
+                    "error, '!123123",
                     error.message
                   ),
                   k,
@@ -927,9 +966,18 @@ exports.handler = async (event) => {
                                 promises.push(completedItemPromise);
                               });
                               return p.metadata.itemId;
-                            } else {
+                            }
+                            // if(p.metadata.optionId) {
+
+                            // }
+                            else {
                               let sourceKeyArray =
                                 bodySourceKeys[p.metadata.optionId];
+                              console.log(
+                                "in else statement jun8",
+                                p,
+                                sourceKeyArray
+                              );
                               sourceKeyArray.forEach((sourceKey) => {
                                 logItemEvent(
                                   events.createdOption(
@@ -956,6 +1004,7 @@ exports.handler = async (event) => {
                               return p.metadata.optionId;
                             }
                           });
+                          console.log(itemsToUploadEnv, "itemID is undefined");
                           const productsFailed = itemsToUploadEnv
                             .filter((p) => {
                               console.log(p);
@@ -968,6 +1017,10 @@ exports.handler = async (event) => {
                               console.log(p.m);
                               if (p.m.itemId) {
                                 let sourceKeyArray = bodySourceKeys[p.m.itemId];
+                                console.log(
+                                  sourceKeyArray,
+                                  "undefined here jun71"
+                                );
                                 sourceKeyArray.forEach((sourceKey) => {
                                   logItemEvent(
                                     events.errorCreatingItem(p.m.itemId),
@@ -979,6 +1032,10 @@ exports.handler = async (event) => {
                               } else {
                                 let sourceKeyArray =
                                   bodySourceKeys[p.m.optionId];
+                                console.log(
+                                  sourceKeyArray,
+                                  "undefined here jun72"
+                                );
                                 sourceKeyArray.forEach((sourceKey) => {
                                   logItemEvent(
                                     events.errorCreatingOption(p.m.optionId),
@@ -1000,7 +1057,8 @@ exports.handler = async (event) => {
                         });
                       })
                       .catch((error) => {
-                        console.log(error);
+                        //NOT CHATCHING HERE
+                        console.log(error, itemsToUploadEnv, "GETTINGHERE");
                         const filesEndTime = Date.now();
                         let filesDuration =
                           Math.abs(filesStartTime - filesEndTime) / 1000;
@@ -1008,6 +1066,7 @@ exports.handler = async (event) => {
                         const endDate = new Date(filesEndTime);
                         let formattedStart = startDate.toISOString();
                         let formattedEnd = endDate.toISOString();
+                 
                         itemsToUploadEnv.forEach((itm) => {
                           let keyArray;
                           if (itm.m.itemId) {
@@ -1022,7 +1081,7 @@ exports.handler = async (event) => {
                               logItemEvent(
                                 events.failedApiCall(
                                   `${apiUrl}/files/${fileId}/content start: ${formattedStart} end: ${formattedEnd} duration: ${filesDuration} seconds`,
-                                  "",
+                                  "this is here 3",
                                   error.response.data,
                                   error.response.status,
                                   error.response.headers
@@ -1043,7 +1102,7 @@ exports.handler = async (event) => {
                               logItemEvent(
                                 events.noResponseApiCall(
                                   `${apiUrl}/files/${fileId}/content start: ${formattedStart} end: ${formattedEnd} duration: ${filesDuration} seconds`,
-                                  "",
+                                  "this is here 2",
                                   error
                                 ),
                                 k,
@@ -1057,7 +1116,7 @@ exports.handler = async (event) => {
                               logItemEvent(
                                 events.unknownErrorApiCall(
                                   `${apiUrl}/files/${fileId}/content start: ${formattedStart} end: ${formattedEnd} duration: ${filesDuration} seconds`,
-                                  "",
+                                  "this is here 1",
                                   error.message
                                 ),
                                 k,
@@ -1088,6 +1147,7 @@ exports.handler = async (event) => {
                       if (error.response) {
                         // The request was made and the server responded with a status code
                         // that falls out of the range of 2xx
+                        console.log(error, "ERROR3", keyArray);
                         keyArray.forEach((k) => {
                           logItemEvent(
                             events.failedApiCall(
@@ -1108,7 +1168,7 @@ exports.handler = async (event) => {
                         // The request was made but no response was received
                         // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
                         // http.ClientRequest in node.js
-                        console.log(error.request);
+                        console.log(error.request, "error2", keyArray);
                         keyArray.forEach((k) => {
                           logItemEvent(
                             events.noResponseApiCall(
@@ -1122,7 +1182,7 @@ exports.handler = async (event) => {
                         });
                       } else {
                         // Something happened in setting up the request that triggered an Error
-                        console.log("Error", error.message);
+                        console.log("Error 1", error.message, keyArray);
                         keyArray.forEach((k) => {
                           logItemEvent(
                             events.unknownErrorApiCall(
@@ -1130,6 +1190,7 @@ exports.handler = async (event) => {
                               "",
                               error.message
                             ),
+                            "Error 1111123",
                             k,
                             orgId
                           );
@@ -1195,6 +1256,7 @@ exports.handler = async (event) => {
                               JSON.stringify(itemsToUploadEnv),
                               `Job timed out ${process.env.jobRetryLimit} times. Item ${idOfItem} failed to import.`
                             ),
+                            'ERROR 5555',
                             k,
                             orgId
                           );
@@ -1210,6 +1272,7 @@ exports.handler = async (event) => {
                   "item import job failed for items " +
                     itemsToUploadEnv.map((i) => i.m)
                 );
+
                 itemsToUploadEnv.forEach((itm) => {
                   let keyArray;
                   if (itm.m.itemId) {
@@ -1224,6 +1287,7 @@ exports.handler = async (event) => {
                         JSON.stringify(itemsToUploadEnv),
                         "job failed"
                       ),
+                      "error112333",
                       k,
                       orgId
                     );
@@ -1259,7 +1323,7 @@ exports.handler = async (event) => {
   for (let i = 0; i < event.Records.length; i++) {
     let r = event.Records[i];
     const body = JSON.parse(r.body);
-    console.log(body.type, body.family, "BODY RESPONSE");
+    console.log(body.type, "BODY RESPONSE");
     let notCancelled = await checkIfJobCancelled(body.sourceKey);
     if (notCancelled) {
       const getQueueTime =
@@ -1310,16 +1374,23 @@ exports.handler = async (event) => {
         }
 
         //***give new type ==== "family"//*** */
-      } else if (body && body.type && body.type === "item") {
+      } else if 
+      (body && body.type && body.type === "item") {
         console.log(
           "body Type is item, which we want!",
           body,
           body.modelId,
-          body.orgId,
+          body.newproduct,
           body.family
         );
+        // const item;
 
-        const item = createItem(body);
+        // const item = body.newproduct ? createNewProduct(body) : body.family ? createFamily(body) : createItem(body);
+        const item = body.newproduct
+          ? createNewProduct(body)
+          : body.family
+          ? createFamily(body)
+          : createItem(body);
 
         console.log(item, "response from create item");
 
@@ -1327,8 +1398,12 @@ exports.handler = async (event) => {
           console.log("no items to update in bodyorgID");
           itemsToUpload[body.orgId] = [];
         }
-        if (!body.modelId) {
+        if(body.newproduct && !body.modelId) {
+          itemsToUpload[body.orgId].push(item);
+        }
+        if (!body.modelId && !body.newproduct) {
           console.log("DO WE have a modelID");
+          //switching to sending item vs body
           sendItemToQueue(body);
         } else {
           itemToBodyMap[item.m.itemId] = body;

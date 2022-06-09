@@ -170,7 +170,7 @@ exports.handler = async (event) => {
   });
 
   const putItemOnQueue = (item, parsed) => {
-    console.log(item.id, item.name, 'WHY NO ID')
+    console.log(item.id, item.name, item, 'WHY NO ID')
     return Promise.all(
       item.itemGroups ? item.itemGroups 
         .filter((ig) => ig.groupOptionFirstUsed)
@@ -203,13 +203,13 @@ exports.handler = async (event) => {
   };
 
   function pushAllItems(parsed) {
-    console.log(parsed, 'IDS HERE')
-    const  itemsPromise =  Promise.all(
-      [...parsed.family.map((i) => putItemOnQueue(i, parsed)), ...parsed.items.map((i) => putItemOnQueue(i, parsed))] 
-      
-    )
-    parsed.family.map((i) => console.log(i.id, 'family map'))
-    parsed.items.map((i) => console.log(i.id, 'items map'))
+    console.log('PUSH ALL ITEMS has been fired', parsed)
+    // const  itemsPromise =  Promise.all(
+    //   [ ...parsed.items.map((i) => putItemOnQueue(i, parsed)), ...parsed.products.map((i) => putItemOnQueue(i, parsed)), ...parsed.family.map((i) => putItemOnQueue(i, parsed))] 
+    // ) 
+        const  itemsPromise =  Promise.all(
+      [...parsed.products.map((i) => putItemOnQueue(i, parsed))] 
+    ) 
     return itemsPromise;
   }
 
@@ -255,8 +255,11 @@ exports.handler = async (event) => {
     console.log(
       "flushing ",
       itemsToQueueBuffer.length,
+      itemsToQueueBuffer,
       " items to queue is my family objecti n here",
-      itemsToQueueBuffer
+      // itemsToQueueBuffer.map((it, i) => {
+      //   console.log(it.id, 'WHERE ARE WE MISSING A FUCKING ID', it)
+      // })
     );
 
     if (itemsToQueueBuffer.length > 0) {
@@ -349,6 +352,7 @@ exports.handler = async (event) => {
 
   function createTranslationArray(obj, defaultLanguageId) {
     let columns = [];
+    console.log('obj translations undefined?',obj.translations)
     obj.translations.forEach((translation) => {
       let desc = translation.description;
       desc = desc.replace(/"/g, '""');
@@ -371,6 +375,7 @@ exports.handler = async (event) => {
     csvFileContent = createHeader(languageMap, csvFileContent);
     //create row for each item
     parsed.items.forEach((item) => {
+      console.log(item.translations, item, 'LOOKING FOR ITEM with translations')
       if (item.translations) {
         let columns = createTranslationArray(item, defaultLanguageId);
         if (!canonicalNames.includes(columns[0])) {
@@ -582,7 +587,7 @@ exports.handler = async (event) => {
 
   return parsedFilesCache[srcKey]
     .then((parsed) => {
-      const url = `${
+      const familyurl = `${
         "https://preview.threekit.com/api/assets?name=" +
         parsed.family[0].modelName +
         "&ordId=" +
@@ -591,20 +596,32 @@ exports.handler = async (event) => {
         parsed.family[0].apiToken
       }`;
 
+
       async function getModelID() {
-        return await axios.get(url).then((a) => a.data.assets);
+        return await axios.get(familyurl).then((a) => a.data.assets);
       }
+
+
       async function updateParsedFamilyModalIdResult() {
         return await getModelID();
       }
 
+
+      // updateParsedProductsModalIdResult().then(res => {
+      //   console.log('result from axious', res)
+      //   parsed.products[0].modelId = res.length === 0 ? '8d1e2cdd-f390-4fc3-afd5-8531a22d4e5c' : res[0].id;
+      //   parsed.products[0].proxyId = res.length === 0 ? '8d1e2cdd-f390-4fc3-afd5-8531a22d4e5c' : res[0].id
+      // })
+
       return updateParsedFamilyModalIdResult()
         .then((res) => {
+          console.log(res,  parsed.family, 'is this the model ID that we75f4408f-99a4-4e34-bee6-9b8b08592dc7 ')
           parsed.family[0].modelId = res.length === 0 ? '8d1e2cdd-f390-4fc3-afd5-8531a22d4e5c' : res[0].id;
+          parsed.family[0].id = res.length === 0 ? '8d1e2cdd-f390-4fc3-afd5-8531a22d4e5c' : res[0].id;
           parsed.family[0].proxyId = res.length === 0 ? '8d1e2cdd-f390-4fc3-afd5-8531a22d4e5c' : res[0].id
+
           return parsed;
         })
-        // .then((res) => res);
     })
     .then((parsed) => {
       console.log("ITEMS LOOK HERE", parsed);
@@ -708,13 +725,14 @@ exports.handler = async (event) => {
           );
           return handleTranslations(parsed)
             .then((res) => {
-              console.log("finished translations");
+              console.log("finished translations", res, parsed);
               logItemEvent(
                 { event: "translations-added", objectType: "translation" },
                 sourceKey,
                 orgId
               );
               if (parseErrorsExist) {
+                console.log('parsed item error exists')
                 logItemEvent(
                   {
                     event: "error",
@@ -725,6 +743,8 @@ exports.handler = async (event) => {
                   orgId
                 );
                 return Promise.all([finishLogEvents()]);
+
+
               } else {
                 return pushAllItems(parsed)
                   .then((r) => {
@@ -771,7 +791,7 @@ exports.handler = async (event) => {
             });
         })
         .catch((error) => {
-          console.log("error", error);
+          console.log("error in CATCH STATEMENT end", error);
           finishLogEvents();
           throw error;
         });
