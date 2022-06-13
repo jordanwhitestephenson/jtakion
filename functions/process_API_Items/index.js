@@ -947,6 +947,7 @@ exports.handler = async (event) => {
                             if (p.metadata.itemId) {
                               let sourceKeyArray =
                                 bodySourceKeys[p.metadata.itemId];
+                                console.log(bodySourceKeys, 'bodySourceKeys', bodySourceKeys[p.metadata.itemId], 'bodySourceKeys[p.metadata.itemId]', p.metadata.itemId, 'itemID' )
                               sourceKeyArray.forEach((sourceKey) => {
                                 logItemEvent(
                                   events.createdItem(

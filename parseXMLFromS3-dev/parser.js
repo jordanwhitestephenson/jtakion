@@ -240,7 +240,6 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {
   var setProductDescription = function (describeMe, textObj) {
     return describeMe != null
       ? function (t) {
-        console.log(t, 'NAME FOR PRODUCT DESCRIPTION')
           currentSingleProduct.name = t;
         }
       : identFunc;
@@ -267,10 +266,7 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {
             ]],
             defaultValue: { assetId: "" },
           };
-          console.log(describeMe.id, 'describeMe', currentSingleProduct.id, 'currentSingleProduct')
-          // describeMe.translations = [] 
           describeMe.description = ""
-          // describeMe.translations.push(textObj);
           if (textObj.langId === defaultLanguageId) {
             //only set description if it is the default language id (could be multiple languages)
             describeMe.description = t;
@@ -391,8 +387,6 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {
           currentItem.itemGroups = [];
           currentItem.layers = [];
           currentItem.id = node.attributes.ID ? node.attributes.ID : node.attributes.PN ;
-          console.log('may31-currentItem.id', currentItem.id)
-          //**may31 - this is undefined alot of times */
           currentItem.pn = node.attributes.PN;
           currentItem.vendorId = node.attributes.VENDOR_ID;
           if (currentCatalog) {
@@ -463,8 +457,7 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {
           currentProductFamily.modelName = nameWithSpaces;
           currentProductFamily.name = node.attributes.NAME;
           currentProductFamily.type = "item";
-          //June7th - Do we need to look at an ID
-          // currentProductFamily.id = nameWithSpaces;
+
           let metadata1 = {
             type: "String",
             name: "family",
@@ -503,12 +496,10 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {
           const familyName = node.attributes.NAME;
           const lowerCaseFamily = familyName.toLocaleLowerCase();
           currentProductFamily.tags = [
-            'jordan_test',
             `${"catalog-version_" + currentCatalog.version}`,
             "type_family",
             `${"family_" + lowerCaseFamily.replace(/\s/g, "-")}`,
           ];
-          // currentProductFamily.proxyId = "75ed9de5-bfbc-4a55-9217-256414f8a58a";
           (currentProductFamily.rules = [
             {
               conditions: [],
@@ -679,7 +670,6 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {
           ];
 
           currentSingleProduct.tags = [
-            'jordan_test_product',
             "type_product",
             `${
               "family_" +
@@ -698,10 +688,8 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {
           console.log(node, "CAN WE FIND text attribute?");
           break;
         case "OPTION":
-     
           currentOption = {};
           currentOption.id = node.attributes.ID ? node.attributes.ID : `${'productOption' + node.attributes.NAME }`
-          console.log("may31OPTION id underined", currentOption.id )
           currentOption.name = node.attributes.NAME;
           currentOption.im = node.attributes.IM;
           if (node.attributes.SUBGROUP_ID) {

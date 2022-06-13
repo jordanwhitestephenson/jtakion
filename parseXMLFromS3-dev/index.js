@@ -204,12 +204,12 @@ exports.handler = async (event) => {
 
   function pushAllItems(parsed) {
     console.log('PUSH ALL ITEMS has been fired', parsed)
-    // const  itemsPromise =  Promise.all(
-    //   [ ...parsed.items.map((i) => putItemOnQueue(i, parsed)), ...parsed.products.map((i) => putItemOnQueue(i, parsed)), ...parsed.family.map((i) => putItemOnQueue(i, parsed))] 
-    // ) 
-        const  itemsPromise =  Promise.all(
-      [...parsed.products.map((i) => putItemOnQueue(i, parsed))] 
+    const  itemsPromise =  Promise.all(
+      [ ...parsed.items.map((i) => putItemOnQueue(i, parsed)), ...parsed.products.map((i) => putItemOnQueue(i, parsed)), ...parsed.family.map((i) => putItemOnQueue(i, parsed))] 
     ) 
+      //   const  itemsPromise =  Promise.all(
+      // [...parsed.family.map((i) => putItemOnQueue(i, parsed))] 
+    
     return itemsPromise;
   }
 
@@ -606,20 +606,14 @@ exports.handler = async (event) => {
         return await getModelID();
       }
 
-
-      // updateParsedProductsModalIdResult().then(res => {
-      //   console.log('result from axious', res)
-      //   parsed.products[0].modelId = res.length === 0 ? '8d1e2cdd-f390-4fc3-afd5-8531a22d4e5c' : res[0].id;
-      //   parsed.products[0].proxyId = res.length === 0 ? '8d1e2cdd-f390-4fc3-afd5-8531a22d4e5c' : res[0].id
-      // })
-
       return updateParsedFamilyModalIdResult()
         .then((res) => {
           console.log(res,  parsed.family, 'is this the model ID that we75f4408f-99a4-4e34-bee6-9b8b08592dc7 ')
           parsed.family[0].modelId = res.length === 0 ? '8d1e2cdd-f390-4fc3-afd5-8531a22d4e5c' : res[0].id;
           parsed.family[0].id = res.length === 0 ? '8d1e2cdd-f390-4fc3-afd5-8531a22d4e5c' : res[0].id;
           parsed.family[0].proxyId = res.length === 0 ? '8d1e2cdd-f390-4fc3-afd5-8531a22d4e5c' : res[0].id
-
+          var itemIdIndex = parsed.family[0].metadata.findIndex((obj => obj.name === "itemId"))
+          parsed.family[0].metadata[itemIdIndex].defaultValue = res.length === 0 ? '8d1e2cdd-f390-4fc3-afd5-8531a22d4e5c' : res[0].id
           return parsed;
         })
     })
