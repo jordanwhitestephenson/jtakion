@@ -450,7 +450,9 @@ exports.handler = async (event) => {
 
     return item;
   }
-
+// family's metadata includes: 
+// family name
+// -catalog version and itemId
   // create a item type product with optional id query
   function createItem(item) {
     console.log(item, "Create ITEM ITEM");
@@ -619,18 +621,24 @@ exports.handler = async (event) => {
 
     uploadItem.product = product;
 
-    console.log(uploadItem, "uploadItem in createItem");
+    console.log(uploadItem, item, "uploadItem in createItem");
     return uploadItem;
   }
   function createFamily(item) {
+    
+    const family = item.metadata.filter(item => item.name === 'family')[0]
+    const catalog = item.metadata.filter(item => item.name === 'catalog-version')[0]
+    console.log("CREATE FAMILYS - metadata", item);
+    //createFamily = identifier should be 'type_family' in metadata query, double check ID is unique
     let uploadItem = {
       m: { itemId: item.id },
       query: {
         metadata: {
-          itemId: item.id,
-          catalog_code: item.catalogCode,
+          'catalog-version': catalog.defaultValue,
+          family: family.defaultValue
         },
       },
+      
       product: {
         name: item.name,
         type: "item",
@@ -646,26 +654,28 @@ exports.handler = async (event) => {
           type: "model",
         },
       },
-    }
+    };
     if (item.modelId) {
       uploadItem.product.asset = {
         assetId: item.modelId,
         configuration: "",
         type: "model",
       };
-    };
+    }
     console.log(uploadItem, "uploadItem in createNewFamily");
     return uploadItem;
   }
   function createNewProduct(item) {
-
-    
+    const family = item.metadata.filter(item => item.name === 'family')[0]
+    const groupCode = item.metadata.filter(item => item.name === 'group_code')[0]
+    const catalog = item.metadata.filter(item => item.name === 'catalog-version')[0]
     let uploadItem = {
       m: { itemId: item.id },
       query: {
         metadata: {
-          itemId: item.id,
-          catalog_code: item.catalogCode,
+          'catalog-version': catalog.defaultValue,
+          family: family.defaultValue,
+          group_code: groupCode.defaultValue
         },
       },
       product: {
@@ -678,6 +688,7 @@ exports.handler = async (event) => {
         forms: item.forms,
         script: item.script,
         orgId: item.orgId,
+        //do I need a proxyID
         // proxyId: item.proxyId,
         asset: item.asset,
       },
@@ -688,8 +699,8 @@ exports.handler = async (event) => {
         configuration: "",
         type: "model",
       };
-    };
-    console.log(uploadItem, "uploadItem in createNewProduct");
+    }
+    console.log(uploadItem.query.metadata, item.modelId, "uploadItem in createNewProduct");
     return uploadItem;
   }
 
@@ -947,7 +958,14 @@ exports.handler = async (event) => {
                             if (p.metadata.itemId) {
                               let sourceKeyArray =
                                 bodySourceKeys[p.metadata.itemId];
-                                console.log(bodySourceKeys, 'bodySourceKeys', bodySourceKeys[p.metadata.itemId], 'bodySourceKeys[p.metadata.itemId]', p.metadata.itemId, 'itemID' )
+                              console.log(
+                                bodySourceKeys,
+                                "bodySourceKeys",
+                                bodySourceKeys[p.metadata.itemId],
+                                "bodySourceKeys[p.metadata.itemId]",
+                                p.metadata.itemId,
+                                "itemID"
+                              );
                               sourceKeyArray.forEach((sourceKey) => {
                                 logItemEvent(
                                   events.createdItem(
@@ -1067,7 +1085,7 @@ exports.handler = async (event) => {
                         const endDate = new Date(filesEndTime);
                         let formattedStart = startDate.toISOString();
                         let formattedEnd = endDate.toISOString();
-                 
+
                         itemsToUploadEnv.forEach((itm) => {
                           let keyArray;
                           if (itm.m.itemId) {
@@ -1257,7 +1275,7 @@ exports.handler = async (event) => {
                               JSON.stringify(itemsToUploadEnv),
                               `Job timed out ${process.env.jobRetryLimit} times. Item ${idOfItem} failed to import.`
                             ),
-                            'ERROR 5555',
+                            "ERROR 5555",
                             k,
                             orgId
                           );
@@ -1375,8 +1393,7 @@ exports.handler = async (event) => {
         }
 
         //***give new type ==== "family"//*** */
-      } else if 
-      (body && body.type && body.type === "item") {
+      } else if (body && body.type && body.type === "item") {
         console.log(
           "body Type is item, which we want!",
           body,
@@ -1384,24 +1401,22 @@ exports.handler = async (event) => {
           body.newproduct,
           body.family
         );
-        // const item;
 
-        // const item = body.newproduct ? createNewProduct(body) : body.family ? createFamily(body) : createItem(body);
         const item = body.newproduct
           ? createNewProduct(body)
           : body.family
           ? createFamily(body)
           : createItem(body);
 
-        console.log(item, "response from create item");
+        console.log(item, body.modelId, "response from create item");
 
         if (!itemsToUpload[body.orgId]) {
           console.log("no items to update in bodyorgID");
           itemsToUpload[body.orgId] = [];
         }
-        if(body.newproduct && !body.modelId) {
-          itemsToUpload[body.orgId].push(item);
-        }
+        // if (body.newproduct && !body.modelId) {
+        //   itemsToUpload[body.orgId].push(item);
+        // }
         if (!body.modelId && !body.newproduct) {
           console.log("DO WE have a modelID");
           //switching to sending item vs body

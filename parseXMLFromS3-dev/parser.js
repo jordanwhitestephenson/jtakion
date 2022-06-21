@@ -27,7 +27,7 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {
 
   function writeImage(image) {
     imagesMap[image.code] = image;
-  } 
+  }
 
   async function writeItem(item) {
     item.type = "item";
@@ -38,7 +38,7 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {
     familyToWrite.push(item);
   }
   async function writeProductItem(item) {
-    item.newproduct = "true"
+    item.newproduct = "true";
     productsToWrite.push(item);
   }
 
@@ -254,27 +254,29 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {
             blacklist: [],
             assetType: "item",
             values: [
-              [ "AND",
-              "#type_pgo",
-              `${
-                "#" +
-                currentProductFamily.name.toLowerCase().replace(/\s/g, "-")
-              }`,
-              `${"#catalog-version_" + currentCatalog.version}`,
-              `${"#product_" + describeMe.id}`,
-              `${"#pgo_" + info.pgoID}`,
-            ]],
+              [
+                "AND",
+                "#type_pgo",
+                `${
+                  "#family_" +
+                  currentProductFamily.name.toLowerCase().replace(/\s/g, "-")
+                }`,
+                `${"#catalog-version_" + currentCatalog.version}`,
+                `${"#product_" + describeMe.id}`,
+                `${'#' + info.pgoID}`,
+                // `${"#pgo_" + info.pgoID}`,
+              ],
+            ],
             defaultValue: { assetId: "" },
           };
-          describeMe.description = ""
+          describeMe.description = "";
           if (textObj.langId === defaultLanguageId) {
             //only set description if it is the default language id (could be multiple languages)
             describeMe.description = t;
           }
-         
-          describeMe.attributes.push(productAttributeObj)
+
+          describeMe.attributes.push(productAttributeObj);
           currentSingleProduct.attributes.push(productAttributeObj);
-          console.log(describeMe, 'hows this looking in product creationg? jun7')
         }
       : identFunc;
   };
@@ -339,6 +341,7 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {
 
   var nodes = [];
 
+  var textPropertyToWrite =null
   saxStream
     .on("opentag", function (node) {
       nodes.push(node);
@@ -350,6 +353,8 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {
           currentLanguage.langId = node.attributes.LANG_ID;
           setFromText = setNameOn(currentLanguage);
           break;
+
+          
         case "CURRENCY":
           currentCurrency = {};
           currentCurrency.code = node.attributes.CODE;
@@ -386,7 +391,9 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {
           currentItem = {};
           currentItem.itemGroups = [];
           currentItem.layers = [];
-          currentItem.id = node.attributes.ID ? node.attributes.ID : node.attributes.PN ;
+          currentItem.id = node.attributes.ID
+            ? node.attributes.ID
+            : node.attributes.PN;
           currentItem.pn = node.attributes.PN;
           currentItem.vendorId = node.attributes.VENDOR_ID;
           if (currentCatalog) {
@@ -401,17 +408,18 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {
           let greatGrandParentNode = nodes[nodes.length - 4];
           let greatgreatGrandParentNode = nodes[nodes.length - 5];
 
-          if (parentNode.name === "DESCRIPTIONS" && grandparentNode.name === "PRODUCT") {
-            console.log('in iff statement')
+          if (
+            parentNode.name === "DESCRIPTIONS" &&
+            grandparentNode.name === "PRODUCT"
+          ) {
+            console.log("in iff statement");
             currentText = {};
             currentText.langId = node.attributes.LANG_ID;
             setFromText = setProductDescription(
               currentSingleProduct,
               currentText
             );
-          } 
-          
-          else if (
+          } else if (
             parentNode.name === "DESCRIPTIONS" &&
             grandparentNode.name === "GROUP" &&
             greatGrandParentNode.name === "PGOS" &&
@@ -428,9 +436,7 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {
               currentText,
               info
             );
-          }
-          
-          else if (parentNode.name !== "PROMPTS") {
+          } else if (parentNode.name !== "PROMPTS") {
             currentText = {};
             currentText.langId = node.attributes.LANG_ID;
             setFromText = setDescriptionOn(currentContext, currentText);
@@ -484,15 +490,66 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {
             defaultValue: currentCatalog.version,
           };
 
-          let metadata4 =  {
+          let metadata4 = {
             type: "String",
             name: "itemId",
             blacklist: [],
             values: [],
             defaultValue: node.attributes.NAME,
+          };
+
+
+          let metadata5 = {
+            type: "String",
+            name: "description",
+            blacklist: [],
+            values: [],
+            defaultValue: currentCatalog.desc,
+          }
+          let metadata6 = {
+            type: "String",
+            name: "year",
+            blacklist: [],
+            values: [],
+            defaultValue: currentCatalog.year,
+          }
+
+          let metadata7 = {
+            type: "String",
+            name: "month",
+            blacklist: [],
+            values: [],
+            defaultValue: currentCatalog.month,
+          }
+
+          let metadata8 = {
+            type: "String",
+            name: "day",
+            blacklist: [],
+            values: [],
+            defaultValue: currentCatalog.day,
+
+          }
+
+          let metadata9 = {
+            type: "String",
+            name: "version",
+            blacklist: [],
+            values: [],
+            defaultValue: currentCatalog.version,
           }
           currentProductFamily.catalogCode = currentCatalog.code;
-          currentProductFamily.metadata = [metadata1, metadata2, metadata3, metadata4];
+          currentProductFamily.metadata = [
+            metadata1,
+            metadata2,
+            metadata3,
+            metadata4,
+            metadata5,
+            metadata6,
+            metadata7,
+            metadata8,
+            metadata9
+          ];
           const familyName = node.attributes.NAME;
           const lowerCaseFamily = familyName.toLocaleLowerCase();
           currentProductFamily.tags = [
@@ -606,9 +663,12 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {
           break;
         case "GROUP":
           currentOptionGroup = {};
-        console.log('GROUP jun7', node.attributes.ID,node.attributes.NAME )
-          currentOptionGroup.id = node.attributes.ID ? node.attributes.ID : node.attributes.PGOID;
-          currentOptionGroup.name = node.attributes.NAME ? node.attributes.NAME : node.attributes.PGOID;
+          currentOptionGroup.id = node.attributes.ID
+            ? node.attributes.ID
+            : node.attributes.PGOID;
+          currentOptionGroup.name = node.attributes.NAME
+            ? node.attributes.NAME
+            : node.attributes.PGOID;
           currentOptionGroup.options = [];
           currentOptionGroup.translations = [];
           currentContext = currentOptionGroup;
@@ -616,11 +676,9 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {
         case "PRODUCT":
           currentSingleProduct = {};
           currentSingleProduct.type = "item";
-          //need to add name 
-          // currentSingleProduct.name = ""
           currentSingleProduct.attributes = [];
           currentSingleProduct.catalogCode = currentCatalog.code;
-          currentSingleProduct.id = node.attributes.GROUP_CODE
+          currentSingleProduct.id = node.attributes.GROUP_CODE;
           const metadata1a = {
             type: "String",
             name: "group_code",
@@ -653,12 +711,59 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {
             defaultValue: "product",
           };
 
-          let metadata5a =  {
+          const metadata5a = {
             type: "String",
             name: "itemId",
             blacklist: [],
             values: [],
-            defaultValue:  node.attributes.GROUP_CODE,
+            defaultValue: node.attributes.GROUP_CODE,
+          };
+          const metadata6a = {
+            type: "String",
+            name: "product",
+            blacklist: [],
+            values: [],
+            defaultValue: node.attributes.GROUP_CODE,
+          };
+
+          let metadata7a = {
+            type: "String",
+            name: "description",
+            blacklist: [],
+            values: [],
+            defaultValue: currentCatalog.desc,
+          }
+          let metadata8a = {
+            type: "String",
+            name: "year",
+            blacklist: [],
+            values: [],
+            defaultValue: currentCatalog.year,
+          }
+
+          let metadata9a = {
+            type: "String",
+            name: "month",
+            blacklist: [],
+            values: [],
+            defaultValue: currentCatalog.month,
+          }
+
+          let metadata10a = {
+            type: "String",
+            name: "day",
+            blacklist: [],
+            values: [],
+            defaultValue: currentCatalog.day,
+
+          }
+
+          let metadata11a = {
+            type: "String",
+            name: "version",
+            blacklist: [],
+            values: [],
+            defaultValue: currentCatalog.version,
           }
 
           currentSingleProduct.metadata = [
@@ -666,7 +771,13 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {
             metadata2a,
             metadata3a,
             metadata4a,
-            metadata5a
+            metadata5a,
+            metadata6a,
+            metadata7a,
+            metadata8a,
+            metadata9a,
+            metadata10a,
+            metadata11a,
           ];
 
           currentSingleProduct.tags = [
@@ -689,7 +800,9 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {
           break;
         case "OPTION":
           currentOption = {};
-          currentOption.id = node.attributes.ID ? node.attributes.ID : `${'productOption' + node.attributes.NAME }`
+          currentOption.id = node.attributes.ID
+            ? node.attributes.ID
+            : `${"productOption" + node.attributes.NAME}`;
           currentOption.name = node.attributes.NAME;
           currentOption.im = node.attributes.IM;
           if (node.attributes.SUBGROUP_ID) {
@@ -731,11 +844,11 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {
         case "IMAGE":
           writeImage(currentImage);
           break;
-        case "PRODUCT":
-          currentContext = null;
-          writeProductItem(currentSingleProduct);
-          break;
-        case "VISUALIZATION":
+          case "PRODUCT":
+            currentContext = null;
+            writeProductItem(currentSingleProduct);
+            break;          
+        case "PRODUCT_FAMILY":
           currentContext = null;
           writeFamilyItem(currentProductFamily);
           break;
@@ -798,8 +911,8 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {
   return new Promise((resolve, reject) => {
     piped.on("end", () => {
       postProcessParsedItems();
-      console.log(productsToWrite, "productsToWrite s");
-      console.log(familyToWrite, "familyToWries");
+      console.log(productsToWrite[0].metadata, "productsToWrite s");
+      console.log(familyToWrite[0].metadata, "familyToWries");
       console.log(itemsToWrite, "itemsToWrite");
       resolve({
         family: familyToWrite,
@@ -816,4 +929,3 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {
 };
 
 module.exports.parse = parse;
-

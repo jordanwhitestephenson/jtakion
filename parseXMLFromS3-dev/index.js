@@ -170,11 +170,13 @@ exports.handler = async (event) => {
   });
 
   const putItemOnQueue = (item, parsed) => {
-    console.log(item.id, item.name, item, 'WHY NO ID')
+    console.log(item.id, item.name, item, "WHY NO ID");
     return Promise.all(
-      item.itemGroups ? item.itemGroups 
-        .filter((ig) => ig.groupOptionFirstUsed)
-        .map((ig) => putOptionGroupOnQueue(ig.id, parsed)) : []
+      item.itemGroups
+        ? item.itemGroups
+            .filter((ig) => ig.groupOptionFirstUsed)
+            .map((ig) => putOptionGroupOnQueue(ig.id, parsed))
+        : []
     ).then((ogs) => {
       console.log("sending item to queue ", item.id);
       return sendItemToQueue(item);
@@ -203,13 +205,12 @@ exports.handler = async (event) => {
   };
 
   function pushAllItems(parsed) {
-    console.log('PUSH ALL ITEMS has been fired', parsed)
-    const  itemsPromise =  Promise.all(
-      [ ...parsed.items.map((i) => putItemOnQueue(i, parsed)), ...parsed.products.map((i) => putItemOnQueue(i, parsed)), ...parsed.family.map((i) => putItemOnQueue(i, parsed))] 
-    ) 
-      //   const  itemsPromise =  Promise.all(
-      // [...parsed.family.map((i) => putItemOnQueue(i, parsed))] 
-    
+    console.log("PUSH ALL ITEMS has been fired", parsed);
+    const itemsPromise = Promise.all([
+      ...parsed.items.map((i) => putItemOnQueue(i, parsed)),
+      ...parsed.products.map((i) => putItemOnQueue(i, parsed)),
+      ...parsed.family.map((i) => putItemOnQueue(i, parsed)),
+    ]);
     return itemsPromise;
   }
 
@@ -256,7 +257,7 @@ exports.handler = async (event) => {
       "flushing ",
       itemsToQueueBuffer.length,
       itemsToQueueBuffer,
-      " items to queue is my family objecti n here",
+      " items to queue is my family objecti n here"
       // itemsToQueueBuffer.map((it, i) => {
       //   console.log(it.id, 'WHERE ARE WE MISSING A FUCKING ID', it)
       // })
@@ -352,7 +353,7 @@ exports.handler = async (event) => {
 
   function createTranslationArray(obj, defaultLanguageId) {
     let columns = [];
-    console.log('obj translations undefined?',obj.translations)
+    console.log("obj translations undefined?", obj.translations);
     obj.translations.forEach((translation) => {
       let desc = translation.description;
       desc = desc.replace(/"/g, '""');
@@ -375,7 +376,11 @@ exports.handler = async (event) => {
     csvFileContent = createHeader(languageMap, csvFileContent);
     //create row for each item
     parsed.items.forEach((item) => {
-      console.log(item.translations, item, 'LOOKING FOR ITEM with translations')
+      console.log(
+        item.translations,
+        item,
+        "LOOKING FOR ITEM with translations"
+      );
       if (item.translations) {
         let columns = createTranslationArray(item, defaultLanguageId);
         if (!canonicalNames.includes(columns[0])) {
@@ -587,39 +592,78 @@ exports.handler = async (event) => {
 
   return parsedFilesCache[srcKey]
     .then((parsed) => {
-      const familyurl = `${
-        "https://preview.threekit.com/api/assets?name=" +
-        parsed.family[0].modelName +
-        "&ordId=" +
-        parsed.family[0].orgId +
-        "&type=model&bearer_token=" +
-        parsed.family[0].apiToken
-      }`;
-
-
-      async function getModelID() {
-        return await axios.get(familyurl).then((a) => a.data.assets);
+      async function getMultiple(objectsToGet) {
+        let familiesWithIDs = [];
+        await Promise.all(
+          objectsToGet.map((obj) =>
+            axios
+              .get(
+                `${
+                  "https://preview.threekit.com/api/assets?name=" +
+                  obj.modelName +
+                  "&ordId=" +
+                  obj.orgId +
+                  "&type=model&bearer_token=" +
+                  obj.apiToken
+                }`
+              )
+              .then((response) => {
+                console.log(response.data, 'RESPONSE FROM GET')
+                if (response.data.assets.length === 0) {
+                  axios
+                    .post(
+                      `${
+                        "https://preview.threekit.com/api/assets/8d1e2cdd-f390-4fc3-afd5-8531a22d4e5c/clone?bearer_token=" +
+                        obj.apiToken +
+                        "&orgId=" +
+                        obj.orgId
+                      }`
+                    )
+                    .then((res) => {
+                      console.log(res.data, 'RESPONSE IN CLONEc')
+                      obj.id = res.data.id;
+                      obj.proxyId = res.data.id;
+                      obj.modelId = res.data.id;
+                      var itemIdIndex = obj.metadata.findIndex(
+                        (obj) => obj.name === "itemId"
+                      );
+                      obj.metadata[itemIdIndex].defaultValue =
+                      res.data.id;
+                      familiesWithIDs.push(obj);
+                    } );
+                } else {
+                  obj.modelId = response.data.assets[0].id
+                  obj.id = response.data.assets[0].id;
+                  obj.proxyId = response.data.assets[0].id;
+                  var itemIdIndex = obj.metadata.findIndex(
+                    (obj) => obj.name === "itemId"
+                  );
+                  obj.metadata[itemIdIndex].defaultValue =
+                    response.data.assets[0].id;
+                  familiesWithIDs.push(obj);
+                }
+              })
+          )
+        );
+        console.log(familiesWithIDs, 'familiesWithIDs')
+        return familiesWithIDs;
       }
-
-
-      async function updateParsedFamilyModalIdResult() {
-        return await getModelID();
-      }
-
-      return updateParsedFamilyModalIdResult()
-        .then((res) => {
-          console.log(res,  parsed.family, 'is this the model ID that we75f4408f-99a4-4e34-bee6-9b8b08592dc7 ')
-          parsed.family[0].modelId = res.length === 0 ? '8d1e2cdd-f390-4fc3-afd5-8531a22d4e5c' : res[0].id;
-          parsed.family[0].id = res.length === 0 ? '8d1e2cdd-f390-4fc3-afd5-8531a22d4e5c' : res[0].id;
-          parsed.family[0].proxyId = res.length === 0 ? '8d1e2cdd-f390-4fc3-afd5-8531a22d4e5c' : res[0].id
-          var itemIdIndex = parsed.family[0].metadata.findIndex((obj => obj.name === "itemId"))
-          parsed.family[0].metadata[itemIdIndex].defaultValue = res.length === 0 ? '8d1e2cdd-f390-4fc3-afd5-8531a22d4e5c' : res[0].id
-          return parsed;
-        })
+      return getMultiple(parsed.family).then((result) => {
+        parsed.family = result;
+        return parsed;
+      })
+      // some other async context
     })
     .then((parsed) => {
-      console.log("ITEMS LOOK HERE", parsed);
-
+      console.log("ITEMS LOOK HERE - all parsed", parsed);
+      console.log(
+        "ITEMS LOOK HERE = family metadata",
+        parsed.family[0].metadata
+      );
+      console.log(
+        "ITEMS LOOK HERE = products metadata",
+        parsed.products[0].metadata
+      );
       parseErrorsExist = parsed.parseErrorsExist;
 
       parsed.items.forEach((item) => {
@@ -726,7 +770,7 @@ exports.handler = async (event) => {
                 orgId
               );
               if (parseErrorsExist) {
-                console.log('parsed item error exists')
+                console.log("parsed item error exists");
                 logItemEvent(
                   {
                     event: "error",
@@ -737,8 +781,6 @@ exports.handler = async (event) => {
                   orgId
                 );
                 return Promise.all([finishLogEvents()]);
-
-
               } else {
                 return pushAllItems(parsed)
                   .then((r) => {
@@ -789,5 +831,6 @@ exports.handler = async (event) => {
           finishLogEvents();
           throw error;
         });
-    });
+    })
+    .catch((error) => console.log(error, "ERROR IN PARSEXML"));
 };
