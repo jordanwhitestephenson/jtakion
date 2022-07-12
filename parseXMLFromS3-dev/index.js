@@ -178,15 +178,10 @@ exports.handler = async (event) => {
             .map((ig) => putOptionGroupOnQueue(ig.id, parsed))
         : []
     ).then((ogs) => {
-      console.log("sending item to queue ", item.id);
+      console.log("sending item to queue ", item);
       return sendItemToQueue(item);
     });
   };
-
-  // const putItemOnQueue = (item, parsed) => {
-  //   console.log("sending item to queue ", item.id);
-  //   return sendItemToQueue(item);
-  // };
 
   const putOptionGroupOnQueue = (optionGroupId, parsed) => {
     const optionGroup = parsed.optionGroupsMap[optionGroupId];
@@ -207,10 +202,12 @@ exports.handler = async (event) => {
   function pushAllItems(parsed) {
     console.log("PUSH ALL ITEMS has been fired", parsed);
     const itemsPromise = Promise.all([
-      ...parsed.items.map((i) => putItemOnQueue(i, parsed)),
-      ...parsed.products.map((i) => putItemOnQueue(i, parsed)),
       ...parsed.family.map((i) => putItemOnQueue(i, parsed)),
+      // ...parsed.items.map((i) => putItemOnQueue(i, parsed)),
+      // ...parsed.products.map((i) => putItemOnQueue(i, parsed)),
+      // ...parsed.pgos.map((i) => putItemOnQueue(i, parsed)),
     ]);
+
     return itemsPromise;
   }
 
@@ -238,6 +235,7 @@ exports.handler = async (event) => {
 
   function sendItemToQueue(item) {
     var itemLength = JSON.stringify(item).length;
+    console.log(item, 'ITEM IN SEND TO QUE')
     const sendPromise =
       itemsToQueueBuffer.length >= 10 ||
       itemsToQueueBufferLength + itemLength >= maxQueueMessageSize
@@ -251,19 +249,17 @@ exports.handler = async (event) => {
     return sendPromise;
   }
 
-  //THIS IS POSTING TO QUE??///
+
   function flushItemsToQueue() {
     console.log(
       "flushing ",
       itemsToQueueBuffer.length,
       itemsToQueueBuffer,
       " items to queue is my family objecti n here"
-      // itemsToQueueBuffer.map((it, i) => {
-      //   console.log(it.id, 'WHERE ARE WE MISSING A FUCKING ID', it)
-      // })
     );
 
-    if (itemsToQueueBuffer.length > 0) {
+    //itemsToQueueBuffer.filter(e => e.type === 'family').length > 0 -- but family isn't being logged in que itemsneedassets
+    if (itemsToQueueBuffer.length > 0 ) {
       var params = {
         Entries: itemsToQueueBuffer.map((it, i) => {
           return {
@@ -608,7 +604,15 @@ exports.handler = async (event) => {
                 }`
               )
               .then((response) => {
-                console.log(response.data, 'RESPONSE FROM GET')
+                console.log(response.data, "RESPONSE FROM GET");
+                // axios.get(
+                //   `${
+                //     "https://preview.threekit.com/api/assets?tag=placeholder_model&ordId=" +
+                //     obj.orgId +
+                //     "&type=model&bearer_token=" +
+                //     obj.apiToken
+                //   }`
+                // )
                 if (response.data.assets.length === 0) {
                   axios
                     .post(
@@ -620,19 +624,18 @@ exports.handler = async (event) => {
                       }`
                     )
                     .then((res) => {
-                      console.log(res.data, 'RESPONSE IN CLONEc')
+                      console.log(res.data, "RESPONSE IN CLONEc", obj.metadata);
                       obj.id = res.data.id;
                       obj.proxyId = res.data.id;
                       obj.modelId = res.data.id;
                       var itemIdIndex = obj.metadata.findIndex(
                         (obj) => obj.name === "itemId"
                       );
-                      obj.metadata[itemIdIndex].defaultValue =
-                      res.data.id;
+                      obj.metadata[itemIdIndex].defaultValue = res.data.id;
                       familiesWithIDs.push(obj);
-                    } );
+                    });
                 } else {
-                  obj.modelId = response.data.assets[0].id
+                  obj.modelId = response.data.assets[0].id;
                   obj.id = response.data.assets[0].id;
                   obj.proxyId = response.data.assets[0].id;
                   var itemIdIndex = obj.metadata.findIndex(
@@ -643,15 +646,16 @@ exports.handler = async (event) => {
                   familiesWithIDs.push(obj);
                 }
               })
+              .catch((error) => console.log(error, "objectsToGet ERROR"))
           )
         );
-        console.log(familiesWithIDs, 'familiesWithIDs')
+        console.log(familiesWithIDs, "familiesWithIDs");
         return familiesWithIDs;
       }
       return getMultiple(parsed.family).then((result) => {
         parsed.family = result;
         return parsed;
-      })
+      });
       // some other async context
     })
     .then((parsed) => {

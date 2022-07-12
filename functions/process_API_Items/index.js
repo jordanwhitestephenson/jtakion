@@ -301,7 +301,14 @@ exports.handler = async (event) => {
 
   //create a item and assets for a group
   function createOption(option) {
-    const item = { m: { optionId: option.id }, product: {} };
+    console.log(option, "WHAT DO WE HAVE FOR QUERY OPTIONS");
+    const item = {
+      m: { optionId: option.id },
+      // query: {
+      //   optionId: option.id,
+      // },
+      product: {},
+    };
 
     if (option.im && option.materialId) {
       item.product.asset = {
@@ -450,13 +457,8 @@ exports.handler = async (event) => {
 
     return item;
   }
-// family's metadata includes: 
-// family name
-// -catalog version and itemId
   // create a item type product with optional id query
   function createItem(item) {
-    console.log(item, "Create ITEM ITEM");
-
     let uploadItem = {
       m: { itemId: item.id },
       query: {
@@ -621,24 +623,24 @@ exports.handler = async (event) => {
 
     uploadItem.product = product;
 
-    console.log(uploadItem, item, "uploadItem in createItem");
     return uploadItem;
   }
   function createFamily(item) {
-    
-    const family = item.metadata.filter(item => item.name === 'family')[0]
-    const catalog = item.metadata.filter(item => item.name === 'catalog-version')[0]
-    console.log("CREATE FAMILYS - metadata", item);
-    //createFamily = identifier should be 'type_family' in metadata query, double check ID is unique
+    console.log("CREATE FAMILY,", item);
+    const family = item.metadata.filter((item) => item.name === "family")[0];
+    const catalog = item.metadata.filter(
+      (item) => item.name === "catalog-version"
+    )[0];
     let uploadItem = {
       m: { itemId: item.id },
       query: {
         metadata: {
-          'catalog-version': catalog.defaultValue,
-          family: family.defaultValue
+          "catalog-version": catalog.defaultValue,
+          family: family.defaultValue,
+          type: "family",
         },
       },
-      
+
       product: {
         name: item.name,
         type: "item",
@@ -662,20 +664,55 @@ exports.handler = async (event) => {
         type: "model",
       };
     }
-    console.log(uploadItem, "uploadItem in createNewFamily");
+    return uploadItem;
+  }
+  function createPGO(item) {
+    console.log(item, "ITEM IN PGO TUEWSDATY");
+    const family = item.metadata.filter((item) => item.name === "family")[0];
+    const catalog = item.metadata.filter(
+      (item) => item.name === "catalog-version"
+    )[0];
+    const name = item.metadata.filter((item) => item.name === "name")[0];
+    const product = item.metadata.filter((item) => item.name === "product")[0];
+    let uploadItem = {
+      m: { itemId: item.id },
+      //
+      query: {
+        metadata: {
+          itemId: item.id,
+          "catalog-version": catalog.defaultValue,
+          family: family.defaultValue,
+          name: name.defaultValue,
+          product: product.defaultValue,
+          type: "pgo",
+        },
+      },
+
+      product: {
+        name: item.name,
+        type: "item",
+        orgId: item.orgId,
+        tags: item.tags,
+        metadata: item.metadata,
+      },
+    };
     return uploadItem;
   }
   function createNewProduct(item) {
-    const family = item.metadata.filter(item => item.name === 'family')[0]
-    const groupCode = item.metadata.filter(item => item.name === 'group_code')[0]
-    const catalog = item.metadata.filter(item => item.name === 'catalog-version')[0]
+    const family = item.metadata.filter((item) => item.name === "family")[0];
+    const groupCode = item.metadata.filter(
+      (item) => item.name === "group_code"
+    )[0];
+    const catalog = item.metadata.filter(
+      (item) => item.name === "catalog-version"
+    )[0];
     let uploadItem = {
       m: { itemId: item.id },
       query: {
         metadata: {
-          'catalog-version': catalog.defaultValue,
+          "catalog-version": catalog.defaultValue,
           family: family.defaultValue,
-          group_code: groupCode.defaultValue
+          group_code: groupCode.defaultValue,
         },
       },
       product: {
@@ -688,9 +725,8 @@ exports.handler = async (event) => {
         forms: item.forms,
         script: item.script,
         orgId: item.orgId,
-        //do I need a proxyID
-        // proxyId: item.proxyId,
-        asset: item.asset,
+        //removed asset - look into
+        // asset: item.asset,
       },
     };
     if (item.modelId) {
@@ -700,7 +736,12 @@ exports.handler = async (event) => {
         type: "model",
       };
     }
-    console.log(uploadItem.query.metadata, item.modelId, "uploadItem in createNewProduct");
+    console.log(
+      uploadItem.query.metadata,
+      uploadItem,
+      item.modelId,
+      "uploadItem in createNewProduct"
+    );
     return uploadItem;
   }
 
@@ -1023,7 +1064,10 @@ exports.handler = async (event) => {
                               return p.metadata.optionId;
                             }
                           });
-                          console.log(itemsToUploadEnv, "itemID is undefined");
+                          console.log(
+                            JSON.stringify(itemsToUploadEnv),
+                            "itemID is undefined"
+                          );
                           const productsFailed = itemsToUploadEnv
                             .filter((p) => {
                               console.log(p);
@@ -1291,6 +1335,7 @@ exports.handler = async (event) => {
                   "item import job failed for items " +
                     itemsToUploadEnv.map((i) => i.m)
                 );
+                console.log(itemsToUploadEnv, "itemsToUploadEnv");
 
                 itemsToUploadEnv.forEach((itm) => {
                   let keyArray;
@@ -1339,10 +1384,12 @@ exports.handler = async (event) => {
   const orgMap = {};
   const itemToBodyMap = {};
 
+  //LOOK HERE//
   for (let i = 0; i < event.Records.length; i++) {
     let r = event.Records[i];
     const body = JSON.parse(r.body);
-    console.log(body.type, "BODY RESPONSE");
+    console.log(event.Records, "event.Records");
+    console.log(body, "BODY RESPONSE");
     let notCancelled = await checkIfJobCancelled(body.sourceKey);
     if (notCancelled) {
       const getQueueTime =
@@ -1391,39 +1438,58 @@ exports.handler = async (event) => {
             itemsToUpload[body.orgId].push(option);
           }
         }
-
-        //***give new type ==== "family"//*** */
-      } else if (body && body.type && body.type === "item") {
-        console.log(
-          "body Type is item, which we want!",
-          body,
-          body.modelId,
-          body.newproduct,
-          body.family
-        );
-
-        const item = body.newproduct
-          ? createNewProduct(body)
-          : body.family
-          ? createFamily(body)
-          : createItem(body);
-
-        console.log(item, body.modelId, "response from create item");
-
+      } else if (body && body.type && body.type === "family") {
+        const item = createFamily(body);
+        console.log("else in create family", {
+          itemId: item.m.itemId,
+          itemToBodyMap: itemToBodyMap,
+          orgId: body.orgId,
+          itemsToUpload: itemsToUpload,
+          body: body.modelId,
+        });
         if (!itemsToUpload[body.orgId]) {
-          console.log("no items to update in bodyorgID");
           itemsToUpload[body.orgId] = [];
         }
-        // if (body.newproduct && !body.modelId) {
-        //   itemsToUpload[body.orgId].push(item);
-        // }
-        if (!body.modelId && !body.newproduct) {
+        if (!body.modelId) {
+          sendItemToQueue(body);
+        } else {
+          itemToBodyMap[item.m.itemId] = body;
+          itemsToUpload[body.orgId].push(item);
+        }
+      } else if (body && body.type && body.type === "product") {
+        const item = createNewProduct(body);
+        if (!itemsToUpload[body.orgId]) {
+          itemsToUpload[body.orgId] = [];
+        }
+        itemToBodyMap[item.m.itemId] = body;
+        itemsToUpload[body.orgId].push(item);
+      } else if (body && body.type && body.type === "pgo") {
+        const item = createPGO(body);
+        if (!itemsToUpload[body.orgId]) {
+          itemsToUpload[body.orgId] = [];
+        }
+
+        itemToBodyMap[item.m.itemId] = body;
+        itemsToUpload[body.orgId].push(item);
+      } else if (body && body.type && body.type === "item") {
+        console.log("else in create item", {
+          itemId: item.m.itemId,
+          itemToBodyMap: itemToBodyMap,
+          orgId: body.orgId,
+          itemsToUpload: itemsToUpload,
+          body: body.modelId,
+        });
+        const item = createItem(body);
+
+        if (!itemsToUpload[body.orgId]) {
+          itemsToUpload[body.orgId] = [];
+        }
+        if (!body.modelId) {
           console.log("DO WE have a modelID");
           //switching to sending item vs body
           sendItemToQueue(body);
         } else {
           itemToBodyMap[item.m.itemId] = body;
-          console.log(body, "else statement BODY BEING PUSHED");
           itemsToUpload[body.orgId].push(item);
         }
       }
@@ -1449,6 +1515,7 @@ exports.handler = async (event) => {
         return flushItemsToQueue().then((r) => {
           console.log("flush items to queue result at end ", r);
         });
-      });
+      })
+      .catch((err) => console.log(err, "IN FLUSHITEMS QUE ERROR"));
   });
 };

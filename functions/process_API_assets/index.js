@@ -218,6 +218,7 @@ exports.handler = async (event) => {
         const hasGroupOptions = item.itemGroups.reduce((agg, grp) => {
             return agg && (!grp.groupOptionIds || (grp.groupOptions && grp.groupOptionIds.length === grp.groupOptions.length));
         }, true);
+		console.log('item in addModelToItem', item)
         if(!item.modelId || !hasGroupOptions){
 			return createOrUpdateModel(item).then( completeItem => {
 				console.log({'event': 'modelIdAdded', 'itemId': completeItem.id, 'modelId': completeItem.modelId});
