@@ -202,9 +202,9 @@ exports.handler = async (event) => {
   function pushAllItems(parsed) {
     console.log("PUSH ALL ITEMS has been fired", parsed);
     const itemsPromise = Promise.all([
-      ...parsed.family.map((i) => putItemOnQueue(i, parsed)),
+      // ...parsed.family.map((i) => putItemOnQueue(i, parsed)),
       // ...parsed.items.map((i) => putItemOnQueue(i, parsed)),
-      // ...parsed.products.map((i) => putItemOnQueue(i, parsed)),
+      ...parsed.products.map((i) => putItemOnQueue(i, parsed)),
       // ...parsed.pgos.map((i) => putItemOnQueue(i, parsed)),
     ]);
 

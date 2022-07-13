@@ -850,10 +850,47 @@ const parse = (s3Params, sourceKey, apiUrl, orgId, apiToken) => {
               `${"catalog-version_" + catalogVersion.version}`,
               `${"product_" + node.attributes.GROUP_CODE}`,
             ];
-            currentSingleProduct.rules = [];
+            currentSingleProduct.rules = [
+              {
+                "conditions": [],
+                "actions": [
+                    {
+                        "type": "custom-script",
+                        "content": "const CONFIGURATOR = api.getConfigurator();\nconst ATTRS = CONFIGURATOR.getDisplayAttributes();\n\nlet UNSET_VALS = false;\nlet PGO_MAP = new Map();\n\nlet VARIANT_ATTR = {};\n\nATTRS.forEach(attr=>{\n    if(attr.type !== \"Asset\" || UNSET_VALS) return;\n\n    if(attr.name === \"_Variant\"){\n        VARIANT_ATTR = attr;\n        return;\n    }\n\n    if(!attr.value.assetId){\n        UNSET_VALS = true;\n        return;\n    }\n\n    let valAssetId = attr.value.assetId;\n    let VAL_PGO = \"\";\n    let i=0;\n    while(VAL_PGO === \"\" && i < attr.values.length){\n        if(attr.values[i].assetId === valAssetId){\n            attr.values[i].tags.forEach(tag=>{\n                if(VAL_PGO) return;\n\n                const regex = new RegExp('^pgo_[0-9]{1,}$');\n                if(regex.test(tag)){\n                    if(!attr.values[i].metadata || !attr.values[i].metadata.name) throw \"Name metadata not present on option\";\n\n                    PGO_MAP.set(tag, attr.values[i].metadata.name)\n                }\n            })\n        }\n        i++;\n    }\n\n});\n\nif(UNSET_VALS) {\n    console.log('unset values present');\n    return;\n}\nlet variantVal = {};\nlet j = 0\nwhile(!variantVal.assetId && j < VARIANT_ATTR.values.length){\n    let val = VARIANT_ATTR.values[j];\n    let REJECT = false;\n    PGO_MAP.forEach((pgoVal, pgoTagNum)=>{\n        if(REJECT) return;\n        if(val.metadata[pgoTagNum] === pgoVal) return;\n        if(!val.metadata[pgoTagNum] || val.metadata[pgoTagNum] !== pgoVal){\n            REJECT = true;\n            return;\n        }\n    });\n    if(!REJECT){\n        variantVal = {assetId: val.assetId};\n    }\n    j++;\n}\n\nif(!variantVal.assetId){\n    console.log(PGO_MAP);\n    throw \"No matching pgo for user selections\";\n} else if(VARIANT_ATTR.value.assetId !== variantVal.assetId){\n    CONFIGURATOR.setConfiguration({\"_Variant\": variantVal});\n}\n",
+                        "enabled": false,
+                        "error": "",
+                        "name": "custom-script"
+                    }
+                ],
+                "name": "PGO Matching",
+                "disabled": false
+            }
+            ];
             currentSingleProduct.forms = [];
             currentSingleProduct.script = "";
             currentSingleProduct.asset = { assetId: "" };
+            let productVariantObj = {
+              type: "Asset",
+              name: "_Variant",
+              blacklist: [],
+              assetType: "item",
+              values: [
+                [
+                  "AND",
+                  "#type_variant",
+                  `${
+                    "#family_" +
+                    currentProductFamily.name.toLowerCase().replace(/\s/g, "-")
+                  }`,
+                  `${"#catalog-version_" + catalogVersion.version}`,
+                  `${"#product_" + currentSingleProduct.id}`,
+                ],
+              ],
+              defaultValue: { assetId: "" },
+            };
+            currentSingleProduct.attributes.push(productVariantObj)
+            console.log( JSON.stringify(productVariantObj), 'productVariantObj1', currentSingleProduct.attributes )
+
             break;
         }
       }

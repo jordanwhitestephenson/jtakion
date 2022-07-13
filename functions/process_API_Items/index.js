@@ -1332,8 +1332,8 @@ exports.handler = async (event) => {
               } else {
                 // error - job failed
                 console.log(
-                  "item import job failed for items " +
-                    itemsToUploadEnv.map((i) => i.m)
+                  "item import job failed for items else" +
+                    JSON.stringify(itemsToUploadEnv.map((i) => i))
                 );
                 console.log(itemsToUploadEnv, "itemsToUploadEnv");
 
@@ -1358,8 +1358,8 @@ exports.handler = async (event) => {
                   });
                 });
                 throw new Error(
-                  "item import job failed for items " +
-                    itemsToUploadEnv.map((i) => i.m)
+                  "item import job failed for items itemsToUploadEnv" +
+                    JSON.stringify(itemsToUploadEnv.map((i) => i))
                 );
               }
             })
@@ -1457,6 +1457,7 @@ exports.handler = async (event) => {
           itemsToUpload[body.orgId].push(item);
         }
       } else if (body && body.type && body.type === "product") {
+        console.log(body, 'BODY IN PRODUCT')
         const item = createNewProduct(body);
         if (!itemsToUpload[body.orgId]) {
           itemsToUpload[body.orgId] = [];

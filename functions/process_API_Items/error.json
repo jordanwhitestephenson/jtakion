@@ -1,101 +1,358 @@
 [
     {
         "m": {
-            "itemId": "75f4408f-99a4-4e34-bee6-9b8b08592dc7"
+            "itemId": "NESP"
         },
         "query": {
             "metadata": {
-                "itemId": "75f4408f-99a4-4e34-bee6-9b8b08592dc7",
-                "catalog_code": "TSC"
+                "catalog-version": "tfs-usr-test-1.001",
+                "family": "essa-chair-pdp",
+                "group_code": "NESP"
             }
         },
         "product": {
-            "asset": {
-                "assetId": "75f4408f-99a4-4e34-bee6-9b8b08592dc7",
-                "configuration": "",
-                "type": "model"
-            }
+            "name": "Essa Chair, Upholstered Back w/Plastic Shell, Single Upholstery",
+            "type": "item",
+            "metadata": [
+                {
+                    "type": "String",
+                    "name": "group_code",
+                    "blacklist": [],
+                    "values": [],
+                    "defaultValue": "NESP"
+                },
+                {
+                    "type": "String",
+                    "name": "catalog-version",
+                    "blacklist": [],
+                    "values": [],
+                    "defaultValue": "tfs-usr-test-1.001"
+                },
+                {
+                    "type": "String",
+                    "name": "family",
+                    "blacklist": [],
+                    "values": [],
+                    "defaultValue": "essa-chair-pdp"
+                },
+                {
+                    "type": "String",
+                    "name": "type",
+                    "blacklist": [],
+                    "values": [],
+                    "defaultValue": "product"
+                },
+                {
+                    "type": "String",
+                    "name": "itemId",
+                    "blacklist": [],
+                    "values": [],
+                    "defaultValue": "NESP"
+                },
+                {
+                    "type": "String",
+                    "name": "product",
+                    "blacklist": [],
+                    "values": [],
+                    "defaultValue": "NESP"
+                },
+                {
+                    "type": "String",
+                    "name": "description",
+                    "blacklist": [],
+                    "values": [],
+                    "defaultValue": "Seating (Cdn-Int-US) (May 2022) - PZ6 Uniprice"
+                },
+                {
+                    "type": "String",
+                    "name": "year",
+                    "blacklist": [],
+                    "values": [],
+                    "defaultValue": "2022"
+                },
+                {
+                    "type": "String",
+                    "name": "month",
+                    "blacklist": [],
+                    "values": [],
+                    "defaultValue": "1"
+                },
+                {
+                    "type": "String",
+                    "name": "day",
+                    "blacklist": [],
+                    "values": [],
+                    "defaultValue": "28"
+                },
+                {
+                    "type": "String",
+                    "name": "version",
+                    "blacklist": [],
+                    "values": [],
+                    "defaultValue": "tfs-usr-test-1.001"
+                }
+            ],
+            "tags": [
+                "type_product",
+                "family_essa-chair-pdp",
+                "catalog-version_tfs-usr-test-1.001",
+                "product_NESP"
+            ],
+            "rules": [
+                {
+                    "conditions": [],
+                    "actions": [
+                        {
+                            "type": "custom-script",
+                            "content": "const CONFIGURATOR = api.getConfigurator();\nconst ATTRS = CONFIGURATOR.getDisplayAttributes();\n\nlet UNSET_VALS = false;\nlet PGO_MAP = new Map();\n\nlet VARIANT_ATTR = {};\n\nATTRS.forEach(attr=>{\n if(attr.type !== \"Asset\" || UNSET_VALS) return;\n\n if(attr.name === \"_Variant\"){\n VARIANT_ATTR = attr;\n return;\n }\n\n if(!attr.value.assetId){\n UNSET_VALS = true;\n return;\n }\n\n let valAssetId = attr.value.assetId;\n let VAL_PGO = \"\";\n let i=0;\n while(VAL_PGO === \"\" && i < attr.values.length){\n if(attr.values[i].assetId === valAssetId){\n attr.values[i].tags.forEach(tag=>{\n if(VAL_PGO) return;\n\n const regex = new RegExp('^pgo_[0-9]{1,}$');\n if(regex.test(tag)){\n if(!attr.values[i].metadata || !attr.values[i].metadata.name) throw \"Name metadata not present on option\";\n\n PGO_MAP.set(tag, attr.values[i].metadata.name)\n }\n })\n }\n i++;\n }\n\n});\n\nif(UNSET_VALS) {\n console.log('unset values present');\n return;\n}\nlet variantVal = {};\nlet j = 0\nwhile(!variantVal.assetId && j < VARIANT_ATTR.values.length){\n let val = VARIANT_ATTR.values[j];\n let REJECT = false;\n PGO_MAP.forEach((pgoVal, pgoTagNum)=>{\n if(REJECT) return;\n if(val.metadata[pgoTagNum] === pgoVal) return;\n if(!val.metadata[pgoTagNum] || val.metadata[pgoTagNum] !== pgoVal){\n REJECT = true;\n return;\n }\n });\n if(!REJECT){\n variantVal = {assetId: val.assetId};\n }\n j++;\n}\n\nif(!variantVal.assetId){\n console.log(PGO_MAP);\n throw \"No matching pgo for user selections\";\n} else if(VARIANT_ATTR.value.assetId !== variantVal.assetId){\n CONFIGURATOR.setConfiguration({\"_Variant\": variantVal});\n}\n",
+                            "enabled": false,
+                            "error": "",
+                            "name": "custom-script"
+                        }
+                    ],
+                    "name": "PGO Matching",
+                    "disabled": false
+                }
+            ],
+            "attributes": [
+                {
+                    "type": "Asset",
+                    "name": "_Variant",
+                    "blacklist": [],
+                    "assetType": "item",
+                    "values": [
+                        [
+                            "AND",
+                            "#type_variant",
+                            "#family_essa-chair-pdp",
+                            "#catalog-version_tfs-usr-test-1.001",
+                            "#product_NESP"
+                        ]
+                    ],
+                    "defaultValue": {
+                        "assetId": ""
+                    }
+                },
+                {
+                    "type": "Asset",
+                    "name": "Upholstery / Seat Style",
+                    "blacklist": [],
+                    "assetType": "item",
+                    "values": [
+                        [
+                            "AND",
+                            "#type_pgo",
+                            "#family_essa-chair-pdp",
+                            "#catalog-version_tfs-usr-test-1.001",
+                            "#product_NESP",
+                            "#pgo_7060"
+                        ]
+                    ],
+                    "defaultValue": {
+                        "assetId": ""
+                    }
+                },
+                {
+                    "type": "Asset",
+                    "name": "Arm Style",
+                    "blacklist": [],
+                    "assetType": "item",
+                    "values": [
+                        [
+                            "AND",
+                            "#type_pgo",
+                            "#family_essa-chair-pdp",
+                            "#catalog-version_tfs-usr-test-1.001",
+                            "#product_NESP",
+                            "#pgo_509782"
+                        ]
+                    ],
+                    "defaultValue": {
+                        "assetId": ""
+                    }
+                }
+            ],
+            "forms": [],
+            "script": "",
+            "orgId": "23de016e-e813-4e8c-a417-583fb95e63c9"
         }
     },
     {
         "m": {
-            "optionId": "opt899"
+            "itemId": "NESP_"
+        },
+        "query": {
+            "metadata": {
+                "catalog-version": "tfs-usr-test-1.001",
+                "family": "essa-chair-pdp",
+                "group_code": "NESP_"
+            }
         },
         "product": {
-            "tags": [
-                "grp00010084-Title_Shift_Redux_Seating_Fabric"
-            ],
+            "name": "Essa Chair, Upholstered Back w/Plastic Shell, Dual Upholstery",
+            "type": "item",
             "metadata": [
                 {
-                    "type": "Number",
-                    "name": "Price",
+                    "type": "String",
+                    "name": "group_code",
                     "blacklist": [],
                     "values": [],
-                    "defaultValue": null
+                    "defaultValue": "NESP_"
                 },
                 {
                     "type": "String",
-                    "name": "optionId",
+                    "name": "catalog-version",
                     "blacklist": [],
                     "values": [],
-                    "defaultValue": "opt899"
+                    "defaultValue": "tfs-usr-test-1.001"
                 },
                 {
                     "type": "String",
-                    "name": "groupId",
+                    "name": "family",
                     "blacklist": [],
                     "values": [],
-                    "defaultValue": "grp00010084"
+                    "defaultValue": "essa-chair-pdp"
                 },
                 {
                     "type": "String",
-                    "name": "optionCode",
+                    "name": "type",
                     "blacklist": [],
                     "values": [],
-                    "defaultValue": "T444"
+                    "defaultValue": "product"
                 },
                 {
                     "type": "String",
-                    "name": "catalogCode",
+                    "name": "itemId",
                     "blacklist": [],
                     "values": [],
-                    "defaultValue": "TSC"
-                },
-                {
-                    "type": "Number",
-                    "name": "isOption",
-                    "blacklist": [],
-                    "values": [],
-                    "defaultValue": 1
+                    "defaultValue": "NESP_"
                 },
                 {
                     "type": "String",
-                    "name": "_UI_label",
+                    "name": "product",
                     "blacklist": [],
                     "values": [],
-                    "defaultValue": "Fluctuate"
+                    "defaultValue": "NESP_"
                 },
                 {
                     "type": "String",
-                    "name": "source",
-                    "defaultValue": "DATAandVISUALIZATION_PBPM_TSC3318_3Kit_1_May23_2022_Feb01_2022-1654552847763"
+                    "name": "description",
+                    "blacklist": [],
+                    "values": [],
+                    "defaultValue": "Seating (Cdn-Int-US) (May 2022) - PZ6 Uniprice"
+                },
+                {
+                    "type": "String",
+                    "name": "year",
+                    "blacklist": [],
+                    "values": [],
+                    "defaultValue": "2022"
+                },
+                {
+                    "type": "String",
+                    "name": "month",
+                    "blacklist": [],
+                    "values": [],
+                    "defaultValue": "1"
+                },
+                {
+                    "type": "String",
+                    "name": "day",
+                    "blacklist": [],
+                    "values": [],
+                    "defaultValue": "28"
+                },
+                {
+                    "type": "String",
+                    "name": "version",
+                    "blacklist": [],
+                    "values": [],
+                    "defaultValue": "tfs-usr-test-1.001"
                 }
             ],
-            "name": "Fluctuate",
+            "tags": [
+                "type_product",
+                "family_essa-chair-pdp",
+                "catalog-version_tfs-usr-test-1.001",
+                "product_NESP_"
+            ],
+            "rules": [
+                {
+                    "conditions": [],
+                    "actions": [
+                        {
+                            "type": "custom-script",
+                            "content": "const CONFIGURATOR = api.getConfigurator();\nconst ATTRS = CONFIGURATOR.getDisplayAttributes();\n\nlet UNSET_VALS = false;\nlet PGO_MAP = new Map();\n\nlet VARIANT_ATTR = {};\n\nATTRS.forEach(attr=>{\n if(attr.type !== \"Asset\" || UNSET_VALS) return;\n\n if(attr.name === \"_Variant\"){\n VARIANT_ATTR = attr;\n return;\n }\n\n if(!attr.value.assetId){\n UNSET_VALS = true;\n return;\n }\n\n let valAssetId = attr.value.assetId;\n let VAL_PGO = \"\";\n let i=0;\n while(VAL_PGO === \"\" && i < attr.values.length){\n if(attr.values[i].assetId === valAssetId){\n attr.values[i].tags.forEach(tag=>{\n if(VAL_PGO) return;\n\n const regex = new RegExp('^pgo_[0-9]{1,}$');\n if(regex.test(tag)){\n if(!attr.values[i].metadata || !attr.values[i].metadata.name) throw \"Name metadata not present on option\";\n\n PGO_MAP.set(tag, attr.values[i].metadata.name)\n }\n })\n }\n i++;\n }\n\n});\n\nif(UNSET_VALS) {\n console.log('unset values present');\n return;\n}\nlet variantVal = {};\nlet j = 0\nwhile(!variantVal.assetId && j < VARIANT_ATTR.values.length){\n let val = VARIANT_ATTR.values[j];\n let REJECT = false;\n PGO_MAP.forEach((pgoVal, pgoTagNum)=>{\n if(REJECT) return;\n if(val.metadata[pgoTagNum] === pgoVal) return;\n if(!val.metadata[pgoTagNum] || val.metadata[pgoTagNum] !== pgoVal){\n REJECT = true;\n return;\n }\n });\n if(!REJECT){\n variantVal = {assetId: val.assetId};\n }\n j++;\n}\n\nif(!variantVal.assetId){\n console.log(PGO_MAP);\n throw \"No matching pgo for user selections\";\n} else if(VARIANT_ATTR.value.assetId !== variantVal.assetId){\n CONFIGURATOR.setConfiguration({\"_Variant\": variantVal});\n}\n",
+                            "enabled": false,
+                            "error": "",
+                            "name": "custom-script"
+                        }
+                    ],
+                    "name": "PGO Matching",
+                    "disabled": false
+                }
+            ],
             "attributes": [
                 {
-                    "type": "Pricing",
-                    "name": "Pricing",
+                    "type": "Asset",
+                    "name": "_Variant",
+                    "blacklist": [],
+                    "assetType": "item",
                     "values": [
-                        {
-                            "pricebook": "98fd76c6-a286-4f82-8ce2-39aa0e0e8475",
-                            "currencies": {
-                                "USD": 0
-                            }
-                        }
-                    ]
+                        [
+                            "AND",
+                            "#type_variant",
+                            "#family_essa-chair-pdp",
+                            "#catalog-version_tfs-usr-test-1.001",
+                            "#product_NESP_"
+                        ]
+                    ],
+                    "defaultValue": {
+                        "assetId": ""
+                    }
+                },
+                {
+                    "type": "Asset",
+                    "name": "Upholstery / Seat Style",
+                    "blacklist": [],
+                    "assetType": "item",
+                    "values": [
+                        [
+                            "AND",
+                            "#type_pgo",
+                            "#family_essa-chair-pdp",
+                            "#catalog-version_tfs-usr-test-1.001",
+                            "#product_NESP_",
+                            "#pgo_7060"
+                        ]
+                    ],
+                    "defaultValue": {
+                        "assetId": ""
+                    }
+                },
+                {
+                    "type": "Asset",
+                    "name": "Arm Style",
+                    "blacklist": [],
+                    "assetType": "item",
+                    "values": [
+                        [
+                            "AND",
+                            "#type_pgo",
+                            "#family_essa-chair-pdp",
+                            "#catalog-version_tfs-usr-test-1.001",
+                            "#product_NESP_",
+                            "#pgo_509782"
+                        ]
+                    ],
+                    "defaultValue": {
+                        "assetId": ""
+                    }
                 }
-            ]
+            ],
+            "forms": [],
+            "script": "",
+            "orgId": "23de016e-e813-4e8c-a417-583fb95e63c9"
         }
     }
 ]
